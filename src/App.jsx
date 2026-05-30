@@ -6,14 +6,12 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock3,
-  Dumbbell,
   Mail,
   Menu,
   MessageSquareText,
   PhoneCall,
   ShieldCheck,
   Target,
-  Workflow,
   X,
   Zap,
 } from "lucide-react";
@@ -22,8 +20,9 @@ import React, { useState } from "react";
 const contactEmail = "hello@cornersystems.ai";
 
 const navItems = [
+  { label: "Coverage", href: "#coverage" },
   { label: "Services", href: "#services" },
-  { label: "Market", href: "#market" },
+  { label: "Proof", href: "#proof" },
   { label: "Process", href: "#process" },
   { label: "Contact", href: "#contact" },
 ];
@@ -31,93 +30,200 @@ const navItems = [
 const services = [
   {
     icon: Bot,
-    title: "Website Chat + Lead Capture",
-    text: "A 24/7 assistant that answers first questions, qualifies prospects, routes program interest, and turns intent into booked trials.",
+    title: "Front Office Coverage",
+    text: "Professional intake across calls, texts, email, site forms, messages, and DMs.",
   },
   {
     icon: Calendar,
-    title: "Trial Booking Flows",
-    text: "Clean booking paths for intro classes, consultations, kids programs, private lessons, and follow-up reminders.",
-  },
-  {
-    icon: PhoneCall,
-    title: "Missed-Call Text Back",
-    text: "Instant SMS replies when your desk is busy, so warm leads hear from the gym before they shop somewhere else.",
-  },
-  {
-    icon: Workflow,
-    title: "CRM Workflows",
-    text: "Pipelines, staff alerts, task creation, and handoff rules that make every new inquiry visible and actionable.",
+    title: "Booking + Pipeline",
+    text: "Clear next steps from first interest to consultation, trial, appointment, or sales conversation.",
   },
   {
     icon: Mail,
-    title: "Follow-Up Sequences",
-    text: "Email and SMS sequences for new inquiries, no-shows, old leads, inactive members, and reactivation campaigns.",
+    title: "Follow-Up Engine",
+    text: "Structured follow-up so interested prospects keep moving instead of fading out.",
   },
   {
     icon: BarChart3,
-    title: "Performance Tracking",
-    text: "Simple reporting for lead sources, booking rates, show rates, close rates, and retention opportunities.",
+    title: "Visibility",
+    text: "Pipeline views, alerts, and reporting so owners can see what is working.",
   },
 ];
 
 const markets = [
   "MMA gyms",
   "Muay Thai gyms",
-  "Brazilian jiu-jitsu academies",
+  "BJJ academies",
   "Boxing gyms",
-  "Kids martial arts programs",
-  "Combat sports franchises",
+  "Strength and conditioning gyms",
+  "Personal trainers",
+  "Fitness studios",
+  "Recovery clinics",
+  "Physio, chiro, and sports medicine",
+  "Supplement brands",
+  "Fightwear brands",
+];
+
+const channels = [
+  {
+    icon: PhoneCall,
+    title: "Calls",
+    text: "Answered with the right questions and the right tone.",
+  },
+  {
+    icon: MessageSquareText,
+    title: "Texts + DMs",
+    text: "Fast, consistent replies where prospects already are.",
+  },
+  {
+    icon: Mail,
+    title: "Email",
+    text: "Clean intake and follow-up without inbox drift.",
+  },
+  {
+    icon: Calendar,
+    title: "Booking",
+    text: "Interest moves toward a real next step.",
+  },
 ];
 
 const benefits = [
-  "Capture leads after hours",
-  "Book more trial classes",
-  "Reduce manual follow-up",
-  "Respond to missed calls instantly",
-  "Give staff a cleaner pipeline",
-  "Track what is actually converting",
-  "Recover cold leads",
-  "Build a business that scales",
+  "Every channel covered",
+  "Every serious lead qualified",
+  "Every next step tracked",
+  "Every follow-up handled",
+  "One clean pipeline",
+  "No bad days at the front desk",
+];
+
+const proofPoints = [
+  {
+    title: "Built for busy operators",
+    text: "Designed around real front-desk pressure, not ideal conditions.",
+  },
+  {
+    title: "Discreet by default",
+    text: "We can explain patterns and outcomes without exposing private client details.",
+  },
+  {
+    title: "Founder-led implementation",
+    text: "We map the workflow, build the system, test it, and keep tightening the handoff.",
+  },
 ];
 
 const process = [
   {
     step: "01",
-    title: "Map the gym",
-    text: "We learn your programs, schedule, pricing structure, lead sources, sales process, staff responsibilities, and recurring admin friction.",
+    title: "Review",
+    text: "Where do leads come from, who handles them, and what slips?",
   },
   {
     step: "02",
-    title: "Build the system",
-    text: "We create the website paths, chat logic, automations, staff alerts, booking flows, and follow-up sequences that match the gym.",
+    title: "Map",
+    text: "Define intake, routing, booking, follow-up, alerts, and ownership.",
   },
   {
     step: "03",
-    title: "Improve the numbers",
-    text: "We review results, refine scripts, tighten weak points, and keep the system aligned with how the business is growing.",
+    title: "Build",
+    text: "Set up the front office flow and test realistic customer scenarios.",
+  },
+  {
+    step: "04",
+    title: "Improve",
+    text: "Tighten weak points as the business learns what converts.",
   },
 ];
 
 const snapshots = [
-  { value: "24/7", label: "lead response" },
-  { value: "3x", label: "faster follow-up" },
-  { value: "1", label: "clean pipeline" },
+  { value: "24/7", label: "coverage" },
+  { value: "All", label: "channels" },
+  { value: "1", label: "pipeline" },
 ];
+
+const deliverables = [
+  "Call, text, email, and DM intake",
+  "Professional phone coverage",
+  "Booking request flow",
+  "CRM pipeline structure",
+  "Staff alerts and task handoff",
+  "Follow-up sequences",
+  "Lead source tracking",
+  "Reporting view",
+];
+
+const faqs = [
+  {
+    question: "Do we need to replace our current CRM?",
+    answer:
+      "Not necessarily. If your current tools work, we can often build around them.",
+  },
+  {
+    question: "Do you only work with gyms?",
+    answer:
+      "No. Gyms are a strong fit, but the system works for any business that depends on inbound inquiries and follow-up.",
+  },
+  {
+    question: "How does pricing work?",
+    answer:
+      "Pricing depends on workflow complexity, volume, tools, and scope. We keep it practical.",
+  },
+  {
+    question: "What happens after we reach out?",
+    answer:
+      "We review the current lead path, identify friction, and recommend the cleanest next step.",
+  },
+];
+
+const initialForm = {
+  name: "",
+  business: "",
+  email: "",
+  phone: "",
+  website: "",
+  bottleneck: "",
+  preferredTime: "",
+};
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [formData, setFormData] = useState(initialForm);
+  const [formStatus, setFormStatus] = useState("idle");
 
   const closeMenu = () => setMenuOpen(false);
+  const encodedLead = encodeURIComponent(
+    [
+      `Name: ${formData.name}`,
+      `Business: ${formData.business}`,
+      `Email: ${formData.email}`,
+      `Phone: ${formData.phone}`,
+      `Website: ${formData.website}`,
+      `Biggest bottleneck: ${formData.bottleneck}`,
+      `Preferred follow-up time: ${formData.preferredTime}`,
+    ].join("\n"),
+  );
+  const mailtoFallback = `mailto:${contactEmail}?subject=${encodeURIComponent(
+    `New Corner Systems inquiry from ${formData.business || formData.name || "website"}`,
+  )}&body=${encodedLead}`;
+
+  function updateField(event) {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
+  }
+
+  function submitLead(event) {
+    event.preventDefault();
+    setFormStatus("sent");
+    window.location.href = mailtoFallback;
+  }
 
   return (
     <div className="site-shell">
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Corner Systems AI home">
+        <a className="brand" href="#top" aria-label="Corner Systems home">
           <span className="brand-mark">CS</span>
           <span>
             <strong>Corner Systems</strong>
-            <small>AI infrastructure for fight gyms</small>
+            <small>Lead infrastructure for service businesses</small>
           </span>
         </a>
 
@@ -130,7 +236,7 @@ function App() {
         </nav>
 
         <a className="header-cta" href="#contact">
-          Book Demo
+          Get a Review
           <ArrowRight aria-hidden="true" size={18} />
         </a>
 
@@ -167,22 +273,28 @@ function App() {
 
           <div className="hero-content">
             <div className="hero-copy">
-              <p className="eyebrow">Automation for combat sports businesses</p>
+              <p className="eyebrow">Professional front-office coverage</p>
               <h1 id="hero-title">
                 <span>Corner</span>
                 <span>Systems</span>
-                <span>AI</span>
               </h1>
               <p className="hero-lede">
-                Modern websites, lead capture, booking flows, and follow-up systems for gym owners who want fewer dropped leads and cleaner operations.
+                We make sure every call, text, email, message, and DM is handled with the same professional standard every day.
               </p>
+              <div className="hero-proofline" aria-label="Coverage channels">
+                <span>Calls</span>
+                <span>Texts</span>
+                <span>Email</span>
+                <span>Messages</span>
+                <span>DMs</span>
+              </div>
               <div className="hero-actions" aria-label="Primary actions">
                 <a className="button button-primary" href="#contact">
-                  Build My System
+                  Get a Lead System Review
                   <ArrowRight aria-hidden="true" size={20} />
                 </a>
-                <a className="button button-secondary" href="#services">
-                  View Services
+                <a className="button button-secondary" href="#coverage">
+                  See Coverage
                   <ChevronRight aria-hidden="true" size={20} />
                 </a>
               </div>
@@ -191,21 +303,21 @@ function App() {
             <div className="lead-console" aria-label="Lead system preview">
               <div className="console-header">
                 <span className="status-dot" />
-                <span>Lead capture live</span>
-              </div>
-              <div className="console-row">
-                <MessageSquareText aria-hidden="true" size={19} />
-                <span>Beginner MMA inquiry</span>
-                <strong>Booked</strong>
+                <span>Front office live</span>
               </div>
               <div className="console-row">
                 <PhoneCall aria-hidden="true" size={19} />
-                <span>Missed call text-back</span>
-                <strong>0:12</strong>
+                <span>Inbound call</span>
+                <strong>Handled</strong>
+              </div>
+              <div className="console-row">
+                <MessageSquareText aria-hidden="true" size={19} />
+                <span>New DM</span>
+                <strong>Qualified</strong>
               </div>
               <div className="console-row">
                 <Calendar aria-hidden="true" size={19} />
-                <span>Trial reminder sequence</span>
+                <span>Follow-up sequence</span>
                 <strong>Armed</strong>
               </div>
             </div>
@@ -223,15 +335,31 @@ function App() {
           </div>
         </section>
 
-        <section id="market" className="section section-split">
+        <section id="coverage" className="section coverage-section">
           <div>
-            <p className="eyebrow">Built for the mat business</p>
-            <h2>Most gyms are elite in person and leaky online.</h2>
+            <p className="eyebrow">Every channel, one standard</p>
+            <h2>Every inquiry gets a professional response.</h2>
             <p className="section-copy">
-              Corner Systems AI helps combat sports operators replace scattered DMs, missed calls, manual spreadsheets, and inconsistent follow-up with one connected system that works before and after class hours.
+              Your front office should not depend on who is free, stressed, or remembering to follow up. Every serious prospect gets a clean path from first contact to next step.
             </p>
           </div>
-          <div className="market-grid" aria-label="Markets served">
+          <div className="channel-grid" aria-label="Channels covered">
+            {channels.map(({ icon: Icon, title, text }) => (
+              <article className="channel-card" key={title}>
+                <Icon aria-hidden="true" size={22} />
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="section market-section">
+          <div className="compact-heading">
+            <p className="eyebrow">Built for lead-driven operators</p>
+            <h2>Especially useful when every new inquiry matters.</h2>
+          </div>
+          <div className="market-grid" aria-label="Businesses served">
             {markets.map((market) => (
               <div className="market-pill" key={market}>
                 <CheckCircle2 aria-hidden="true" size={18} />
@@ -244,9 +372,9 @@ function App() {
         <section id="services" className="section services-section">
           <div className="section-heading">
             <p className="eyebrow">What we build</p>
-            <h2>Systems that keep prospects moving.</h2>
+            <h2>Simple pieces that make the whole business sharper.</h2>
             <p className="section-copy">
-              Each piece is designed around the way combat sports gyms actually sell: curiosity, trust, trial attendance, and consistent follow-up.
+              The goal is not more software. The goal is a business that answers well, books cleanly, follows up consistently, and knows where every lead stands.
             </p>
           </div>
 
@@ -263,14 +391,14 @@ function App() {
           </div>
         </section>
 
-        <section className="section proof-section" aria-label="Operational value">
+        <section id="proof" className="section proof-section" aria-label="Operational value">
           <div className="proof-media">
             <div className="metric-strip">
               <span>Lead Source</span>
               <strong>Website Chat</strong>
             </div>
             <div className="metric-line">
-              <span>Trial booked</span>
+              <span>Consultation booked</span>
               <strong>8:15 PM</strong>
             </div>
             <div className="metric-line">
@@ -285,10 +413,18 @@ function App() {
 
           <div>
             <p className="eyebrow">The result</p>
-            <h2>Less chasing. More training. Better ownership.</h2>
+            <h2>A front office that protects every opportunity.</h2>
             <p className="section-copy">
-              The right system catches leads while your team is coaching, keeps prospects warm before their first class, and gives staff a clear view of what needs attention.
+              Prospects get a sharp first impression. Staff get clean handoffs. Owners get visibility. Follow-up happens even when the day gets busy.
             </p>
+            <div className="proof-grid" aria-label="Trust points">
+              {proofPoints.map((point) => (
+                <article className="proof-card" key={point.title}>
+                  <h3>{point.title}</h3>
+                  <p>{point.text}</p>
+                </article>
+              ))}
+            </div>
             <div className="benefit-grid">
               {benefits.map((benefit) => (
                 <span className="benefit-item" key={benefit}>
@@ -300,10 +436,28 @@ function App() {
           </div>
         </section>
 
+        <section className="section deliverables-section" aria-label="What you get">
+          <div className="section-heading">
+            <p className="eyebrow">What you get</p>
+            <h2>Everything needed to stop leakage at the front door.</h2>
+            <p className="section-copy">
+              We focus on the moment someone reaches out, how they are handled, where the lead goes, who owns it, and what happens next.
+            </p>
+          </div>
+          <div className="deliverable-grid">
+            {deliverables.map((item) => (
+              <span className="deliverable-item" key={item}>
+                <CheckCircle2 aria-hidden="true" size={18} />
+                {item}
+              </span>
+            ))}
+          </div>
+        </section>
+
         <section id="process" className="section process-section">
           <div className="section-heading">
             <p className="eyebrow">How it works</p>
-            <h2>A tight build process for busy gym owners.</h2>
+            <h2>Clean, direct, and built around your actual workflow.</h2>
           </div>
 
           <div className="process-grid">
@@ -317,12 +471,27 @@ function App() {
           </div>
         </section>
 
+        <section className="section faq-section" aria-label="Frequently asked questions">
+          <div className="section-heading">
+            <p className="eyebrow">Questions</p>
+            <h2>Quick answers before we talk.</h2>
+          </div>
+          <div className="faq-list">
+            {faqs.map((item) => (
+              <article className="faq-item" key={item.question}>
+                <h3>{item.question}</h3>
+                <p>{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section id="contact" className="section contact-section">
           <div className="contact-copy">
             <p className="eyebrow">Start clean</p>
-            <h2>Build the system your next lead should meet.</h2>
+            <h2>Find the leaks in your current front office.</h2>
             <p className="section-copy">
-              Bring your current website, booking process, lead sources, and follow-up problems. We will map the fastest path to a cleaner gym operating system.
+              Tell us where inquiries come from and what feels inconsistent. We will use that context to recommend the cleanest next step.
             </p>
             <div className="trust-row" aria-label="Trust points">
               <span>
@@ -331,7 +500,7 @@ function App() {
               </span>
               <span>
                 <Clock3 aria-hidden="true" size={18} />
-                Fast implementation
+                Practical scope
               </span>
               <span>
                 <Target aria-hidden="true" size={18} />
@@ -340,37 +509,54 @@ function App() {
             </div>
           </div>
 
-          <form className="contact-form" action={`mailto:${contactEmail}`} method="post" encType="text/plain">
+          <form className="contact-form" onSubmit={submitLead}>
             <label>
               Name
-              <input name="name" autoComplete="name" required />
+              <input name="name" autoComplete="name" value={formData.name} onChange={updateField} required />
             </label>
             <label>
-              Gym
-              <input name="gym" autoComplete="organization" required />
+              Business
+              <input name="business" autoComplete="organization" value={formData.business} onChange={updateField} required />
             </label>
             <label>
               Email
-              <input name="email" type="email" autoComplete="email" required />
+              <input name="email" type="email" autoComplete="email" value={formData.email} onChange={updateField} required />
+            </label>
+            <label>
+              Phone
+              <input name="phone" type="tel" autoComplete="tel" value={formData.phone} onChange={updateField} />
+            </label>
+            <label>
+              Website
+              <input name="website" type="url" autoComplete="url" value={formData.website} onChange={updateField} />
             </label>
             <label>
               Biggest bottleneck
-              <textarea name="bottleneck" rows="4" required />
+              <textarea name="bottleneck" rows="4" value={formData.bottleneck} onChange={updateField} required />
+            </label>
+            <label>
+              Best follow-up time
+              <input name="preferredTime" value={formData.preferredTime} onChange={updateField} placeholder="Example: weekday mornings" />
             </label>
             <button className="button button-primary" type="submit">
-              Send Request
+              Request Review
               <Mail aria-hidden="true" size={19} />
             </button>
+            {formStatus === "sent" && (
+              <p className="form-note">
+                Your email app should open with the details filled in. You can also talk to the assistant in the corner.
+              </p>
+            )}
           </form>
         </section>
       </main>
 
       <footer className="site-footer">
-        <a className="brand footer-brand" href="#top" aria-label="Corner Systems AI home">
+        <a className="brand footer-brand" href="#top" aria-label="Corner Systems home">
           <span className="brand-mark">CS</span>
           <span>
             <strong>Corner Systems</strong>
-            <small>Digital systems for combat sports businesses</small>
+            <small>Digital systems for lead-driven businesses</small>
           </span>
         </a>
         <a href={`mailto:${contactEmail}`}>{contactEmail}</a>

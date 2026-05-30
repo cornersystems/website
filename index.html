@@ -5,13 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Corner Systems AI builds websites, chat systems, automations, and operational workflows for combat sports gyms."
+      content="Corner Systems builds professional reception, lead capture, booking, CRM, and follow-up systems that handle calls, texts, emails, messages, and DMs."
     />
     <meta name="theme-color" content="#08090c" />
-    <title>Corner Systems AI | Automation for Combat Sports Gyms</title>
+    <title>Corner Systems | Reception and Lead Systems</title>
   </head>
   <body>
     <div id="root"></div>
+    <elevenlabs-convai
+      agent-id="agent_7601ksvg46h3fsm8zc264rs9s1wm"
+      action-text="Talk to Corner Systems"
+      start-call-text="Start conversation"
+      expand-text="Open assistant"
+      listening-text="Listening"
+      speaking-text="Alex is speaking"
+      dismissible="true"
+      dynamic-variables='{"source":"corner_systems_website","business_name":"Corner Systems","website_context":"public marketing site"}'
+    ></elevenlabs-convai>
     <script type="module" src="/src/main.jsx"></script>
+    <script
+      src="https://unpkg.com/@elevenlabs/convai-widget-embed"
+      async
+      type="text/javascript"
+    ></script>
   </body>
 </html>
