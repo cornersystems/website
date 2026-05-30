@@ -88,26 +88,24 @@ const channels = [
 ];
 
 const benefits = [
-  "Every channel covered",
-  "Every serious lead qualified",
-  "Every next step tracked",
-  "Every follow-up handled",
-  "One clean pipeline",
-  "No bad days at the front desk",
+  "Channels covered",
+  "Leads qualified",
+  "Next steps tracked",
+  "Follow-up handled",
 ];
 
 const proofPoints = [
   {
-    title: "Built for busy operators",
-    text: "Designed around real front-desk pressure, not ideal conditions.",
+    title: "Operator-ready",
+    text: "Built for busy days, not perfect conditions.",
   },
   {
-    title: "Discreet by default",
-    text: "We can explain patterns and outcomes without exposing private client details.",
+    title: "Discreet",
+    text: "Private client details stay private.",
   },
   {
-    title: "Founder-led implementation",
-    text: "We map the workflow, build the system, test it, and keep tightening the handoff.",
+    title: "Hands-on",
+    text: "Mapped, built, tested, and refined with you.",
   },
 ];
 
@@ -236,7 +234,7 @@ function App() {
         </nav>
 
         <a className="header-cta" href="#contact">
-          Get a Review
+          Book Discovery
           <ArrowRight aria-hidden="true" size={18} />
         </a>
 
@@ -290,7 +288,7 @@ function App() {
               </div>
               <div className="hero-actions" aria-label="Primary actions">
                 <a className="button button-primary" href="#contact">
-                  Get a Lead System Review
+                  Book a Discovery Call
                   <ArrowRight aria-hidden="true" size={20} />
                 </a>
                 <a className="button button-secondary" href="#coverage">
@@ -335,22 +333,24 @@ function App() {
           </div>
         </section>
 
-        <section id="coverage" className="section coverage-section">
-          <div>
-            <p className="eyebrow">Every channel, one standard</p>
-            <h2>Every inquiry gets a professional response.</h2>
-            <p className="section-copy">
-              Your front office should not depend on who is free, stressed, or remembering to follow up. Every serious prospect gets a clean path from first contact to next step.
-            </p>
-          </div>
-          <div className="channel-grid" aria-label="Channels covered">
-            {channels.map(({ icon: Icon, title, text }) => (
-              <article className="channel-card" key={title}>
-                <Icon aria-hidden="true" size={22} />
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
-            ))}
+        <section id="coverage" className="coverage-band">
+          <div className="coverage-inner">
+            <div>
+              <p className="eyebrow">Every channel, one standard</p>
+              <h2>Every inquiry gets a professional response.</h2>
+              <p className="section-copy">
+                Your front office should not depend on who is free, stressed, or remembering to follow up. Every serious prospect gets a clean path from first contact to next step.
+              </p>
+            </div>
+            <div className="channel-grid" aria-label="Channels covered">
+              {channels.map(({ icon: Icon, title, text }) => (
+                <article className="channel-card" key={title}>
+                  <Icon aria-hidden="true" size={22} />
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -417,20 +417,20 @@ function App() {
             <p className="section-copy">
               Prospects get a sharp first impression. Staff get clean handoffs. Owners get visibility. Follow-up happens even when the day gets busy.
             </p>
+            <div className="benefit-grid">
+              {benefits.map((benefit) => (
+                <span className="benefit-item" key={benefit}>
+                  <CheckCircle2 aria-hidden="true" size={16} />
+                  {benefit}
+                </span>
+              ))}
+            </div>
             <div className="proof-grid" aria-label="Trust points">
               {proofPoints.map((point) => (
                 <article className="proof-card" key={point.title}>
                   <h3>{point.title}</h3>
                   <p>{point.text}</p>
                 </article>
-              ))}
-            </div>
-            <div className="benefit-grid">
-              {benefits.map((benefit) => (
-                <span className="benefit-item" key={benefit}>
-                  <Zap aria-hidden="true" size={16} />
-                  {benefit}
-                </span>
               ))}
             </div>
           </div>
@@ -489,9 +489,9 @@ function App() {
         <section id="contact" className="section contact-section">
           <div className="contact-copy">
             <p className="eyebrow">Start clean</p>
-            <h2>Find the leaks in your current front office.</h2>
+            <h2>Book a discovery call.</h2>
             <p className="section-copy">
-              Tell us where inquiries come from and what feels inconsistent. We will use that context to recommend the cleanest next step.
+              Tell us where inquiries come from and what feels inconsistent. We will use that context to map the cleanest next step on the call.
             </p>
             <div className="trust-row" aria-label="Trust points">
               <span>
@@ -539,7 +539,7 @@ function App() {
               <input name="preferredTime" value={formData.preferredTime} onChange={updateField} placeholder="Example: weekday mornings" />
             </label>
             <button className="button button-primary" type="submit">
-              Request Review
+              Book Discovery
               <Mail aria-hidden="true" size={19} />
             </button>
             {formStatus === "sent" && (
