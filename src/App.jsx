@@ -23,6 +23,7 @@ const navItems = [
   { label: "Coverage", href: "#coverage" },
   { label: "Services", href: "#services" },
   { label: "Proof", href: "#proof" },
+  { label: "Pricing", href: "#pricing" },
   { label: "Process", href: "#process" },
   { label: "Contact", href: "#contact" },
 ];
@@ -147,6 +148,56 @@ const deliverables = [
   "Follow-up sequences",
   "Lead source tracking",
   "Reporting view",
+];
+
+const pricingPlans = [
+  {
+    id: "starter",
+    name: "Starter",
+    monthly: "$149",
+    setup: "$497",
+    note: "For basic lead capture and fast website response.",
+    badge: "Essentials",
+    accent: "blue",
+    cta: "Start with Starter",
+    highlights: ["AI chatbot", "Lead capture", "FAQ answers", "100 chats included"],
+  },
+  {
+    id: "growth",
+    name: "Growth",
+    monthly: "$299",
+    setup: "$997",
+    note: "For operators who want qualification, CRM handoff, and stronger follow-up.",
+    badge: "Best value",
+    accent: "teal",
+    cta: "Choose Growth",
+    highlights: ["Lead qualification", "CRM integration", "250 chats included", "Lower chat overages"],
+  },
+  {
+    id: "receptionist",
+    name: "AI Receptionist",
+    monthly: "$499",
+    setup: "$1,497",
+    note: "For businesses that need voice coverage, missed-call recovery, and chat coverage.",
+    badge: "Most coverage",
+    accent: "amber",
+    cta: "Book AI Receptionist",
+    highlights: ["AI voice agent", "Missed-call recovery", "200 voice minutes", "Full front-office stack"],
+  },
+];
+
+const pricingRows = [
+  { label: "Monthly price", values: ["$149", "$299", "$499"], strong: true },
+  { label: "Setup fee", values: ["$497", "$997", "$1,497"], strong: true },
+  { label: "AI chatbot", values: [true, true, true] },
+  { label: "Lead capture", values: [true, true, true] },
+  { label: "FAQ answers", values: [true, true, true] },
+  { label: "Lead qualification", values: [false, true, true] },
+  { label: "CRM integration", values: [false, true, true] },
+  { label: "AI voice agent", values: [false, false, true] },
+  { label: "Missed-call recovery", values: [false, false, true] },
+  { label: "Included usage", values: ["100 chats", "250 chats", "250 chats + 200 voice min"] },
+  { label: "Overages", values: ["$0.50/chat", "$0.40/chat", "$0.40/chat + $0.20/min"] },
 ];
 
 const faqs = [
@@ -451,6 +502,92 @@ function App() {
                 {item}
               </span>
             ))}
+          </div>
+        </section>
+
+        <section id="pricing" className="section pricing-section" aria-labelledby="pricing-title">
+          <div className="pricing-heading">
+            <div>
+              <p className="eyebrow">Pricing</p>
+              <h2 id="pricing-title">Simple packages for clearer front-office coverage.</h2>
+              <p className="section-copy">
+                Start with chat and lead capture, add qualification and CRM handoff, or move into full AI receptionist coverage with voice and missed-call recovery.
+              </p>
+            </div>
+            <div className="pricing-kicker" aria-label="Pricing summary">
+              <strong>We&apos;re in your corner.</strong>
+              <span>AI receptionists, AI chatbots, and lead capture systems built around your workflow.</span>
+            </div>
+          </div>
+
+          <div className="pricing-card-grid" aria-label="Pricing plans">
+            {pricingPlans.map((plan) => (
+              <article className={`pricing-card pricing-card-${plan.accent}`} key={plan.id}>
+                <div className="pricing-card-top">
+                  <span className="plan-badge">{plan.badge}</span>
+                  <h3>{plan.name}</h3>
+                  <p>{plan.note}</p>
+                </div>
+                <div className="plan-price">
+                  <strong>{plan.monthly}</strong>
+                  <span>/ month</span>
+                </div>
+                <div className="setup-price">
+                  <span>Setup</span>
+                  <strong>{plan.setup}</strong>
+                </div>
+                <ul className="plan-highlights" aria-label={`${plan.name} highlights`}>
+                  {plan.highlights.map((highlight) => (
+                    <li key={highlight}>
+                      <CheckCircle2 aria-hidden="true" size={17} />
+                      {highlight}
+                    </li>
+                  ))}
+                </ul>
+                <a className="button button-secondary pricing-button" href="#contact">
+                  {plan.cta}
+                  <ArrowRight aria-hidden="true" size={18} />
+                </a>
+              </article>
+            ))}
+          </div>
+
+          <div className="pricing-table-wrap">
+            <table className="pricing-table">
+              <caption>Plan comparison</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Feature</th>
+                  {pricingPlans.map((plan) => (
+                    <th className={`plan-head plan-head-${plan.accent}`} scope="col" key={plan.id}>
+                      {plan.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pricingRows.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row">{row.label}</th>
+                    {row.values.map((value, index) => (
+                      <td data-label={pricingPlans[index].name} key={`${row.label}-${pricingPlans[index].id}`}>
+                        {value === true && (
+                          <span className="pricing-check" aria-label="Included">
+                            <CheckCircle2 aria-hidden="true" size={18} />
+                          </span>
+                        )}
+                        {value === false && <span className="pricing-dash">-</span>}
+                        {typeof value === "string" && (
+                          <span className={row.strong ? "pricing-value pricing-value-strong" : "pricing-value"}>
+                            {value}
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
