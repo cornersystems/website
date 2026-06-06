@@ -1166,6 +1166,99 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Lead Journey — replaces broken reel section */}
+      <section className="journey-section" aria-label="Lead journey walkthrough">
+        <RevealSection>
+          <div className="journey-header">
+            <p className="eyebrow">How it works in real time</p>
+            <h2>From first contact to booked — in under 3 minutes.</h2>
+            <p className="journey-sub">This is a real sequence. A prospect reaches out after hours. Here's exactly what happens inside the system.</p>
+          </div>
+        </RevealSection>
+        <div className="journey-timeline">
+          {[
+            {
+              time: "11:42 PM",
+              channel: "Instagram DM",
+              color: "teal",
+              title: "Prospect reaches out",
+              detail: "\"Hey, do you guys have any morning spots open? Looking to start next week.\"",
+              outcome: "Captured instantly — no missed message",
+            },
+            {
+              time: "11:42:08 PM",
+              channel: "AI Response",
+              color: "blue",
+              title: "AI replies in 8 seconds",
+              detail: "Personalised response with available slots, pricing, and a booking link — no human needed.",
+              outcome: "Prospect stays warm, not left on read",
+            },
+            {
+              time: "11:47 PM",
+              channel: "Booking System",
+              color: "teal",
+              title: "Consultation booked",
+              detail: "Prospect selects a Tuesday 7am slot. Confirmation email fires immediately. Reminder set for 24h before.",
+              outcome: "Booking confirmed while you sleep",
+            },
+            {
+              time: "11:47 PM",
+              channel: "CRM",
+              color: "blue",
+              title: "Lead logged with full context",
+              detail: "Name, source (Instagram), intent, booking time, and conversation transcript — all written to your CRM automatically.",
+              outcome: "Zero manual data entry",
+            },
+            {
+              time: "11:47 PM",
+              channel: "Staff Notification",
+              color: "teal",
+              title: "Staff alerted",
+              detail: "Your team gets a brief: new lead, booked for Tuesday 7am, context summary. No chasing the inbox.",
+              outcome: "Clean handoff — staff show up prepared",
+            },
+            {
+              time: "7:00 AM (next day)",
+              channel: "Follow-up",
+              color: "amber",
+              title: "Pre-consultation follow-up sent",
+              detail: "Automated message goes out: what to expect, what to bring, and a link to any intake forms.",
+              outcome: "Show rate goes up. No-show risk goes down.",
+            },
+          ].map((step, i) => (
+            <RevealSection delay={i * 100} key={step.time + step.title}>
+              <div className={`journey-step journey-step-${step.color}`}>
+                <div className="journey-step-meta">
+                  <span className="journey-time">{step.time}</span>
+                  <span className={`journey-channel journey-channel-${step.color}`}>{step.channel}</span>
+                </div>
+                <div className="journey-step-body">
+                  <h3>{step.title}</h3>
+                  {step.detail.startsWith('"') ? (
+                    <blockquote className="journey-quote">{step.detail}</blockquote>
+                  ) : (
+                    <p>{step.detail}</p>
+                  )}
+                  <span className="journey-outcome">
+                    <CheckCircle2 aria-hidden="true" size={15} />
+                    {step.outcome}
+                  </span>
+                </div>
+              </div>
+            </RevealSection>
+          ))}
+        </div>
+        <RevealSection delay={300}>
+          <div className="journey-cta">
+            <p>Want to see this running inside your business?</p>
+            <a className="button button-primary" href="/contact">
+              Book a Demo
+              <ArrowRight aria-hidden="true" size={19} />
+            </a>
+          </div>
+        </RevealSection>
+      </section>
+
       {/* Coverage brief */}
       <section className="coverage-band" aria-label="Channels covered">
         <RevealSection className="coverage-inner">
