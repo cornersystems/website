@@ -621,21 +621,22 @@ function App() {
       <header className="site-header">
         <a className="brand" href="/" aria-label="Corner Systems home">
           <span className="brand-mark">
-            <svg className="cs-logo-mark" width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="42" height="42" rx="7" fill="#09090b"/>
-              {/* C shape */}
-              <path d="M5 8H22V15H13V27H22V34H5Z" fill="white"/>
-              {/* S top half */}
-              <path d="M21 8H37V21H29V14H21Z" fill="white"/>
-              {/* S bottom half */}
-              <path d="M21 21H29V27H37V34H21Z" fill="white"/>
-              {/* Blue diagonal slit */}
-              <polygon points="6,32 30,7 36,7 12,36" fill="#2563eb"/>
+            <svg className="cs-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="100" height="100" rx="12" fill="#09090b"/>
+              {/* C — bold geometric, opens right, chamfered outer corners */}
+              <polygon points="4,14 14,4 58,4 68,14 68,38 30,38 30,62 68,62 68,86 58,96 14,96 4,86" fill="white"/>
+              {/* S top half — opens left */}
+              <polygon points="60,4 88,4 96,12 96,52 60,52 60,40 84,40 84,16 60,16" fill="white"/>
+              {/* S bottom half — opens right */}
+              <polygon points="60,48 96,48 96,60 74,60 74,84 96,84 96,88 86,96 60,96" fill="white"/>
+              {/* Blue diagonal slit — parallelogram across full CS mark */}
+              <polygon points="4,80 20,98 96,20 80,2" fill="#2563eb"/>
             </svg>
           </span>
-          <span>
-            <strong>Corner Systems</strong>
-            <small>AI</small>
+          <span className="brand-wordmark">
+            <strong>CORNER</strong>
+            <em>SYSTEMS</em>
+            <small>— AI —</small>
           </span>
         </a>
 
@@ -682,8 +683,8 @@ function App() {
         <section className="hero-section" aria-labelledby="hero-title">
           <img
             className="hero-image"
-            src="/assets/cs-hero-blue-v1.png"
-            alt="Corner Systems AI receptionist and lead capture system background"
+            src="/assets/cs-lobby-hero.png"
+            alt="Corner Systems AI front office — premium lobby with autonomous AI reception system"
             fetchpriority="high"
           />
           <div className="hero-overlay" />
@@ -1013,33 +1014,38 @@ function App() {
           </div>
         </section>
 
-        <section className="social-section" aria-label="As seen on social">
+        <section className="social-section" aria-label="What we build for your business">
           <RevealSection>
             <div className="social-heading">
-              <p className="eyebrow">As seen on social</p>
-              <h2>Built for the feed, not just the website.</h2>
+              <p className="eyebrow">Across every environment</p>
+              <h2>From the gym floor to the clinic corridor — we cover it all.</h2>
+              <p className="social-subhead">
+                Calls answered at 11pm. DMs replied in seconds. Bookings confirmed while your staff is focused on the client in front of them.
+              </p>
             </div>
           </RevealSection>
+
           <div className="social-grid">
             {[
-              { src: "/assets/cs-story-916.png",    label: "Instagram Story",      ratio: "9:16" },
-              { src: "/assets/cs-hero-wide.png",     label: "Facebook Banner",      ratio: "16:9" },
-              { src: "/assets/cs-square-11.png",     label: "Instagram Feed",       ratio: "1:1"  },
-              { src: "/assets/cs-story-pain.png",    label: "Story — Pain Point",   ratio: "9:16" },
-              { src: "/assets/cs-octagon-ad.png",    label: "Facebook Ad",          ratio: "16:9" },
-              { src: "/assets/cs-before-after.png",  label: "Before / After",       ratio: "1:1"  },
-              { src: "/assets/cs-medspa-story.png",  label: "Med Spa — Story Ad",   ratio: "9:16" },
-              { src: "/assets/cs-email-header.png",  label: "Email Header",         ratio: "16:9" },
-              { src: "/assets/cs-clinic-square.png", label: "Clinic — Feed Square", ratio: "1:1"  },
-              { src: "/assets/cs-hero-blue-v2.jpg",  label: "Brand Dark — Banner",  ratio: "16:9" },
-              { src: "/assets/cs-blue-square.png",   label: "Brand Dark — Square",  ratio: "1:1"  },
+              { src: "/assets/cs-lobby-hero.png",       label: "24/7 Reception — Active",          tag: "Always On"    },
+              { src: "/assets/cs-gym-night-sq.png",     label: "Fitness & Combat Sports",          tag: "Your Niche"   },
+              { src: "/assets/cs-phone-story.png",      label: "Every Lead. Captured.",             tag: "Zero Dropped" },
+              { src: "/assets/cs-reception-hero.png",   label: "Front Office Infrastructure",       tag: "Premium"      },
+              { src: "/assets/cs-before-after-v2.png",  label: "Before Corner Systems → After",    tag: "The Result"   },
+              { src: "/assets/cs-clinic-story-v2.png",  label: "Clinics & Aesthetics",             tag: "Your Niche"   },
+              { src: "/assets/cs-medspa-story.png",     label: "Med Spa Coverage",                  tag: "24/7"         },
+              { src: "/assets/cs-gym-aerial.png",       label: "Gym Operations — Automated",        tag: "Systemised"   },
+              { src: "/assets/cs-email-header.png",     label: "Professional Outreach System",      tag: "Done For You" },
+              { src: "/assets/cs-clinic-square.png",    label: "Patient Intake — Seamless",         tag: "Clinics"      },
+              { src: "/assets/cs-hero-blue-v2.jpg",     label: "AI Infrastructure — Dark",          tag: "Powered"      },
+              { src: "/assets/cs-blue-square.png",      label: "Corner Systems Network",            tag: "Connected"    },
             ].map((item, i) => (
-              <RevealSection delay={i * 70} key={item.src}>
+              <RevealSection delay={i * 55} key={item.src}>
                 <div className="social-card">
                   <img src={item.src} alt={item.label} loading="lazy" />
                   <div className="social-card-label">
                     <span>{item.label}</span>
-                    <span className="social-ratio">{item.ratio}</span>
+                    <span className="social-tag">{item.tag}</span>
                   </div>
                 </div>
               </RevealSection>
@@ -1150,17 +1156,18 @@ function App() {
       <footer className="site-footer">
         <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
           <span className="brand-mark">
-            <svg className="cs-logo-mark" width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="42" height="42" rx="7" fill="#09090b"/>
-              <path d="M5 8H22V15H13V27H22V34H5Z" fill="white"/>
-              <path d="M21 8H37V21H29V14H21Z" fill="white"/>
-              <path d="M21 21H29V27H37V34H21Z" fill="white"/>
-              <polygon points="6,32 30,7 36,7 12,36" fill="#2563eb"/>
+            <svg className="cs-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="100" height="100" rx="12" fill="#09090b"/>
+              <polygon points="4,14 14,4 58,4 68,14 68,38 30,38 30,62 68,62 68,86 58,96 14,96 4,86" fill="white"/>
+              <polygon points="60,4 88,4 96,12 96,52 60,52 60,40 84,40 84,16 60,16" fill="white"/>
+              <polygon points="60,48 96,48 96,60 74,60 74,84 96,84 96,88 86,96 60,96" fill="white"/>
+              <polygon points="4,80 20,98 96,20 80,2" fill="#2563eb"/>
             </svg>
           </span>
-          <span>
-            <strong>Corner Systems</strong>
-            <small>AI</small>
+          <span className="brand-wordmark">
+            <strong>CORNER</strong>
+            <em>SYSTEMS</em>
+            <small>— AI —</small>
           </span>
         </a>
         <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
