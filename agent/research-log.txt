@@ -1,0 +1,43 @@
+
+╔══════════════════════════════════════════════════╗
+║  Lead Research — Day 0                          ║
+║  Phase: Toronto Core                             ║
+║  Area:  Toronto ON                               ║
+╚══════════════════════════════════════════════════╝
+
+🔍 Discovering leads in Toronto ON — niches: boutique fitness studio, CrossFit gym, wellness studio
+Research error: AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CbnMMPzAKHi9QWjsx3yRX"}
+    at APIError.generate (file:///C:/Users/thoma/OneDrive/Documents/GitHub/website/node_modules/@anthropic-ai/sdk/core/error.mjs:42:20)
+    at Anthropic.makeStatusError (file:///C:/Users/thoma/OneDrive/Documents/GitHub/website/node_modules/@anthropic-ai/sdk/client.mjs:372:32)
+    at Anthropic.makeRequest (file:///C:/Users/thoma/OneDrive/Documents/GitHub/website/node_modules/@anthropic-ai/sdk/client.mjs:572:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async askClaude (file:///C:/Users/thoma/OneDrive/Documents/GitHub/website/agent/research-daily.js:93:16)
+    at async discoverLeads (file:///C:/Users/thoma/OneDrive/Documents/GitHub/website/agent/research-daily.js:120:15)
+    at async researchNewLeads (file:///C:/Users/thoma/OneDrive/Documents/GitHub/website/agent/research-daily.js:230:22) {
+  status: 401,
+  headers: Headers {
+    date: 'Sat, 06 Jun 2026 16:51:12 GMT',
+    'content-type': 'application/json',
+    'transfer-encoding': 'chunked',
+    connection: 'keep-alive',
+    'x-should-retry': 'false',
+    'request-id': 'req_011CbnMMPzAKHi9QWjsx3yRX',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    server: 'cloudflare',
+    'content-encoding': 'gzip',
+    vary: 'Accept-Encoding',
+    'set-cookie': '_cfuvid=JBGXayGPAZqKZaVizlnk._4veEOKKRn4DOv.xoXD8s8-1780764672.1222477-1.0.1.1-evY6Og1IO_YAhpVmBNUjrxN3.qGpwe3.YUapChxhhjc; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'x-robots-tag': 'none',
+    'cf-cache-status': 'DYNAMIC',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'cf-ray': 'a078eba0c8a74f09-YYZ'
+  },
+  requestID: 'req_011CbnMMPzAKHi9QWjsx3yRX',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CbnMMPzAKHi9QWjsx3yRX'
+  },
+  type: 'authentication_error'
+}
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94
