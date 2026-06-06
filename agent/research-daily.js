@@ -16,6 +16,8 @@
 
 import "dotenv/config";
 import { spawnSync } from "child_process";
+import fs from "fs";
+import os from "os";
 import { upsertLead, updateResearchData, getUnresearchedLeads } from "./db.js";
 
 // ── Geographic expansion schedule ─────────────────────────────────────────────
@@ -85,42 +87,39 @@ function getDailyTargets() {
 }
 
 // ── Claude CLI helper ─────────────────────────────────────────────────────────
-// Uses `claude -p` — your Claude Code subscription, zero API cost.
-function askClaude(prompt, useSearch = false) {
-  const args = ["-p", prompt, "--output-format", "text"];
+// Uses the claude CLI — your Claude Code subscription, zero API cost.
+// Writes prompt to C:\Temp to avoid shell quoting issues with long JSON prompts.
+const CLAUDE_CMD = "C:\\Users\\thoma\\AppData\\Roaming\\npm\\claude.cmd";
+const TMP_DIR    = "C:\\Temp";
+const TMP_PROMPT = `${TMP_DIR}\\cs-prompt.txt`;
 
-  if (useSearch) {
-    // Allow web search tools when discovering leads
-    args.push("--allowedTools", "WebSearch,WebFetch");
-  }
+function askClaude(prompt) {
+  // Ensure temp dir exists
+  fs.mkdirSync(TMP_DIR, { recursive: true });
+  fs.writeFileSync(TMP_PROMPT, prompt, "utf8");
 
-  const result = spawnSync("claude", args, {
-    encoding: "utf8",
-    timeout: 120_000,          // 2 min per call
-    maxBuffer: 10 * 1024 * 1024,
-    shell: true,               // needed on Windows to resolve PATH
-    windowsHide: true,
-  });
+  const result = spawnSync(
+    "cmd.exe",
+    ["/c", `${CLAUDE_CMD} --output-format text --dangerously-skip-permissions < ${TMP_PROMPT}`],
+    {
+      encoding: "utf8",
+      timeout: 300_000,    // 5 min — web search calls can take a while
+      maxBuffer: 10 * 1024 * 1024,
+      cwd: os.homedir(),      // neutral dir — not project, so claude acts as general assistant
+      windowsHide: true,
+    }
+  );
+
+  try { fs.unlinkSync(TMP_PROMPT); } catch {}
 
   if (result.error) {
-    const msg = result.error.message || "";
-    if (msg.includes("ENOENT") || msg.includes("not found")) {
-      throw new Error(
-        "Claude CLI not found. Open a terminal and run: claude login\n" +
-        "This is a one-time setup that uses your existing Claude subscription."
-      );
-    }
-    throw new Error(`Claude CLI spawn error: ${msg}`);
+    throw new Error(`Claude CLI error: ${result.error.message}`);
   }
 
   const stderr = (result.stderr || "").trim();
   if (result.status !== 0) {
-    if (stderr.toLowerCase().includes("not logged in") || stderr.toLowerCase().includes("please run /login")) {
-      throw new Error(
-        "Claude CLI is not logged in.\n" +
-        "Open a terminal and run:  claude login\n" +
-        "It will open your browser — click Authorize. One-time setup."
-      );
+    if (stderr.toLowerCase().includes("not logged in") || stderr.toLowerCase().includes("/login")) {
+      throw new Error("Claude CLI not logged in. Run: claude  (in a terminal window)");
     }
     throw new Error(`Claude CLI failed (exit ${result.status}): ${stderr.slice(0, 300)}`);
   }
@@ -129,8 +128,10 @@ function askClaude(prompt, useSearch = false) {
 }
 
 function parseJson(text) {
+  // Strip markdown code fences if claude wrapped the response
+  const stripped = text.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "");
   try {
-    const match = text.match(/\{[\s\S]*\}/);
+    const match = stripped.match(/\{[\s\S]*\}/);
     return match ? JSON.parse(match[0]) : null;
   } catch {
     return null;
@@ -163,7 +164,7 @@ Find 20 real businesses. For each, collect:
 Return JSON: { "leads": [ ...20 objects... ] }
 Only include real, verifiable businesses. Do NOT make any up.`;
 
-  const raw = askClaude(prompt, true);
+  const raw = askClaude(prompt);
   const parsed = parseJson(raw);
 
   if (!parsed?.leads?.length) {
@@ -208,7 +209,7 @@ Return ONLY:
   "research_notes": "brief note on what you found"
 }`;
 
-  const raw = askClaude(prompt, true);
+  const raw = askClaude(prompt);
   return parseJson(raw) || {
     email: null, website_url: null,
     has_website: !!business.website,
@@ -234,7 +235,7 @@ Rules:
 - Sign off as Thomas.
 - Body only. No subject line.`;
 
-  return askClaude(prompt, false);
+  return askClaude(prompt);
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
