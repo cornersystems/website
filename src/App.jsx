@@ -620,10 +620,22 @@ function App() {
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Corner Systems home">
-          <span className="brand-mark">CS</span>
+          <span className="brand-mark">
+            <svg className="cs-logo-mark" width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="42" height="42" rx="7" fill="#09090b"/>
+              {/* C shape */}
+              <path d="M5 8H22V15H13V27H22V34H5Z" fill="white"/>
+              {/* S top half */}
+              <path d="M21 8H37V21H29V14H21Z" fill="white"/>
+              {/* S bottom half */}
+              <path d="M21 21H29V27H37V34H21Z" fill="white"/>
+              {/* Blue diagonal slit */}
+              <polygon points="6,32 30,7 36,7 12,36" fill="#2563eb"/>
+            </svg>
+          </span>
           <span>
             <strong>Corner Systems</strong>
-            <small>Lead infrastructure for service businesses</small>
+            <small>AI</small>
           </span>
         </a>
 
@@ -670,7 +682,7 @@ function App() {
         <section className="hero-section" aria-labelledby="hero-title">
           <img
             className="hero-image"
-            src="/assets/cs-hero-bg.png"
+            src="/assets/cs-hero-blue-v1.png"
             alt="Corner Systems AI receptionist and lead capture system background"
             fetchpriority="high"
           />
@@ -1019,6 +1031,8 @@ function App() {
               { src: "/assets/cs-medspa-story.png",  label: "Med Spa — Story Ad",   ratio: "9:16" },
               { src: "/assets/cs-email-header.png",  label: "Email Header",         ratio: "16:9" },
               { src: "/assets/cs-clinic-square.png", label: "Clinic — Feed Square", ratio: "1:1"  },
+              { src: "/assets/cs-hero-blue-v2.jpg",  label: "Brand Dark — Banner",  ratio: "16:9" },
+              { src: "/assets/cs-blue-square.png",   label: "Brand Dark — Square",  ratio: "1:1"  },
             ].map((item, i) => (
               <RevealSection delay={i * 70} key={item.src}>
                 <div className="social-card">
@@ -1135,10 +1149,18 @@ function App() {
 
       <footer className="site-footer">
         <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
-          <span className="brand-mark">CS</span>
+          <span className="brand-mark">
+            <svg className="cs-logo-mark" width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="42" height="42" rx="7" fill="#09090b"/>
+              <path d="M5 8H22V15H13V27H22V34H5Z" fill="white"/>
+              <path d="M21 8H37V21H29V14H21Z" fill="white"/>
+              <path d="M21 21H29V27H37V34H21Z" fill="white"/>
+              <polygon points="6,32 30,7 36,7 12,36" fill="#2563eb"/>
+            </svg>
+          </span>
           <span>
             <strong>Corner Systems</strong>
-            <small>Digital systems for lead-driven businesses</small>
+            <small>AI</small>
           </span>
         </a>
         <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
