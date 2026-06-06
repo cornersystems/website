@@ -123,8 +123,14 @@ export async function sendSequenceEmail(lead, sequenceKey) {
   const subject = seq.subjectTemplate(lead);
   const body    = await personalise(seq.prompt(lead));
 
-  const html = `<div style="font-family:sans-serif;font-size:15px;line-height:1.7;color:#1a1a1a;max-width:560px">
+  const html = `<div style="font-family:sans-serif;max-width:560px">
+  <img src="https://cornersystems.vercel.app/assets/cs-email-header.png" alt="Corner Systems" width="560" style="width:100%;border-radius:8px 8px 0 0;display:block;margin-bottom:24px" />
+  <div style="font-size:15px;line-height:1.7;color:#1a1a1a">
 ${body.replace(/\n/g, "<br>")}
+  </div>
+  <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#999">
+    Corner Systems · cornersystemsai@gmail.com · <a href="https://cornersystems.vercel.app" style="color:#999">cornersystems.vercel.app</a>
+  </div>
 </div>`;
 
   try {

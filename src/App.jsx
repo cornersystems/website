@@ -1010,12 +1010,15 @@ function App() {
           </RevealSection>
           <div className="social-grid">
             {[
-              { src: "/assets/cs-story-916.png",   label: "Instagram Story",  ratio: "9:16" },
-              { src: "/assets/cs-hero-wide.png",    label: "Facebook Banner",  ratio: "16:9" },
-              { src: "/assets/cs-square-11.png",    label: "Instagram Feed",   ratio: "1:1"  },
-              { src: "/assets/cs-story-pain.png",   label: "Story — Pain Point", ratio: "9:16" },
-              { src: "/assets/cs-octagon-ad.png",   label: "Facebook Ad",      ratio: "16:9" },
-              { src: "/assets/cs-before-after.png", label: "Before / After",   ratio: "1:1"  },
+              { src: "/assets/cs-story-916.png",    label: "Instagram Story",      ratio: "9:16" },
+              { src: "/assets/cs-hero-wide.png",     label: "Facebook Banner",      ratio: "16:9" },
+              { src: "/assets/cs-square-11.png",     label: "Instagram Feed",       ratio: "1:1"  },
+              { src: "/assets/cs-story-pain.png",    label: "Story — Pain Point",   ratio: "9:16" },
+              { src: "/assets/cs-octagon-ad.png",    label: "Facebook Ad",          ratio: "16:9" },
+              { src: "/assets/cs-before-after.png",  label: "Before / After",       ratio: "1:1"  },
+              { src: "/assets/cs-medspa-story.png",  label: "Med Spa — Story Ad",   ratio: "9:16" },
+              { src: "/assets/cs-email-header.png",  label: "Email Header",         ratio: "16:9" },
+              { src: "/assets/cs-clinic-square.png", label: "Clinic — Feed Square", ratio: "1:1"  },
             ].map((item, i) => (
               <RevealSection delay={i * 70} key={item.src}>
                 <div className="social-card">
