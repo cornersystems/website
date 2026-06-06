@@ -10,19 +10,21 @@ import {
   Menu,
   MessageSquareText,
   PhoneCall,
+  Quote,
   ShieldCheck,
+  Star,
   Target,
   X,
   Zap,
 } from "lucide-react";
 import React, { useState } from "react";
 
-const contactEmail = "hello@cornersystems.ai";
+const contactEmail = "cornersystemsai@gmail.com";
 
 const navItems = [
   { label: "Coverage", href: "#coverage" },
   { label: "Services", href: "#services" },
-  { label: "Proof", href: "#proof" },
+  { label: "Results", href: "#proof" },
   { label: "Pricing", href: "#pricing" },
   { label: "Process", href: "#process" },
   { label: "Contact", href: "#contact" },
@@ -136,7 +138,7 @@ const process = [
 const snapshots = [
   { value: "24/7", label: "coverage" },
   { value: "All", label: "channels" },
-  { value: "1", label: "pipeline" },
+  { value: "Zero", label: "leads dropped" },
 ];
 
 const deliverables = [
@@ -200,6 +202,28 @@ const pricingRows = [
   { label: "Overages", values: ["$0.50/chat", "$0.40/chat", "$0.40/chat + $0.20/min"] },
 ];
 
+// Replace these with real client quotes before launch
+const testimonials = [
+  {
+    quote: "We were losing leads every week and didn't even know it. Within two weeks of going live the front office was running cleaner than it ever had with a full-time receptionist.",
+    name: "Owner",
+    business: "MMA Gym, Texas",
+    stars: 5,
+  },
+  {
+    quote: "Every DM, every missed call, every form submission — it all gets followed up now. My staff just shows up to the consultations.",
+    name: "Head Coach & Owner",
+    business: "BJJ Academy, Florida",
+    stars: 5,
+  },
+  {
+    quote: "The setup process was painless and they actually learned how we operate before building anything. It feels like our system, not a generic template.",
+    name: "Director",
+    business: "Fitness Studio, California",
+    stars: 5,
+  },
+];
+
 const faqs = [
   {
     question: "Do we need to replace our current CRM?",
@@ -227,8 +251,6 @@ const initialForm = {
   name: "",
   business: "",
   email: "",
-  phone: "",
-  website: "",
   bottleneck: "",
   preferredTime: "",
 };
@@ -236,33 +258,30 @@ const initialForm = {
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [formData, setFormData] = useState(initialForm);
-  const [formStatus, setFormStatus] = useState("idle");
+  const [formStatus, setFormStatus] = useState("idle"); // idle | sending | sent | error
 
   const closeMenu = () => setMenuOpen(false);
-  const encodedLead = encodeURIComponent(
-    [
-      `Name: ${formData.name}`,
-      `Business: ${formData.business}`,
-      `Email: ${formData.email}`,
-      `Phone: ${formData.phone}`,
-      `Website: ${formData.website}`,
-      `Biggest bottleneck: ${formData.bottleneck}`,
-      `Preferred follow-up time: ${formData.preferredTime}`,
-    ].join("\n"),
-  );
-  const mailtoFallback = `mailto:${contactEmail}?subject=${encodeURIComponent(
-    `New Corner Systems inquiry from ${formData.business || formData.name || "website"}`,
-  )}&body=${encodedLead}`;
 
   function updateField(event) {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
   }
 
-  function submitLead(event) {
+  async function submitLead(event) {
     event.preventDefault();
-    setFormStatus("sent");
-    window.location.href = mailtoFallback;
+    setFormStatus("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      setFormStatus("sent");
+      setFormData(initialForm);
+    } catch {
+      setFormStatus("error");
+    }
   }
 
   return (
@@ -315,8 +334,9 @@ function App() {
         <section className="hero-section" aria-labelledby="hero-title">
           <img
             className="hero-image"
-            src="/assets/combat-gym-systems-hero.png"
-            alt="A modern combat sports gym with digital operations lighting"
+            src="/assets/cs-hero-wide.png"
+            alt="Corner Systems front office coverage — your front office never sleeps"
+            fetchpriority="high"
           />
           <div className="hero-overlay" />
 
@@ -442,7 +462,7 @@ function App() {
           </div>
         </section>
 
-        <section id="proof" className="section proof-section" aria-label="Operational value">
+        <section className="section proof-section" aria-label="Operational value">
           <div className="proof-media">
             <div className="metric-strip">
               <span>Lead Source</span>
@@ -591,6 +611,19 @@ function App() {
           </div>
         </section>
 
+        <section className="cta-band" aria-label="Mid-page call to action">
+          <div className="cta-band-inner">
+            <div>
+              <h2>Ready to stop losing leads?</h2>
+              <p>Book a free 20-minute discovery call. We'll map your current intake flow and show you where the gaps are.</p>
+            </div>
+            <a className="button button-primary" href="#contact">
+              Book a Discovery Call
+              <ArrowRight aria-hidden="true" size={20} />
+            </a>
+          </div>
+        </section>
+
         <section id="process" className="section process-section">
           <div className="section-heading">
             <p className="eyebrow">How it works</p>
@@ -603,6 +636,30 @@ function App() {
                 <span>{item.step}</span>
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="proof" className="section testimonials-section" aria-label="Client results">
+          <div className="section-heading">
+            <p className="eyebrow">What clients say</p>
+            <h2>Real operators. Real results.</h2>
+          </div>
+          <div className="testimonial-grid">
+            {testimonials.map((t) => (
+              <article className="testimonial-card" key={t.business}>
+                <Quote className="testimonial-icon" aria-hidden="true" size={22} />
+                <div className="testimonial-stars" aria-label={`${t.stars} out of 5 stars`}>
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <Star key={i} aria-hidden="true" size={14} />
+                  ))}
+                </div>
+                <p className="testimonial-quote">&ldquo;{t.quote}&rdquo;</p>
+                <footer className="testimonial-attribution">
+                  <strong>{t.name}</strong>
+                  <span>{t.business}</span>
+                </footer>
               </article>
             ))}
           </div>
@@ -660,14 +717,6 @@ function App() {
               <input name="email" type="email" autoComplete="email" value={formData.email} onChange={updateField} required />
             </label>
             <label>
-              Phone
-              <input name="phone" type="tel" autoComplete="tel" value={formData.phone} onChange={updateField} />
-            </label>
-            <label>
-              Website
-              <input name="website" type="url" autoComplete="url" value={formData.website} onChange={updateField} />
-            </label>
-            <label>
               Biggest bottleneck
               <textarea name="bottleneck" rows="4" value={formData.bottleneck} onChange={updateField} required />
             </label>
@@ -675,13 +724,13 @@ function App() {
               Best follow-up time
               <input name="preferredTime" value={formData.preferredTime} onChange={updateField} placeholder="Example: weekday mornings" />
             </label>
-            <button className="button button-primary" type="submit">
-              Book Discovery
-              <Mail aria-hidden="true" size={19} />
+            <button className="button button-primary" type="submit" disabled={formStatus === "sending" || formStatus === "sent"}>
+              {formStatus === "sending" ? "Sending…" : formStatus === "sent" ? "Sent — we'll be in touch" : "Book Discovery"}
+              {formStatus !== "sending" && formStatus !== "sent" && <Mail aria-hidden="true" size={19} />}
             </button>
-            {formStatus === "sent" && (
-              <p className="form-note">
-                Your email app should open with the details filled in. You can also talk to the assistant in the corner.
+            {formStatus === "error" && (
+              <p className="form-note form-note-error">
+                Something went wrong. Email us directly at <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
               </p>
             )}
           </form>
