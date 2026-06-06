@@ -426,17 +426,23 @@ function RevealSection({ children, className = "", delay = 0 }) {
 function PageHero({ eyebrow, title, subtitle, stats = [] }) {
   return (
     <section className="page-hero" aria-labelledby="page-hero-title">
+      <img className="page-hero-bg" src="/assets/cs-navy-hero-bg.png" alt="" aria-hidden="true" />
       <div className="page-hero-inner">
-        <p className="eyebrow">{eyebrow}</p>
-        <h1 id="page-hero-title">{title}</h1>
-        {subtitle && <p className="page-hero-sub">{subtitle}</p>}
-        {stats.length > 0 && (
-          <div className="page-hero-stats" aria-label="Page highlights">
-            {stats.map((s) => (
-              <span key={s.label}><strong>{s.value}</strong> {s.label}</span>
-            ))}
-          </div>
-        )}
+        <div className="page-hero-copy">
+          <p className="eyebrow">{eyebrow}</p>
+          <h1 id="page-hero-title">{title}</h1>
+          {subtitle && <p className="page-hero-sub">{subtitle}</p>}
+          {stats.length > 0 && (
+            <div className="page-hero-stats" aria-label="Page highlights">
+              {stats.map((s) => (
+                <span key={s.label}><strong>{s.value}</strong> {s.label}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="page-hero-logo" aria-hidden="true">
+          <img src="/assets/cs-logo-3d.png" alt="" />
+        </div>
       </div>
     </section>
   );
