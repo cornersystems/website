@@ -27,8 +27,9 @@ const contactEmail = "cornersystemsai@gmail.com";
 const navItems = [
   { label: "Coverage", href: "#coverage" },
   { label: "Services", href: "#services" },
+  { label: "Tools", href: "#integrations" },
   { label: "Results", href: "#proof" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Pricing", href: "/pricing" },
   { label: "Process", href: "#process" },
   { label: "Contact", href: "#contact" },
 ];
@@ -59,9 +60,9 @@ const services = [
 const marketGroups = [
   {
     icon: Dumbbell,
-    title: "Fitness & Combat",
-    text: "Gyms and studios that live on trials, memberships, and fast response.",
-    items: ["MMA & Muay Thai gyms", "BJJ academies", "Boxing gyms", "Strength & conditioning", "Personal training studios", "Fitness studios"],
+    title: "Fitness & Studios",
+    text: "Gyms, studios, and membership businesses that live on trials, consultations, and fast response.",
+    items: ["Membership gyms", "Boutique studios", "Martial arts academies", "Strength & conditioning", "Personal training studios", "Wellness studios"],
   },
   {
     icon: HeartPulse,
@@ -97,6 +98,24 @@ const channels = [
     icon: Calendar,
     title: "Booking",
     text: "Interest moves toward a real next step.",
+  },
+];
+
+const integrationGroups = [
+  {
+    title: "Booking",
+    text: "Move qualified inquiries toward a real appointment, trial, class, or consult.",
+    tools: ["Mindbody", "GloFox", "Zen Planner", "Jane App", "Cliniko", "Google Calendar"],
+  },
+  {
+    title: "CRM + Pipeline",
+    text: "Route clean lead data into the system your team already checks.",
+    tools: ["HubSpot", "GoHighLevel", "Pipedrive", "Airtable", "Google Sheets", "Notion"],
+  },
+  {
+    title: "Inbox + Messaging",
+    text: "Keep calls, forms, emails, texts, and DMs from becoming loose ends.",
+    tools: ["Gmail", "Outlook", "Twilio", "Instagram", "Facebook", "Website Forms"],
   },
 ];
 
@@ -246,19 +265,19 @@ const testimonials = [
   {
     quote: "We were losing leads every week and didn't even know it. Within two weeks of going live the front office was running cleaner than it ever had with a full-time receptionist.",
     name: "Owner",
-    business: "MMA Gym, Texas",
+    business: "Service Business, Texas",
     stars: 5,
   },
   {
     quote: "Every DM, every missed call, every form submission — it all gets followed up now. My staff just shows up to the consultations.",
-    name: "Head Coach & Owner",
-    business: "BJJ Academy, Florida",
+    name: "Practice Owner",
+    business: "Health Clinic, Florida",
     stars: 5,
   },
   {
     quote: "The setup process was painless and they actually learned how we operate before building anything. It feels like our system, not a generic template.",
     name: "Director",
-    business: "Fitness Studio, California",
+    business: "Med Spa, California",
     stars: 5,
   },
 ];
@@ -273,6 +292,11 @@ const faqs = [
     question: "Do you only work with gyms?",
     answer:
       "No. Gyms are a strong fit, but the system works for any business that depends on inbound inquiries and follow-up — including chiropractic and physio clinics, med spas, and dental practices.",
+  },
+  {
+    question: "Can you connect with the tools we already use?",
+    answer:
+      "Usually, yes. We design around your current booking, CRM, calendar, inbox, and messaging tools using the cleanest available connection or handoff.",
   },
   {
     question: "How does pricing work?",
@@ -394,17 +418,181 @@ function RevealSection({ children, className = "", delay = 0 }) {
   );
 }
 
+function PricingSection({ pricingAudience, setPricingAudience, page = false }) {
+  const pricingPlans = pricingByAudience[pricingAudience].plans;
+  const pricingRows = pricingByAudience[pricingAudience].rows;
+
+  return (
+    <section id="pricing" className={`section pricing-section ${page ? "pricing-page-section" : ""}`} aria-labelledby="pricing-title">
+      <div className="pricing-heading">
+        <div>
+          <p className="eyebrow">Pricing</p>
+          <h2 id="pricing-title">Clear packages. No mystery software bill.</h2>
+          <p className="section-copy">
+            Start with chat and lead capture, add qualification and CRM handoff, or move into full AI receptionist coverage with voice and missed-call recovery.
+          </p>
+        </div>
+        <div className="pricing-kicker" aria-label="Pricing summary">
+          <strong>Built around your workflow.</strong>
+          <span>Choose the closest package, then we scope the exact build around your tools, volume, and front-office gaps.</span>
+        </div>
+      </div>
+
+      <div className="pricing-toggle" role="tablist" aria-label="Choose your industry">
+        {pricingAudiences.map((aud) => (
+          <button
+            key={aud.id}
+            type="button"
+            role="tab"
+            aria-selected={pricingAudience === aud.id}
+            className={`pricing-toggle-btn ${pricingAudience === aud.id ? "active" : ""}`}
+            onClick={() => setPricingAudience(aud.id)}
+          >
+            {aud.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="pricing-card-grid" aria-label="Pricing plans">
+        {pricingPlans.map((plan) => (
+          <article className={`pricing-card pricing-card-${plan.accent}`} key={plan.id}>
+            <div className="pricing-card-top">
+              <span className="plan-badge">{plan.badge}</span>
+              <h3>{plan.name}</h3>
+              <p>{plan.note}</p>
+            </div>
+            <div className="plan-price">
+              <strong>{plan.monthly}</strong>
+              <span>/ month</span>
+            </div>
+            <div className="setup-price">
+              <span>Setup</span>
+              <strong>{plan.setup}</strong>
+            </div>
+            <ul className="plan-highlights" aria-label={`${plan.name} highlights`}>
+              {plan.highlights.map((highlight) => (
+                <li key={highlight}>
+                  <CheckCircle2 aria-hidden="true" size={17} />
+                  {highlight}
+                </li>
+              ))}
+            </ul>
+            <a className="button button-secondary pricing-button" href="/#contact">
+              {plan.cta}
+              <ArrowRight aria-hidden="true" size={18} />
+            </a>
+          </article>
+        ))}
+      </div>
+
+      <div className="pricing-table-wrap">
+        <table className="pricing-table">
+          <caption>Plan comparison</caption>
+          <thead>
+            <tr>
+              <th scope="col">Feature</th>
+              {pricingPlans.map((plan) => (
+                <th className={`plan-head plan-head-${plan.accent}`} scope="col" key={plan.id}>
+                  {plan.name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {pricingRows.map((row) => (
+              <tr key={row.label}>
+                <th scope="row">{row.label}</th>
+                {row.values.map((value, index) => (
+                  <td data-label={pricingPlans[index].name} key={`${row.label}-${pricingPlans[index].id}`}>
+                    {value === true && (
+                      <span className="pricing-check" aria-label="Included">
+                        <CheckCircle2 aria-hidden="true" size={18} />
+                      </span>
+                    )}
+                    {value === false && <span className="pricing-dash">-</span>}
+                    {typeof value === "string" && (
+                      <span className={row.strong ? "pricing-value pricing-value-strong" : "pricing-value"}>
+                        {value}
+                      </span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function PricingPage({ pricingAudience, setPricingAudience }) {
+  return (
+    <>
+      <section className="pricing-hero" aria-labelledby="pricing-page-title">
+        <div className="pricing-hero-inner">
+          <p className="eyebrow">Dedicated pricing</p>
+          <h1 id="pricing-page-title">Pick the coverage level that stops the leak.</h1>
+          <p>
+            Transparent monthly packages for AI reception, lead capture, missed-call recovery, and follow-up automation. Every plan is tuned to the tools and workflow already inside your business.
+          </p>
+          <div className="pricing-hero-stats" aria-label="Pricing highlights">
+            <span><strong>24/7</strong> coverage</span>
+            <span><strong>$149+</strong> monthly</span>
+            <span><strong>CRM</strong> ready</span>
+          </div>
+        </div>
+      </section>
+      <PricingSection pricingAudience={pricingAudience} setPricingAudience={setPricingAudience} page />
+      <section className="cta-band pricing-final-cta" aria-label="Pricing call to action">
+        <div className="cta-band-inner">
+          <div>
+            <h2>Want the cleanest fit?</h2>
+            <p>Send the current intake flow and we will recommend the simplest package before you commit.</p>
+          </div>
+          <a className="button button-primary" href="/#contact">
+            Book Discovery
+            <ArrowRight aria-hidden="true" size={20} />
+          </a>
+        </div>
+      </section>
+    </>
+  );
+}
+
 function App() {
   const { rows: consoleRows, flash: consoleFlash } = useLiveConsole();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pricingAudience, setPricingAudience] = useState("fitness");
   const [formData, setFormData] = useState(initialForm);
   const [formStatus, setFormStatus] = useState("idle"); // idle | sending | sent | error
+  const isPricingPage = window.location.pathname === "/pricing";
 
-  const pricingPlans = pricingByAudience[pricingAudience].plans;
-  const pricingRows = pricingByAudience[pricingAudience].rows;
+  useEffect(() => {
+    const description = document.querySelector('meta[name="description"]');
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (isPricingPage) {
+      document.title = "AI Receptionist Pricing for Gyms, Clinics & Med Spas | Corner Systems";
+      description?.setAttribute(
+        "content",
+        "Compare Corner Systems AI receptionist, lead capture, missed-call recovery, booking, and CRM automation packages for gyms, clinics, and med spas.",
+      );
+      canonical?.setAttribute("href", "https://cornersystems.vercel.app/pricing");
+      return;
+    }
+    document.title = "AI Receptionist & Lead Capture for Gyms, Clinics & Med Spas | Corner Systems";
+    description?.setAttribute(
+      "content",
+      "Corner Systems builds AI receptionists, lead capture, missed-call recovery, booking, and follow-up systems for gyms, clinics, and med spas. Answer every call, text, email, and DM 24/7, with workflows built around tools like Mindbody, GloFox, Zen Planner, Jane App, HubSpot, and GoHighLevel.",
+    );
+    canonical?.setAttribute("href", "https://cornersystems.vercel.app/");
+  }, [isPricingPage]);
 
   const closeMenu = () => setMenuOpen(false);
+  const navHref = (href) => {
+    if (href.startsWith("/")) return href;
+    return isPricingPage ? `/${href}` : href;
+  };
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -431,7 +619,7 @@ function App() {
   return (
     <div className="site-shell">
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Corner Systems home">
+        <a className="brand" href="/" aria-label="Corner Systems home">
           <span className="brand-mark">CS</span>
           <span>
             <strong>Corner Systems</strong>
@@ -441,13 +629,13 @@ function App() {
 
         <nav className="desktop-nav" aria-label="Primary navigation">
           {navItems.map((item) => (
-            <a key={item.href} href={item.href}>
+            <a key={item.href} href={navHref(item.href)}>
               {item.label}
             </a>
           ))}
         </nav>
 
-        <a className="header-cta" href="#contact">
+        <a className="header-cta" href="/#contact">
           Book Discovery
           <ArrowRight aria-hidden="true" size={18} />
         </a>
@@ -466,7 +654,7 @@ function App() {
       {menuOpen && (
         <nav className="mobile-nav" aria-label="Mobile navigation">
           {navItems.map((item) => (
-            <a key={item.href} href={item.href} onClick={closeMenu}>
+            <a key={item.href} href={navHref(item.href)} onClick={closeMenu}>
               {item.label}
               <ChevronRight aria-hidden="true" size={18} />
             </a>
@@ -475,11 +663,15 @@ function App() {
       )}
 
       <main id="top">
+        {isPricingPage ? (
+          <PricingPage pricingAudience={pricingAudience} setPricingAudience={setPricingAudience} />
+        ) : (
+          <>
         <section className="hero-section" aria-labelledby="hero-title">
           <img
             className="hero-image"
             src="/assets/cs-hero-bg.png"
-            alt="Corner Systems — AI receptionist and lead capture for gyms, clinics, and med spas"
+            alt="Corner Systems AI receptionist and lead capture system background"
             fetchpriority="high"
           />
           <div className="hero-overlay" />
@@ -536,7 +728,7 @@ function App() {
               </div>
               <div className="console-footer">
                 <span className="console-pulse" />
-                <span>All channels covered · Zero dropped</span>
+                <span>All channels covered | Zero dropped</span>
               </div>
             </div>
           </div>
@@ -691,6 +883,39 @@ function App() {
           </div>
         </section>
 
+        <section id="integrations" className="section integrations-section" aria-label="Tools and integrations">
+          <div className="section-heading integrations-heading">
+            <p className="eyebrow">Works with your tools</p>
+            <h2>Built around the systems your team already uses.</h2>
+            <p className="section-copy">
+              Corner Systems connects the front-office workflow to your booking, CRM, calendar, inbox, and messaging stack. When a native integration is not the right fit, we build a clean handoff so staff still get the right lead data in the right place.
+            </p>
+          </div>
+
+          <div className="integration-grid">
+            {integrationGroups.map((group, i) => (
+              <RevealSection delay={i * 100} key={group.title}>
+                <article className="integration-card">
+                  <div className="integration-card-top">
+                    <span className="integration-icon">
+                      <Zap aria-hidden="true" size={20} />
+                    </span>
+                    <div>
+                      <h3>{group.title}</h3>
+                      <p>{group.text}</p>
+                    </div>
+                  </div>
+                  <div className="tool-chip-list" aria-label={`${group.title} tools`}>
+                    {group.tools.map((tool) => (
+                      <span className="tool-chip" key={tool}>{tool}</span>
+                    ))}
+                  </div>
+                </article>
+              </RevealSection>
+            ))}
+          </div>
+        </section>
+
         <section className="section reel-section" aria-label="See it in action">
           <RevealSection>
             <div className="reel-heading">
@@ -728,104 +953,19 @@ function App() {
           </RevealSection>
         </section>
 
-        <section id="pricing" className="section pricing-section" aria-labelledby="pricing-title">
-          <div className="pricing-heading">
+        <section id="pricing" className="section pricing-teaser-section" aria-label="Pricing overview">
+          <div className="pricing-teaser">
             <div>
               <p className="eyebrow">Pricing</p>
-              <h2 id="pricing-title">Simple packages for clearer front-office coverage.</h2>
+              <h2>Packages from $149/month, scoped around your real front office.</h2>
               <p className="section-copy">
-                Start with chat and lead capture, add qualification and CRM handoff, or move into full AI receptionist coverage with voice and missed-call recovery.
+                Keep the homepage focused. Compare the full chat, CRM, voice, and missed-call recovery packages on the dedicated pricing page.
               </p>
             </div>
-            <div className="pricing-kicker" aria-label="Pricing summary">
-              <strong>We&apos;re in your corner.</strong>
-              <span>AI receptionists, AI chatbots, and lead capture systems built around your workflow.</span>
-            </div>
-          </div>
-
-          <div className="pricing-toggle" role="tablist" aria-label="Choose your industry">
-            {pricingAudiences.map((aud) => (
-              <button
-                key={aud.id}
-                type="button"
-                role="tab"
-                aria-selected={pricingAudience === aud.id}
-                className={`pricing-toggle-btn ${pricingAudience === aud.id ? "active" : ""}`}
-                onClick={() => setPricingAudience(aud.id)}
-              >
-                {aud.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="pricing-card-grid" aria-label="Pricing plans">
-            {pricingPlans.map((plan) => (
-              <article className={`pricing-card pricing-card-${plan.accent}`} key={plan.id}>
-                <div className="pricing-card-top">
-                  <span className="plan-badge">{plan.badge}</span>
-                  <h3>{plan.name}</h3>
-                  <p>{plan.note}</p>
-                </div>
-                <div className="plan-price">
-                  <strong>{plan.monthly}</strong>
-                  <span>/ month</span>
-                </div>
-                <div className="setup-price">
-                  <span>Setup</span>
-                  <strong>{plan.setup}</strong>
-                </div>
-                <ul className="plan-highlights" aria-label={`${plan.name} highlights`}>
-                  {plan.highlights.map((highlight) => (
-                    <li key={highlight}>
-                      <CheckCircle2 aria-hidden="true" size={17} />
-                      {highlight}
-                    </li>
-                  ))}
-                </ul>
-                <a className="button button-secondary pricing-button" href="#contact">
-                  {plan.cta}
-                  <ArrowRight aria-hidden="true" size={18} />
-                </a>
-              </article>
-            ))}
-          </div>
-
-          <div className="pricing-table-wrap">
-            <table className="pricing-table">
-              <caption>Plan comparison</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Feature</th>
-                  {pricingPlans.map((plan) => (
-                    <th className={`plan-head plan-head-${plan.accent}`} scope="col" key={plan.id}>
-                      {plan.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pricingRows.map((row) => (
-                  <tr key={row.label}>
-                    <th scope="row">{row.label}</th>
-                    {row.values.map((value, index) => (
-                      <td data-label={pricingPlans[index].name} key={`${row.label}-${pricingPlans[index].id}`}>
-                        {value === true && (
-                          <span className="pricing-check" aria-label="Included">
-                            <CheckCircle2 aria-hidden="true" size={18} />
-                          </span>
-                        )}
-                        {value === false && <span className="pricing-dash">-</span>}
-                        {typeof value === "string" && (
-                          <span className={row.strong ? "pricing-value pricing-value-strong" : "pricing-value"}>
-                            {value}
-                          </span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <a className="button button-primary" href="/pricing">
+              View Pricing
+              <ArrowRight aria-hidden="true" size={20} />
+            </a>
           </div>
         </section>
 
@@ -986,10 +1126,12 @@ function App() {
             )}
           </form>
         </section>
+          </>
+        )}
       </main>
 
       <footer className="site-footer">
-        <a className="brand footer-brand" href="#top" aria-label="Corner Systems home">
+        <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
           <span className="brand-mark">CS</span>
           <span>
             <strong>Corner Systems</strong>
