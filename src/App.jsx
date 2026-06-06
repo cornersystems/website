@@ -1377,10 +1377,10 @@ function App() {
         <a className="brand" href="/" aria-label="Corner Systems home">
           <img
             className="cs-logo-img"
-            src="/assets/cs-logo-dark.png"
+            src="/assets/cs-logo-3d.png"
             alt="Corner Systems AI"
-            width="120"
-            height="58"
+            width="52"
+            height="52"
           />
         </a>
 
@@ -1436,10 +1436,10 @@ function App() {
         <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
           <img
             className="cs-logo-img"
-            src="/assets/cs-logo-dark.png"
+            src="/assets/cs-logo-3d.png"
             alt="Corner Systems AI"
-            width="120"
-            height="58"
+            width="52"
+            height="52"
           />
         </a>
         <nav className="footer-nav" aria-label="Footer navigation">

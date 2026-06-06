@@ -86,14 +86,21 @@ textarea {
   min-width: 0;
 }
 
-/* Official Corner Systems logo — image asset, never recreate */
+/* Corner Systems 3D logo mark */
 .cs-logo-img {
   display: block;
   height: 52px;
-  width: auto;
+  width: 52px;
   object-fit: contain;
-  object-position: left center;
   flex-shrink: 0;
+  border-radius: 10px;
+  filter: drop-shadow(0 0 10px rgba(36, 105, 255, 0.5));
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.brand:hover .cs-logo-img {
+  filter: drop-shadow(0 0 18px rgba(36, 105, 255, 0.75)) drop-shadow(0 0 36px rgba(53, 208, 179, 0.3));
+  transform: scale(1.06);
 }
 
 .desktop-nav {
