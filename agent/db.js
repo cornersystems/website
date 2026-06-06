@@ -8,7 +8,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, "pipeline.db");
+
+// Database lives in AppData (NOT OneDrive) — SQLite + OneDrive = corruption
+const DB_PATH = process.env.CS_DB_PATH ||
+  path.join(process.env.LOCALAPPDATA || path.join(path.dirname(__dirname), ".."), "CornerSystems", "pipeline.db");
 
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
