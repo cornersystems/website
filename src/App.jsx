@@ -674,7 +674,7 @@ function App() {
             className="hero-image"
             src="/assets/cs-hero-lobby-v2.png"
             alt="Corner Systems AI front office — premium lobby with autonomous AI reception system"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <div className="hero-overlay" />
 
