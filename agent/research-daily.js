@@ -7,18 +7,18 @@
  * business already has a website / AI chatbot / voice agent, and
  * generates a personalized cold outreach email draft stored in the CRM.
  *
+ * Powered by Claude Code CLI (claude -p) — uses your existing Claude
+ * subscription. No separate Anthropic API key needed.
+ *
  * Usage:  node agent/research-daily.js
  * Called: automatically by agent/daily-run.js
  */
 
 import "dotenv/config";
-import Anthropic from "@anthropic-ai/sdk";
+import { spawnSync } from "child_process";
 import { upsertLead, updateResearchData, getUnresearchedLeads } from "./db.js";
 
-const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 // ── Geographic expansion schedule ─────────────────────────────────────────────
-// Phase advances automatically based on days elapsed since launch.
 const START_DATE = new Date("2026-06-06T00:00:00-05:00");
 
 const GEO_PHASES = [
@@ -55,13 +55,13 @@ const GEO_PHASES = [
 
 // Niches rotated by day of week so we never spam one vertical
 const NICHE_ROTATION = {
-  0: ["MMA gym", "boxing gym", "Muay Thai gym"],                          // Sun
-  1: ["chiropractic clinic", "physiotherapy clinic", "rehab clinic"],     // Mon
-  2: ["med spa", "cosmetic clinic", "laser clinic"],                      // Tue
-  3: ["BJJ academy", "martial arts school", "personal training studio"],  // Wed
-  4: ["sports medicine clinic", "massage therapy clinic", "osteopathy"],  // Thu
-  5: ["dental practice", "cosmetic dentistry", "skin clinic"],            // Fri
-  6: ["boutique fitness studio", "CrossFit gym", "wellness studio"],      // Sat
+  0: ["MMA gym", "boxing gym", "Muay Thai gym"],
+  1: ["chiropractic clinic", "physiotherapy clinic", "rehab clinic"],
+  2: ["med spa", "cosmetic clinic", "laser clinic"],
+  3: ["BJJ academy", "martial arts school", "personal training studio"],
+  4: ["sports medicine clinic", "massage therapy clinic", "osteopathy"],
+  5: ["dental practice", "cosmetic dentistry", "skin clinic"],
+  6: ["boutique fitness studio", "CrossFit gym", "wellness studio"],
 };
 
 // ── Phase selection ───────────────────────────────────────────────────────────
@@ -84,23 +84,48 @@ function getDailyTargets() {
   return { area, niches, phaseLabel: phase.label, daysElapsed };
 }
 
-// ── Claude helper ─────────────────────────────────────────────────────────────
-async function askClaude(systemPrompt, userPrompt, useSearch = true) {
-  const tools = useSearch
-    ? [{ type: "web_search_20250305", name: "web_search", max_uses: 8 }]
-    : [];
+// ── Claude CLI helper ─────────────────────────────────────────────────────────
+// Uses `claude -p` — your Claude Code subscription, zero API cost.
+function askClaude(prompt, useSearch = false) {
+  const args = ["-p", prompt, "--output-format", "text"];
 
-  const resp = await claude.messages.create({
-    model: useSearch ? "claude-opus-4-5" : "claude-haiku-4-5-20251001",
-    max_tokens: useSearch ? 4000 : 600,
-    ...(tools.length ? { tools } : {}),
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
+  if (useSearch) {
+    // Allow web search tools when discovering leads
+    args.push("--allowedTools", "WebSearch,WebFetch");
+  }
+
+  const result = spawnSync("claude", args, {
+    encoding: "utf8",
+    timeout: 120_000,          // 2 min per call
+    maxBuffer: 10 * 1024 * 1024,
+    shell: true,               // needed on Windows to resolve PATH
+    windowsHide: true,
   });
 
-  // Return the final text block (after any tool use)
-  const text = resp.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-  return text.trim();
+  if (result.error) {
+    const msg = result.error.message || "";
+    if (msg.includes("ENOENT") || msg.includes("not found")) {
+      throw new Error(
+        "Claude CLI not found. Open a terminal and run: claude login\n" +
+        "This is a one-time setup that uses your existing Claude subscription."
+      );
+    }
+    throw new Error(`Claude CLI spawn error: ${msg}`);
+  }
+
+  const stderr = (result.stderr || "").trim();
+  if (result.status !== 0) {
+    if (stderr.toLowerCase().includes("not logged in") || stderr.toLowerCase().includes("please run /login")) {
+      throw new Error(
+        "Claude CLI is not logged in.\n" +
+        "Open a terminal and run:  claude login\n" +
+        "It will open your browser — click Authorize. One-time setup."
+      );
+    }
+    throw new Error(`Claude CLI failed (exit ${result.status}): ${stderr.slice(0, 300)}`);
+  }
+
+  return result.stdout.trim();
 }
 
 function parseJson(text) {
@@ -117,29 +142,30 @@ async function discoverLeads(area, niches) {
   console.log(`\n🔍 Discovering leads in ${area} — niches: ${niches.join(", ")}`);
 
   const nicheList = niches.join(", ");
-  const raw = await askClaude(
-    `You are a B2B lead researcher for Corner Systems, which sells AI front-office systems to service businesses.
-     Return ONLY valid JSON — no commentary before or after.`,
-    `Search Google Maps and the web for ${nicheList} businesses in ${area}.
-     Find 20 real businesses. For each, collect as much of the following as possible:
-     - business_name (string)
-     - owner_name (string or null)
-     - phone (string or null — include country code if available)
-     - website (URL or null)
-     - instagram_handle (string or null — without the @)
-     - google_maps_url (string or null)
-     - niche (pick the closest from: ${nicheList})
-     - city (string)
-     - state (use province abbreviation e.g. ON, BC)
-     - lead_score (integer 1-10: higher if small/medium independent business with no obvious AI tools)
-     - pain_signal (1 sentence — what's the likely front-office gap for this type of business?)
-     - notes (any useful detail you found)
+  const prompt = `You are a B2B lead researcher for Corner Systems, which sells AI front-office systems to service businesses.
+Return ONLY valid JSON — no commentary before or after.
 
-     Return a JSON object: { "leads": [ ...20 objects... ] }
-     Do NOT make up businesses. Only include real, verifiable results.`
-  );
+Search the web for ${nicheList} businesses in ${area}.
+Find 20 real businesses. For each, collect:
+- business_name (string)
+- owner_name (string or null)
+- phone (string or null)
+- website (URL or null)
+- instagram_handle (string or null — without the @)
+- google_maps_url (string or null)
+- niche (pick the closest from: ${nicheList})
+- city (string)
+- state (province abbreviation e.g. ON, BC)
+- lead_score (integer 1-10: higher if small/medium independent business with no obvious AI tools)
+- pain_signal (1 sentence — what's the likely front-office gap for this type of business?)
+- notes (any useful detail)
 
+Return JSON: { "leads": [ ...20 objects... ] }
+Only include real, verifiable businesses. Do NOT make any up.`;
+
+  const raw = askClaude(prompt, true);
   const parsed = parseJson(raw);
+
   if (!parsed?.leads?.length) {
     console.log("   ⚠️  No leads parsed from discovery response");
     return [];
@@ -150,70 +176,65 @@ async function discoverLeads(area, niches) {
 
 // ── Step 2: Deep-dive — find real email + detect AI presence ─────────────────
 async function deepResearch(business) {
-  const raw = await askClaude(
-    `You are a contact information researcher. Your ONLY job is to find real email addresses and
-     check whether a small business already has an AI chatbot or voice agent.
-     Return ONLY valid JSON.`,
-    `Research this business:
-     Name: ${business.business_name}
-     City: ${business.city}, ${business.state}
-     Website: ${business.website || "unknown"}
-     Phone: ${business.phone || "unknown"}
+  const prompt = `You are a contact information researcher. Find real email addresses and check for AI tools.
+Return ONLY valid JSON.
 
-     Tasks:
-     1. FIND THEIR EMAIL ADDRESS. Try ALL of these:
-        a. Search "${business.business_name} ${business.city} email contact"
-        b. If they have a website, look at /contact, /about, footer
-        c. Search "${business.business_name} ${business.city} instagram" — check bio
-        d. Search "${business.business_name} ${business.city} facebook" — check About tab
-        e. Try info@[domain], hello@[domain], [firstname]@[domain] if you found a website domain
+Research this business:
+Name: ${business.business_name}
+City: ${business.city}, ${business.state || "ON"}
+Website: ${business.website || "unknown"}
+Phone: ${business.phone || "unknown"}
 
-     2. Confirm whether they have a working WEBSITE (true/false).
+Tasks:
+1. FIND THEIR EMAIL. Try:
+   - Search "${business.business_name} ${business.city} email contact"
+   - If they have a website, check /contact, /about, footer
+   - Search "${business.business_name} ${business.city} instagram" — check bio
+   - Try info@[domain], hello@[domain] if you found their domain
 
-     3. Check if their website or Google listing mentions:
-        - A CHATBOT or live chat (Intercom, Tidio, Drift, LiveChat widget, "chat with us", etc.) → has_chatbot
-        - An AI VOICE AGENT or answering service ("AI receptionist", "never miss a call", etc.) → has_voice_agent
+2. Confirm they have a working website (true/false)
 
-     Return ONLY this JSON:
-     {
-       "email": "found@email.com or null",
-       "website_url": "https://... or null",
-       "has_website": true or false,
-       "has_chatbot": true or false,
-       "has_voice_agent": true or false,
-       "research_notes": "brief note on what you found"
-     }`
-  );
+3. Check if website/Google listing mentions:
+   - A chatbot / live chat widget → has_chatbot
+   - An AI voice agent / "never miss a call" service → has_voice_agent
 
+Return ONLY:
+{
+  "email": "found@email.com or null",
+  "website_url": "https://... or null",
+  "has_website": true or false,
+  "has_chatbot": true or false,
+  "has_voice_agent": true or false,
+  "research_notes": "brief note on what you found"
+}`;
+
+  const raw = askClaude(prompt, true);
   return parseJson(raw) || {
     email: null, website_url: null,
     has_website: !!business.website,
     has_chatbot: false, has_voice_agent: false,
-    research_notes: "Deep research returned no parseable result",
+    research_notes: "No parseable result",
   };
 }
 
 // ── Step 3: Generate personalized email draft ─────────────────────────────────
 async function draftEmail(lead) {
-  return await askClaude(
-    `You write short, punchy cold outreach emails for Corner Systems. No fluff. Peer-to-peer tone.`,
-    `Write a cold outreach email from Thomas at Corner Systems to ${lead.owner_name || "the owner"}
-     of ${lead.business_name}, a ${lead.niche} in ${lead.city}.
+  const prompt = `Write a short cold outreach email from Thomas at Corner Systems to ${lead.owner_name || "the owner"} of ${lead.business_name}, a ${lead.niche} in ${lead.city}.
 
-     Pain signal: "${lead.pain_signal}"
-     Has website: ${lead.has_website ? "yes" : "no"}
-     Has chatbot already: ${lead.has_chatbot ? "yes" : "no"}
-     Has voice agent already: ${lead.has_voice_agent ? "yes" : "no"}
+Pain signal: "${lead.pain_signal}"
+Has website: ${lead.has_website ? "yes" : "no"}
+Has chatbot already: ${lead.has_chatbot ? "yes" : "no"}
+Has voice agent already: ${lead.has_voice_agent ? "yes" : "no"}
 
-     Rules:
-     - 4-6 sentences MAX. No fluff.
-     - Lead with a specific observation about their front-office gap.
-     - If they already have a chatbot/voice agent, angle is "upgrade/improve" not "you're missing this".
-     - One clear CTA: book a 20-min discovery call — https://cornersystems.vercel.app/#contact
-     - Sign off as Thomas.
-     - Do NOT include a subject line. Body only.`,
-    false  // no web search needed for drafting
-  );
+Rules:
+- 4-6 sentences MAX. No fluff. Peer-to-peer tone.
+- Lead with a specific observation about their front-office gap.
+- If they already have a chatbot/voice agent, angle is "upgrade/improve" not "you're missing this".
+- One clear CTA: book a 20-min discovery call — https://cornersystems.vercel.app/#contact
+- Sign off as Thomas.
+- Body only. No subject line.`;
+
+  return askClaude(prompt, false);
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -247,7 +268,7 @@ export async function researchNewLeads() {
   }
   console.log(`\n   📥 ${added} new leads added to CRM`);
 
-  // Deep research the top leads that still need email/AI check
+  // Deep research leads that still need email/AI check
   const needsResearch = getUnresearchedLeads(15);
   console.log(`\n🔬 Deep-researching ${needsResearch.length} leads for emails & AI presence...`);
 
@@ -263,10 +284,10 @@ export async function researchNewLeads() {
       if (research.email) emailsFound++;
       console.log(research.email ? `✅ ${research.email}` : "⚠️  no email found");
 
-      // Small delay to be respectful of API rate limits
-      await new Promise((r) => setTimeout(r, 1500));
+      // Small pause between calls
+      await new Promise((r) => setTimeout(r, 2000));
     } catch (e) {
-      console.log(`❌ ${e.message}`);
+      console.log(`❌ ${e.message.split("\n")[0]}`);
     }
   }
 
@@ -278,7 +299,7 @@ export async function researchNewLeads() {
 const isDirect = process.argv[1]?.endsWith("research-daily.js");
 if (isDirect) {
   researchNewLeads().catch((err) => {
-    console.error("Research error:", err);
+    console.error("\nResearch error:", err.message);
     process.exit(1);
   });
 }
