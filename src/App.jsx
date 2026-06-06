@@ -30,8 +30,33 @@ const navItems = [
   { label: "Tools", href: "#integrations" },
   { label: "Results", href: "#proof" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Process", href: "#process" },
+  { label: "Team", href: "#team" },
   { label: "Contact", href: "#contact" },
+];
+
+const teamMembers = [
+  {
+    initials: "TM",
+    name: "Tom Morris",
+    title: "Co-Founder & CEO",
+    accentColor: "teal",
+    department: "Sales & Operations",
+    bio: "Tom is a sales and operations professional turned AI entrepreneur. With nearly 10 years of experience generating revenue, building client relationships, and managing complex business workflows across technology, automotive, and regulated industries, he founded Corner Systems to help businesses leverage AI in practical, profitable ways.",
+    bio2: "His background in outbound sales, business development, and operational problem-solving gives him a unique perspective on where AI can create real impact — from automating repetitive tasks to improving customer acquisition and decision-making. His mission: help businesses work smarter, grow faster, and stay competitive in an AI-driven world.",
+    specialties: ["Outbound Sales", "Business Development", "Revenue Operations", "Client Relationships", "AI Strategy"],
+    tags: ["Sales & BD", "AI Strategy", "Operations", "Entrepreneurship"],
+  },
+  {
+    initials: "MM",
+    name: "Michael Mastrella",
+    title: "Co-Founder & CTO",
+    accentColor: "blue",
+    department: "Engineering & AI",
+    bio: "Michael leads the technical architecture behind Corner Systems. His 20+ years of software and automation experience spans AI agents, RAG and document workflows, integrations, custom software, ecommerce and marketplace systems, observability, and production reliability.",
+    bio2: "Michael has built production agent systems across enterprise, government, and SMB environments — with deep expertise in APIs, permissions, dashboards, and reliability. He designs and builds the infrastructure that powers every Corner Systems deployment.",
+    specialties: ["Production agent systems", "Enterprise & SMB environments", "APIs, permissions, and reliability"],
+    tags: ["AI Engineering", "RAG & Agents", "System Architecture", "Custom Software"],
+  },
 ];
 
 const services = [
@@ -1089,6 +1114,52 @@ function App() {
               </article>
               </RevealSection>
             ))}
+          </div>
+        </section>
+
+        <section id="team" className="team-section" aria-labelledby="team-title">
+          <div className="team-inner">
+            <RevealSection>
+              <div className="team-heading">
+                <p className="eyebrow">The founders</p>
+                <h2 id="team-title">Built by people who've worked the front line.</h2>
+                <p className="section-copy">
+                  Corner Systems was built by operators and engineers who understand both the chaos of running a service business and the precision required to automate it well.
+                </p>
+              </div>
+            </RevealSection>
+            <div className="team-grid">
+              {teamMembers.map((member, i) => (
+                <RevealSection delay={i * 140} key={member.name}>
+                  <article className={`team-card team-card-${member.accentColor}`}>
+                    <div className="team-card-top">
+                      <div className={`team-avatar team-avatar-${member.accentColor}`}>
+                        <span>{member.initials}</span>
+                      </div>
+                      <div className="team-meta">
+                        <span className="team-dept">{member.department}</span>
+                        <h3 className="team-name">{member.name}</h3>
+                        <span className={`team-title-badge team-badge-${member.accentColor}`}>{member.title}</span>
+                      </div>
+                    </div>
+                    <div className="team-bio">
+                      <p>{member.bio}</p>
+                      <p>{member.bio2}</p>
+                    </div>
+                    <div className="team-specialties">
+                      {member.specialties.map((spec) => (
+                        <span className="team-specialty" key={spec}>{spec}</span>
+                      ))}
+                    </div>
+                    <div className="team-tags">
+                      {member.tags.map((tag) => (
+                        <span className="team-tag" key={tag}>{tag}</span>
+                      ))}
+                    </div>
+                  </article>
+                </RevealSection>
+              ))}
+            </div>
           </div>
         </section>
 
