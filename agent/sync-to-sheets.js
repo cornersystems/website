@@ -216,6 +216,84 @@ export async function syncToSheets() {
     });
   }
 
+  // ── Conditional formatting: scores, stages, dead-row greying ───────────────
+  if (sheetId2 != null) {
+    const dataEnd  = leads.length + 1;       // header is row 0
+    const scoreCol = 9;                        // "Score"
+    const stageCol = 10;                       // "Stage"
+    const stageLetter = "K";                   // col 10 → K, for custom formula
+    const fullCols = LEAD_HEADERS.length;
+
+    // Wipe existing rules first so they don't stack on each daily run
+    const lsMeta   = meta2.data.sheets.find((s) => s.properties.title === LEADS_TAB);
+    const existingRuleCount = (lsMeta?.conditionalFormats || []).length;
+    const wipeRequests = Array.from({ length: existingRuleCount }, () => ({
+      deleteConditionalFormatRule: { sheetId: sheetId2, index: 0 },
+    }));
+
+    const scoreRange = { sheetId: sheetId2, startRowIndex: 1, endRowIndex: dataEnd, startColumnIndex: scoreCol, endColumnIndex: scoreCol + 1 };
+    const stageRange = { sheetId: sheetId2, startRowIndex: 1, endRowIndex: dataEnd, startColumnIndex: stageCol, endColumnIndex: stageCol + 1 };
+    const fullRange  = { sheetId: sheetId2, startRowIndex: 1, endRowIndex: dataEnd, startColumnIndex: 0, endColumnIndex: fullCols };
+
+    const boolRule = (range, condition, bg, fg) => ({
+      addConditionalFormatRule: {
+        index: 0,
+        rule: {
+          ranges: [range],
+          booleanRule: {
+            condition,
+            format: { backgroundColor: bg, textFormat: fg ? { foregroundColor: fg } : undefined },
+          },
+        },
+      },
+    });
+
+    const C = {
+      greenBg:  { red: 0.78, green: 0.92, blue: 0.79 },
+      amberBg:  { red: 0.99, green: 0.95, blue: 0.78 },
+      greyBg:   { red: 0.93, green: 0.93, blue: 0.93 },
+      blueBg:   { red: 0.80, green: 0.89, blue: 0.99 },
+      hotGreen: { red: 0.71, green: 0.88, blue: 0.72 },
+      greyTxt:  { red: 0.6,  green: 0.6,  blue: 0.6  },
+      darkTxt:  { red: 0.1,  green: 0.3,  blue: 0.15 },
+    };
+
+    const cfRequests = [
+      // Score: 8-10 green, 5-7 amber, <5 grey
+      boolRule(scoreRange, { type: "NUMBER_GREATER_THAN_EQ", values: [{ userEnteredValue: "8" }] }, C.greenBg),
+      boolRule(scoreRange, { type: "NUMBER_BETWEEN", values: [{ userEnteredValue: "5" }, { userEnteredValue: "7" }] }, C.amberBg),
+      boolRule(scoreRange, { type: "NUMBER_LESS", values: [{ userEnteredValue: "5" }] }, C.greyBg),
+
+      // Stage colours
+      boolRule(stageRange, { type: "TEXT_EQ", values: [{ userEnteredValue: "client" }] }, C.hotGreen, C.darkTxt),
+      boolRule(stageRange, { type: "TEXT_EQ", values: [{ userEnteredValue: "discovery_booked" }] }, C.blueBg),
+      boolRule(stageRange, { type: "TEXT_EQ", values: [{ userEnteredValue: "replied" }] }, C.greenBg),
+      boolRule(stageRange, { type: "TEXT_STARTS_WITH", values: [{ userEnteredValue: "emailed" }] }, C.blueBg),
+
+      // Dead rows — grey the ENTIRE row (custom formula on stage col)
+      {
+        addConditionalFormatRule: {
+          index: 0,
+          rule: {
+            ranges: [fullRange],
+            booleanRule: {
+              condition: { type: "CUSTOM_FORMULA", values: [{ userEnteredValue: `=$${stageLetter}2="dead"` }] },
+              format: {
+                backgroundColor: C.greyBg,
+                textFormat: { foregroundColor: C.greyTxt, italic: true, strikethrough: true },
+              },
+            },
+          },
+        },
+      },
+    ];
+
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: { requests: [...wipeRequests, ...cfRequests] },
+    });
+  }
+
   console.log(`\n✅ Synced ${leads.length} leads → "${LEADS_TAB}" tab`);
   return leads.length;
 }
@@ -720,7 +798,6 @@ export async function syncDashboard() {
     ["PIPELINE FUNNEL", ""],
     ["Stage", "Count"],
     ...funnelRows,
-    ["─────────────────────────", "──────"],
     ["Total tracked", String(s.total)],
     ["", ""],
 
@@ -758,48 +835,160 @@ export async function syncDashboard() {
     requestBody: { values: rows },
   });
 
-  // Formatting
+  // ── Formatting ─────────────────────────────────────────────────────────────
   const sheetId = meta.data.sheets.find((s) => s.properties.title === DASHBOARD_TAB)?.properties.sheetId;
   if (sheetId != null) {
-    // Find row indices of section headers dynamically
+    // Classify each row so we can style it correctly
+    const SECTION_TITLES = [
+      "PIPELINE FUNNEL", "EMAIL COVERAGE", "THIS WEEK (last 7 days)",
+      "REVENUE", "TOP NICHES IN PIPELINE",
+    ];
+    const SUBHEADERS   = ["Stage", "Niche"];   // col-A value of the two-column sub-headers
+    const KEY_METRICS  = ["Total tracked", "Reply rate", "Monthly MRR"];
+
     const sectionRows = [];
+    const subHeaderRows = [];
+    const keyMetricRows = [];
+    const blankRows = [];
+
     rows.forEach((row, i) => {
-      if (row[0] && !row[1] && row[0] !== "" && !row[0].startsWith("─") && i > 2) {
-        sectionRows.push(i);
-      }
+      const a = row[0] || "";
+      if (i < 2) return; // title + updated handled separately
+      if (a === "")                              blankRows.push(i);
+      else if (SECTION_TITLES.includes(a))       sectionRows.push(i);
+      else if (SUBHEADERS.includes(a))           subHeaderRows.push(i);
+      else if (KEY_METRICS.includes(a))          keyMetricRows.push(i);
     });
 
+    const totalRows = rows.length;
+
     const requests = [
-      // Title row — large bold
+      // Freeze the title + updated rows
       {
-        repeatCell: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 2 },
-          cell: { userEnteredFormat: { textFormat: { bold: true, fontSize: 14 } } },
-          fields: "userEnteredFormat.textFormat",
+        updateSheetProperties: {
+          properties: { sheetId, gridProperties: { frozenRowCount: 2 } },
+          fields: "gridProperties.frozenRowCount",
         },
       },
-      // Value column width
+      // Hide gridlines for a clean dashboard look
+      {
+        updateSheetProperties: {
+          properties: { sheetId, gridProperties: { hideGridlines: true } },
+          fields: "gridProperties.hideGridlines",
+        },
+      },
+      // Column widths
       {
         updateDimensionProperties: {
           range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
-          properties: { pixelSize: 260 },
+          properties: { pixelSize: 300 },
           fields: "pixelSize",
         },
       },
       {
         updateDimensionProperties: {
           range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 },
-          properties: { pixelSize: 140 },
+          properties: { pixelSize: 160 },
           fields: "pixelSize",
         },
       },
-      // Section header rows — amber background
+      // Default row height for all data rows — breathing room
+      {
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: totalRows },
+          properties: { pixelSize: 30 },
+          fields: "pixelSize",
+        },
+      },
+      // Title row — tall, large, white on dark
+      {
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 },
+          properties: { pixelSize: 48 },
+          fields: "pixelSize",
+        },
+      },
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 2 },
+          cell: { userEnteredFormat: {
+            textFormat: { bold: true, fontSize: 15, foregroundColor: { red: 1, green: 1, blue: 1 } },
+            backgroundColor: { red: 0.07, green: 0.08, blue: 0.10 },
+            verticalAlignment: "MIDDLE",
+            horizontalAlignment: "LEFT",
+            padding: { left: 12 },
+          }},
+          fields: "userEnteredFormat(textFormat,backgroundColor,verticalAlignment,horizontalAlignment,padding)",
+        },
+      },
+      // "Updated:" row — italic grey
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 },
+          cell: { userEnteredFormat: {
+            textFormat: { italic: true, fontSize: 9, foregroundColor: { red: 0.5, green: 0.5, blue: 0.5 } },
+            backgroundColor: { red: 0.07, green: 0.08, blue: 0.10 },
+            verticalAlignment: "MIDDLE",
+            padding: { left: 12 },
+          }},
+          fields: "userEnteredFormat(textFormat,backgroundColor,verticalAlignment,padding)",
+        },
+      },
+      // Right-align the entire count/value column (data rows)
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 2, endRowIndex: totalRows, startColumnIndex: 1, endColumnIndex: 2 },
+          cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", verticalAlignment: "MIDDLE" } },
+          fields: "userEnteredFormat(horizontalAlignment,verticalAlignment)",
+        },
+      },
+      // Left padding + middle align on label column
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 2, endRowIndex: totalRows, startColumnIndex: 0, endColumnIndex: 1 },
+          cell: { userEnteredFormat: { verticalAlignment: "MIDDLE", padding: { left: 12 } } },
+          fields: "userEnteredFormat(verticalAlignment,padding)",
+        },
+      },
+      // Section header rows — full amber bar, taller, larger
       ...sectionRows.map((rowIdx) => ({
         repeatCell: {
           range: { sheetId, startRowIndex: rowIdx, endRowIndex: rowIdx + 1, startColumnIndex: 0, endColumnIndex: 2 },
           cell: { userEnteredFormat: {
-            textFormat: { bold: true, foregroundColor: { red: 0.94, green: 0.66, blue: 0.19 } },
-            backgroundColor: { red: 0.12, green: 0.11, blue: 0.09 },
+            textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.96, green: 0.69, blue: 0.21 } },
+            backgroundColor: { red: 0.13, green: 0.12, blue: 0.09 },
+            verticalAlignment: "MIDDLE",
+            padding: { left: 12 },
+          }},
+          fields: "userEnteredFormat(textFormat,backgroundColor,verticalAlignment,padding)",
+        },
+      })),
+      // Section header rows — taller
+      ...sectionRows.map((rowIdx) => ({
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "ROWS", startIndex: rowIdx, endIndex: rowIdx + 1 },
+          properties: { pixelSize: 38 },
+          fields: "pixelSize",
+        },
+      })),
+      // Sub-header rows (Stage/Count, Niche/Leads) — bold grey, subtle bg
+      ...subHeaderRows.map((rowIdx) => ({
+        repeatCell: {
+          range: { sheetId, startRowIndex: rowIdx, endRowIndex: rowIdx + 1, startColumnIndex: 0, endColumnIndex: 2 },
+          cell: { userEnteredFormat: {
+            textFormat: { bold: true, fontSize: 9, foregroundColor: { red: 0.45, green: 0.47, blue: 0.5 } },
+            backgroundColor: { red: 0.96, green: 0.96, blue: 0.97 },
+          }},
+          fields: "userEnteredFormat(textFormat,backgroundColor)",
+        },
+      })),
+      // Key metric rows — bold, slightly highlighted
+      ...keyMetricRows.map((rowIdx) => ({
+        repeatCell: {
+          range: { sheetId, startRowIndex: rowIdx, endRowIndex: rowIdx + 1, startColumnIndex: 0, endColumnIndex: 2 },
+          cell: { userEnteredFormat: {
+            textFormat: { bold: true, fontSize: 11 },
+            backgroundColor: { red: 0.99, green: 0.97, blue: 0.90 },
           }},
           fields: "userEnteredFormat(textFormat,backgroundColor)",
         },
