@@ -10,3 +10,5 @@ yarn-error.log*
 pnpm-debug.log*
 
 .vercel
+agent/pipeline.db
+agent/raw-output.txt

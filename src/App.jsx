@@ -17,7 +17,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const contactEmail = "cornersystemsai@gmail.com";
 
@@ -255,7 +255,108 @@ const initialForm = {
   preferredTime: "",
 };
 
+const consoleFeed = [
+  { icon: PhoneCall, label: "Inbound call — MMA gym", status: "Handled", color: "teal" },
+  { icon: MessageSquareText, label: "Instagram DM", status: "Qualified", color: "teal" },
+  { icon: Calendar, label: "Trial booking request", status: "Confirmed", color: "amber" },
+  { icon: Mail, label: "Website contact form", status: "Replied", color: "teal" },
+  { icon: PhoneCall, label: "Missed call recovery", status: "Recovered", color: "amber" },
+  { icon: MessageSquareText, label: "Facebook DM", status: "Qualified", color: "teal" },
+  { icon: Calendar, label: "Follow-up sequence", status: "Armed", color: "blue" },
+  { icon: Mail, label: "Email inquiry", status: "Handled", color: "teal" },
+];
+
+function useLiveConsole() {
+  const [rows, setRows] = useState([consoleFeed[0], consoleFeed[1]]);
+  const [flash, setFlash] = useState(null);
+  const idx = useRef(2);
+  useEffect(() => {
+    const t = setInterval(() => {
+      const next = consoleFeed[idx.current % consoleFeed.length];
+      idx.current++;
+      setFlash(next.label);
+      setRows((prev) => [next, ...prev].slice(0, 4));
+      setTimeout(() => setFlash(null), 600);
+    }, 2200);
+    return () => clearInterval(t);
+  }, []);
+  return { rows, flash };
+}
+
+function useCountUp(target, duration = 1800) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        const start = performance.now();
+        const tick = (now) => {
+          const progress = Math.min((now - start) / duration, 1);
+          const ease = 1 - Math.pow(1 - progress, 3);
+          setCount(Math.floor(ease * target));
+          if (progress < 1) requestAnimationFrame(tick);
+          else setCount(target);
+        };
+        requestAnimationFrame(tick);
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target, duration]);
+  return { count, ref };
+}
+
+function useReveal() {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.12 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, visible };
+}
+
+function SnapshotCounter({ value, suffix, label }) {
+  const num = parseInt(value, 10);
+  const { count, ref } = useCountUp(num);
+  return (
+    <div className="snapshot-item" ref={ref}>
+      <strong>{count}{suffix}</strong>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function RevealSection({ children, className = "", delay = 0 }) {
+  const { ref, visible } = useReveal();
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(32px)",
+        transition: `opacity 0.65s ease ${delay}ms, transform 0.65s ease ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function App() {
+  const { rows: consoleRows, flash: consoleFlash } = useLiveConsole();
   const [menuOpen, setMenuOpen] = useState(false);
   const [formData, setFormData] = useState(initialForm);
   const [formStatus, setFormStatus] = useState("idle"); // idle | sending | sent | error
@@ -335,7 +436,7 @@ function App() {
           <img
             className="hero-image"
             src="/assets/cs-hero-wide.png"
-            alt="Corner Systems front office coverage — your front office never sleeps"
+            alt="Corner Systems — professional front office coverage for combat sports and fitness businesses"
             fetchpriority="high"
           />
           <div className="hero-overlay" />
@@ -373,21 +474,26 @@ function App() {
               <div className="console-header">
                 <span className="status-dot" />
                 <span>Front office live</span>
+                <span className="console-live-badge">LIVE</span>
               </div>
-              <div className="console-row">
-                <PhoneCall aria-hidden="true" size={19} />
-                <span>Inbound call</span>
-                <strong>Handled</strong>
+              <div className="console-feed">
+                {consoleRows.map((row, i) => {
+                  const Icon = row.icon;
+                  return (
+                    <div
+                      key={row.label + i}
+                      className={`console-row ${consoleFlash === row.label ? "console-row-flash" : ""} ${i === 0 ? "console-row-new" : ""}`}
+                    >
+                      <Icon aria-hidden="true" size={17} />
+                      <span>{row.label}</span>
+                      <strong className={`status-${row.color}`}>{row.status}</strong>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="console-row">
-                <MessageSquareText aria-hidden="true" size={19} />
-                <span>New DM</span>
-                <strong>Qualified</strong>
-              </div>
-              <div className="console-row">
-                <Calendar aria-hidden="true" size={19} />
-                <span>Follow-up sequence</span>
-                <strong>Armed</strong>
+              <div className="console-footer">
+                <span className="console-pulse" />
+                <span>All channels covered · Zero dropped</span>
               </div>
             </div>
           </div>
@@ -395,17 +501,14 @@ function App() {
 
         <section className="snapshot-band" aria-label="System snapshot">
           <div className="snapshot-inner">
-            {snapshots.map((item) => (
-              <div className="snapshot-item" key={item.label}>
-                <strong>{item.value}</strong>
-                <span>{item.label}</span>
-              </div>
-            ))}
+            <SnapshotCounter value="24" suffix="/7" label="coverage" />
+            <SnapshotCounter value="100" suffix="%" label="channels covered" />
+            <SnapshotCounter value="0" suffix="" label="leads dropped" />
           </div>
         </section>
 
         <section id="coverage" className="coverage-band">
-          <div className="coverage-inner">
+          <RevealSection className="coverage-inner">
             <div>
               <p className="eyebrow">Every channel, one standard</p>
               <h2>Every inquiry gets a professional response.</h2>
@@ -414,15 +517,17 @@ function App() {
               </p>
             </div>
             <div className="channel-grid" aria-label="Channels covered">
-              {channels.map(({ icon: Icon, title, text }) => (
-                <article className="channel-card" key={title}>
-                  <Icon aria-hidden="true" size={22} />
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                </article>
+              {channels.map(({ icon: Icon, title, text }, i) => (
+                <RevealSection delay={i * 80} key={title}>
+                  <article className="channel-card">
+                    <Icon aria-hidden="true" size={22} />
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </article>
+                </RevealSection>
               ))}
             </div>
-          </div>
+          </RevealSection>
         </section>
 
         <section className="section market-section">
@@ -450,14 +555,16 @@ function App() {
           </div>
 
           <div className="service-grid">
-            {services.map(({ icon: Icon, title, text }) => (
-              <article className="service-card" key={title}>
-                <span className="service-icon">
-                  <Icon aria-hidden="true" size={24} />
-                </span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
+            {services.map(({ icon: Icon, title, text }, i) => (
+              <RevealSection delay={i * 100} key={title}>
+                <article className="service-card">
+                  <span className="service-icon">
+                    <Icon aria-hidden="true" size={24} />
+                  </span>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </article>
+              </RevealSection>
             ))}
           </div>
         </section>
@@ -631,12 +738,43 @@ function App() {
           </div>
 
           <div className="process-grid">
-            {process.map((item) => (
-              <article className="process-card" key={item.step}>
-                <span>{item.step}</span>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </article>
+            {process.map((item, i) => (
+              <RevealSection delay={i * 100} key={item.step}>
+                <article className="process-card">
+                  <span>{item.step}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              </RevealSection>
+            ))}
+          </div>
+        </section>
+
+        <section className="social-section" aria-label="As seen on social">
+          <RevealSection>
+            <div className="social-heading">
+              <p className="eyebrow">As seen on social</p>
+              <h2>Built for the feed, not just the website.</h2>
+            </div>
+          </RevealSection>
+          <div className="social-grid">
+            {[
+              { src: "/assets/cs-story-916.png",   label: "Instagram Story",  ratio: "9:16" },
+              { src: "/assets/cs-hero-wide.png",    label: "Facebook Banner",  ratio: "16:9" },
+              { src: "/assets/cs-square-11.png",    label: "Instagram Feed",   ratio: "1:1"  },
+              { src: "/assets/cs-story-pain.png",   label: "Story — Pain Point", ratio: "9:16" },
+              { src: "/assets/cs-octagon-ad.png",   label: "Facebook Ad",      ratio: "16:9" },
+              { src: "/assets/cs-before-after.png", label: "Before / After",   ratio: "1:1"  },
+            ].map((item, i) => (
+              <RevealSection delay={i * 70} key={item.src}>
+                <div className="social-card">
+                  <img src={item.src} alt={item.label} loading="lazy" />
+                  <div className="social-card-label">
+                    <span>{item.label}</span>
+                    <span className="social-ratio">{item.ratio}</span>
+                  </div>
+                </div>
+              </RevealSection>
             ))}
           </div>
         </section>
@@ -647,8 +785,9 @@ function App() {
             <h2>Real operators. Real results.</h2>
           </div>
           <div className="testimonial-grid">
-            {testimonials.map((t) => (
-              <article className="testimonial-card" key={t.business}>
+            {testimonials.map((t, i) => (
+              <RevealSection delay={i * 120} key={t.business}>
+              <article className="testimonial-card">
                 <Quote className="testimonial-icon" aria-hidden="true" size={22} />
                 <div className="testimonial-stars" aria-label={`${t.stars} out of 5 stars`}>
                   {Array.from({ length: t.stars }).map((_, i) => (
@@ -661,6 +800,7 @@ function App() {
                   <span>{t.business}</span>
                 </footer>
               </article>
+              </RevealSection>
             ))}
           </div>
         </section>
