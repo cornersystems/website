@@ -272,7 +272,7 @@ const faqs = [
   {
     question: "Do you only work with gyms?",
     answer:
-      "No. Gyms are a strong fit, but the system works for any business that depends on inbound inquiries and follow-up.",
+      "No. Gyms are a strong fit, but the system works for any business that depends on inbound inquiries and follow-up — including chiropractic and physio clinics, med spas, and dental practices.",
   },
   {
     question: "How does pricing work?",
@@ -295,14 +295,14 @@ const initialForm = {
 };
 
 const consoleFeed = [
-  { icon: PhoneCall, label: "Inbound call — MMA gym", status: "Handled", color: "teal" },
+  { icon: PhoneCall, label: "Inbound call", status: "Handled", color: "teal" },
   { icon: MessageSquareText, label: "Instagram DM", status: "Qualified", color: "teal" },
-  { icon: Calendar, label: "Trial booking request", status: "Confirmed", color: "amber" },
-  { icon: Mail, label: "Website contact form", status: "Replied", color: "teal" },
-  { icon: PhoneCall, label: "Missed call recovery", status: "Recovered", color: "amber" },
-  { icon: MessageSquareText, label: "Facebook DM", status: "Qualified", color: "teal" },
+  { icon: Calendar, label: "Booking request", status: "Confirmed", color: "amber" },
+  { icon: Mail, label: "Website inquiry", status: "Replied", color: "teal" },
+  { icon: PhoneCall, label: "Missed call", status: "Recovered", color: "amber" },
+  { icon: MessageSquareText, label: "Facebook message", status: "Qualified", color: "teal" },
   { icon: Calendar, label: "Follow-up sequence", status: "Armed", color: "blue" },
-  { icon: Mail, label: "Email inquiry", status: "Handled", color: "teal" },
+  { icon: Mail, label: "New lead", status: "Captured", color: "teal" },
 ];
 
 function useLiveConsole() {
@@ -478,8 +478,8 @@ function App() {
         <section className="hero-section" aria-labelledby="hero-title">
           <img
             className="hero-image"
-            src="/assets/cs-hero-wide.png"
-            alt="Corner Systems — professional front office coverage for combat sports and fitness businesses"
+            src="/assets/cs-hero-bg.png"
+            alt="Corner Systems — AI receptionist and lead capture for gyms, clinics, and med spas"
             fetchpriority="high"
           />
           <div className="hero-overlay" />
