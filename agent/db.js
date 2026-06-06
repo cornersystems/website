@@ -88,25 +88,37 @@ db.exec(`
 
 // ── Lead queries ──────────────────────────────────────────────────────────────
 export function upsertLead(data) {
-  const existing = db.prepare("SELECT id FROM leads WHERE business_name = ? AND (phone = ? OR email = ?)").get(
-    data.business_name, data.phone || "", data.email || ""
-  );
+  // If discovery found a website URL, mark has_website = 1 immediately
+  const hasWebsite = (data.website && data.website.trim()) ? 1 : 0;
+
+  const existing = db.prepare(
+    "SELECT id FROM leads WHERE business_name = ? AND city = ?"
+  ).get(data.business_name, data.city || "");
+
   if (existing) {
     db.prepare(`UPDATE leads SET owner_name=?, city=?, state=?, phone=?, email=?, website=?,
-      instagram=?, google_maps=?, lead_score=?, pain_signal=?, niche=?, notes=?, updated_at=datetime('now')
+      instagram=?, google_maps=?, lead_score=?, pain_signal=?, niche=?, notes=?,
+      has_website = CASE WHEN ? = 1 THEN 1 ELSE has_website END,
+      website_url = COALESCE(NULLIF(?, ''), website_url),
+      updated_at=datetime('now')
       WHERE id=?`).run(
       data.owner_name, data.city, data.state, data.phone, data.email,
       data.website, data.instagram_handle, data.google_maps_url,
-      data.lead_score, data.pain_signal, data.niche, data.notes, existing.id
+      data.lead_score, data.pain_signal, data.niche, data.notes,
+      hasWebsite, data.website || "",
+      existing.id
     );
     return existing.id;
   }
   const result = db.prepare(`INSERT INTO leads
-    (business_name, owner_name, city, state, phone, email, website, instagram, google_maps, lead_score, pain_signal, niche, notes)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+    (business_name, owner_name, city, state, phone, email, website, website_url,
+     instagram, google_maps, lead_score, pain_signal, niche, notes, has_website)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     data.business_name, data.owner_name, data.city, data.state,
-    data.phone, data.email, data.website, data.instagram_handle,
-    data.google_maps_url, data.lead_score, data.pain_signal, data.niche, data.notes
+    data.phone, data.email, data.website, data.website || "",
+    data.instagram_handle, data.google_maps_url,
+    data.lead_score, data.pain_signal, data.niche, data.notes,
+    hasWebsite
   );
   return result.lastInsertRowid;
 }

@@ -36,17 +36,18 @@ const LEAD_HEADERS = [
   "Has Website", "Has AI Chatbot", "Has Voice Agent", "Notes",
 ];
 
+// Email draft is column 3 — right next to the business name for easy copy-paste
 const TOP10_COLS = [
-  "business_name", "owner_name", "city", "phone", "email",
+  "business_name", "email_draft", "owner_name", "city", "phone", "email",
+  "has_website", "has_chatbot", "has_voice_agent",
   "niche", "lead_score", "pain_signal",
-  "has_website", "has_chatbot", "has_voice_agent", "email_draft",
 ];
 
 const TOP10_HEADERS = [
-  "Rank", "Business", "Owner", "City", "Phone", "Email",
-  "Niche", "Score", "Pain Signal",
+  "Rank", "Business", "⚡ OUTREACH EMAIL — copy, personalise, send",
+  "Owner", "City", "Phone", "Email",
   "Has Website", "Has AI Chatbot", "Has Voice Agent",
-  "⚡ OUTREACH EMAIL — Copy, personalise, send",
+  "Niche", "Score", "Pain Signal",
 ];
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
@@ -158,22 +159,22 @@ export async function syncTop10Daily() {
     requestBody: { values },
   });
 
-  // Style: bold the header row (row 4) and widen the email draft column
+  // Styling: email draft is now column index 2 (right next to business name)
   const sheetId = meta.data.sheets.find((s) => s.properties.title === TOP10_TAB)?.properties.sheetId;
   if (sheetId != null) {
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SHEET_ID,
       requestBody: {
         requests: [
-          // Bold title
+          // Bold + large title row
           {
             repeatCell: {
               range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 13 },
-              cell: { userEnteredFormat: { textFormat: { bold: true, fontSize: 12 } } },
+              cell: { userEnteredFormat: { textFormat: { bold: true, fontSize: 13 } } },
               fields: "userEnteredFormat.textFormat",
             },
           },
-          // Bold header row
+          // Bold header row (row 4, index 3)
           {
             repeatCell: {
               range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: 13 },
@@ -181,20 +182,36 @@ export async function syncTop10Daily() {
               fields: "userEnteredFormat(textFormat,backgroundColor)",
             },
           },
-          // Widen the email draft column (column 12 = index 12)
+          // Business name column wide (col 1)
           {
             updateDimensionProperties: {
-              range: { sheetId, dimension: "COLUMNS", startIndex: 12, endIndex: 13 },
-              properties: { pixelSize: 520 },
+              range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 },
+              properties: { pixelSize: 220 },
               fields: "pixelSize",
             },
           },
-          // Wrap text in email draft column
+          // Email draft column very wide (col 2 — right next to business)
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 },
+              properties: { pixelSize: 560 },
+              fields: "pixelSize",
+            },
+          },
+          // Wrap text in email draft column (rows 5-14, col 2)
           {
             repeatCell: {
-              range: { sheetId, startRowIndex: 4, endRowIndex: 14, startColumnIndex: 12, endColumnIndex: 13 },
-              cell: { userEnteredFormat: { wrapStrategy: "WRAP" } },
-              fields: "userEnteredFormat.wrapStrategy",
+              range: { sheetId, startRowIndex: 4, endRowIndex: 14, startColumnIndex: 2, endColumnIndex: 3 },
+              cell: { userEnteredFormat: { wrapStrategy: "WRAP", verticalAlignment: "TOP" } },
+              fields: "userEnteredFormat(wrapStrategy,verticalAlignment)",
+            },
+          },
+          // Light blue fill on email draft column header to make it pop
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 2, endColumnIndex: 3 },
+              cell: { userEnteredFormat: { backgroundColor: { red: 0.086, green: 0.247, blue: 0.624 }, textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } } } },
+              fields: "userEnteredFormat(backgroundColor,textFormat)",
             },
           },
         ],
