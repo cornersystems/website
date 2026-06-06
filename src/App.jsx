@@ -1075,6 +1075,7 @@ function HomePage() {
               <span>Corner</span>
               <span>Systems</span>
             </h1>
+            <p className="hero-tagline">We're in your corner.</p>
             <p className="hero-lede">
               For service businesses where every inquiry is worth real money. We make sure every call, text, email, message, and DM is captured, qualified, and booked — with the same professional standard, every day.
             </p>
@@ -1433,15 +1434,18 @@ function App() {
       </main>
 
       <footer className="site-footer">
-        <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
-          <img
-            className="cs-logo-img"
-            src="/assets/cs-logo-3d.png"
-            alt="Corner Systems AI"
-            width="52"
-            height="52"
-          />
-        </a>
+        <div className="footer-brand-block">
+          <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
+            <img
+              className="cs-logo-img"
+              src="/assets/cs-logo-3d.png"
+              alt="Corner Systems AI"
+              width="52"
+              height="52"
+            />
+          </a>
+          <p className="footer-tagline">Corner Systems AI<span>We're in your corner.</span></p>
+        </div>
         <nav className="footer-nav" aria-label="Footer navigation">
           {navItems.map((item) => (
             <a key={item.href} href={item.href}>{item.label}</a>
