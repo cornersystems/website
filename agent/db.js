@@ -68,6 +68,24 @@ db.exec(`
   );
 `);
 
+// ── Schema migration: add research columns if they don't exist ─────────────────
+{
+  const existing = db.prepare("PRAGMA table_info(leads)").all().map((c) => c.name);
+  const migrations = [
+    ["has_website",    "INTEGER DEFAULT 0"],
+    ["website_url",    "TEXT"],
+    ["has_chatbot",    "INTEGER DEFAULT 0"],
+    ["has_voice_agent","INTEGER DEFAULT 0"],
+    ["email_draft",    "TEXT"],
+    ["last_researched","TEXT"],
+  ];
+  for (const [col, def] of migrations) {
+    if (!existing.includes(col)) {
+      db.exec(`ALTER TABLE leads ADD COLUMN ${col} ${def}`);
+    }
+  }
+}
+
 // ── Lead queries ──────────────────────────────────────────────────────────────
 export function upsertLead(data) {
   const existing = db.prepare("SELECT id FROM leads WHERE business_name = ? AND (phone = ? OR email = ?)").get(
@@ -122,6 +140,48 @@ export function getLead(id) {
 
 export function getAllLeads() {
   return db.prepare("SELECT * FROM leads ORDER BY updated_at DESC").all();
+}
+
+export function updateResearchData(leadId, data) {
+  db.prepare(`UPDATE leads SET
+    email            = COALESCE(NULLIF(?, ''), email),
+    website_url      = COALESCE(NULLIF(?, ''), website_url),
+    has_website      = ?,
+    has_chatbot      = ?,
+    has_voice_agent  = ?,
+    email_draft      = COALESCE(NULLIF(?, ''), email_draft),
+    last_researched  = datetime('now'),
+    updated_at       = datetime('now')
+    WHERE id = ?`).run(
+    data.email || "", data.website_url || "",
+    data.has_website ? 1 : 0,
+    data.has_chatbot ? 1 : 0,
+    data.has_voice_agent ? 1 : 0,
+    data.email_draft || "",
+    leadId
+  );
+}
+
+// Top 10 uncontacted leads that have an email — for daily outreach sheet
+export function getTop10ForOutreach() {
+  return db.prepare(`
+    SELECT * FROM leads
+    WHERE email IS NOT NULL AND email != ''
+      AND stage IN ('found', 'researched')
+    ORDER BY lead_score DESC, created_at ASC
+    LIMIT 10
+  `).all();
+}
+
+// All un-researched leads (no email_draft yet and have a name)
+export function getUnresearchedLeads(limit = 30) {
+  return db.prepare(`
+    SELECT * FROM leads
+    WHERE (last_researched IS NULL OR email_draft IS NULL)
+      AND business_name IS NOT NULL
+    ORDER BY lead_score DESC, created_at ASC
+    LIMIT ?
+  `).all(limit);
 }
 
 // ── Client queries ────────────────────────────────────────────────────────────
