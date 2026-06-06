@@ -1798,86 +1798,141 @@ h3 {
   letter-spacing: 0.04em;
 }
 
-.testimonials-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+/* ── Early results section ─────────────────────────────────────────────────── */
+.early-results-section {
   background:
-    linear-gradient(180deg, rgba(240, 168, 48, 0.04) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(240,168,48,0.05) 0%, transparent 50%),
     var(--bg-soft);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+  padding: 96px 24px;
 }
 
-.testimonial-grid {
+.early-results-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.early-results-header {
+  text-align: center;
+}
+
+.early-results-header h2 {
+  margin: 10px 0 14px;
+}
+
+.early-results-sub {
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.7;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.early-results-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  width: 100%;
-  margin-top: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
 }
 
-.testimonial-card {
+.early-result-card {
   background: var(--panel);
   border: 1px solid var(--line);
   border-top: 2px solid var(--amber);
   border-radius: 12px;
-  padding: 28px 26px 24px;
+  padding: 32px 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  text-align: left;
-  transition: border-color 0.18s, transform 0.18s;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  transition: transform 0.18s, border-color 0.18s;
 }
 
-.testimonial-card:hover {
-  border-color: var(--teal);
+.early-result-card:hover {
   transform: translateY(-3px);
+  border-color: var(--teal);
 }
 
-.testimonial-icon {
-  color: var(--teal);
-  opacity: 0.7;
-}
-
-.testimonial-stars {
-  display: flex;
-  gap: 3px;
+.early-result-card strong {
+  font-size: 2.2rem;
+  font-weight: 700;
   color: var(--amber);
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
-.testimonial-stars svg {
-  fill: var(--amber);
-  stroke: none;
+.early-result-card span {
+  font-size: 0.87rem;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
-.testimonial-quote {
-  color: var(--muted-strong);
-  font-size: 0.97rem;
-  line-height: 1.72;
-  margin: 0;
+.early-results-note {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.7;
+  max-width: 580px;
+  margin: 0 auto;
   font-style: italic;
-  flex: 1;
+  border-top: 1px solid var(--line);
+  padding-top: 32px;
 }
 
-.testimonial-attribution {
+/* ── Form success card ─────────────────────────────────────────────────────── */
+.form-success-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--teal);
+  border-radius: 14px;
+  padding: 40px 32px;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
-  margin-top: 4px;
+  align-items: center;
+  gap: 14px;
 }
 
-.testimonial-attribution strong {
-  font-size: 0.92rem;
+.form-success-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(45, 212, 191, 0.15);
+  border: 2px solid var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--teal);
+  font-weight: 700;
+}
+
+.form-success-card h3 {
+  font-size: 1.4rem;
+  margin: 0;
   color: var(--text);
 }
 
-.testimonial-attribution span {
-  font-size: 0.84rem;
+.form-success-card p {
   color: var(--muted);
+  font-size: 0.96rem;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 420px;
+}
+
+.form-success-meta {
+  font-size: 0.88rem !important;
+  color: var(--muted) !important;
+  opacity: 0.7;
+}
+
+.form-success-meta strong {
+  color: var(--text);
 }
 
 .cta-band {
@@ -2479,6 +2534,10 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .early-results-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .testimonial-grid,
   .vertical-grid,
   .integration-grid,
@@ -2635,6 +2694,12 @@ h3 {
   .site-footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .early-results-grid {
+    grid-template-columns: 1fr;
   }
 }
 

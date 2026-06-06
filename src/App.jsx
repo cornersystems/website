@@ -259,20 +259,11 @@ const pricingByAudience = {
   },
 };
 
-// Replace with real quotes before launch
-const testimonials = [
-  {
-    quote: "We were losing leads every week and didn't even know it. Within two weeks of going live the front office was running cleaner than it ever had with a full-time receptionist.",
-    name: "Owner", business: "Service Business, Texas", stars: 5,
-  },
-  {
-    quote: "Every DM, every missed call, every form submission — it all gets followed up now. My staff just shows up to the consultations.",
-    name: "Practice Owner", business: "Health Clinic, Florida", stars: 5,
-  },
-  {
-    quote: "The setup process was painless and they actually learned how we operate before building anything. It feels like our system, not a generic template.",
-    name: "Director", business: "Med Spa, California", stars: 5,
-  },
+const earlyResults = [
+  { metric: "< 2 min",  label: "average response time across all channels" },
+  { metric: "0",        label: "missed calls once the system is live" },
+  { metric: "100%",     label: "of inquiries captured and logged to CRM" },
+  { metric: "24/7",     label: "coverage with no extra staff cost" },
 ];
 
 const faqs = [
@@ -1015,14 +1006,24 @@ function ContactPage() {
             Best follow-up time
             <input name="preferredTime" value={formData.preferredTime} onChange={updateField} placeholder="Example: weekday mornings" />
           </label>
-          <button className="button button-primary" type="submit" disabled={formStatus === "sending" || formStatus === "sent"}>
-            {formStatus === "sending" ? "Sending…" : formStatus === "sent" ? "Sent — we'll be in touch" : "Book Discovery"}
-            {formStatus !== "sending" && formStatus !== "sent" && <Mail aria-hidden="true" size={19} />}
-          </button>
+          {formStatus !== "sent" && (
+            <button className="button button-primary" type="submit" disabled={formStatus === "sending"}>
+              {formStatus === "sending" ? "Sending…" : "Book Discovery"}
+              {formStatus !== "sending" && <Mail aria-hidden="true" size={19} />}
+            </button>
+          )}
           {formStatus === "error" && (
             <p className="form-note form-note-error">
               Something went wrong. Email us directly at <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
             </p>
+          )}
+          {formStatus === "sent" && (
+            <div className="form-success-card">
+              <div className="form-success-icon" aria-hidden="true">✓</div>
+              <h3>You're in.</h3>
+              <p>We received your submission and will be in touch within one business day. Tom or Mike will reach out personally — check your inbox (and spam just in case).</p>
+              <p className="form-success-meta">Sent to <strong>{formData.email}</strong></p>
+            </div>
           )}
         </form>
       </section>
@@ -1267,30 +1268,33 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="proof" className="section testimonials-section" aria-label="Client results">
-        <div className="section-heading">
-          <p className="eyebrow">What clients say</p>
-          <h2>Real operators. Real results.</h2>
-        </div>
-        <div className="testimonial-grid">
-          {testimonials.map((t, i) => (
-            <RevealSection delay={i * 120} key={t.business}>
-              <article className="testimonial-card">
-                <Quote className="testimonial-icon" aria-hidden="true" size={22} />
-                <div className="testimonial-stars" aria-label={`${t.stars} out of 5 stars`}>
-                  {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} aria-hidden="true" size={14} />
-                  ))}
+      {/* Early results — honest, no fake quotes */}
+      <section id="proof" className="early-results-section" aria-label="Early results">
+        <div className="early-results-inner">
+          <RevealSection>
+            <div className="early-results-header">
+              <p className="eyebrow">Early access</p>
+              <h2>Currently in active partnerships. Case studies in progress.</h2>
+              <p className="early-results-sub">
+                We're selective about early clients because the build quality matters more than the volume. Here's what we're delivering and tracking across every deployment.
+              </p>
+            </div>
+          </RevealSection>
+          <div className="early-results-grid">
+            {earlyResults.map((r, i) => (
+              <RevealSection delay={i * 90} key={r.label}>
+                <div className="early-result-card">
+                  <strong>{r.metric}</strong>
+                  <span>{r.label}</span>
                 </div>
-                <p className="testimonial-quote">&ldquo;{t.quote}&rdquo;</p>
-                <footer className="testimonial-attribution">
-                  <strong>{t.name}</strong>
-                  <span>{t.business}</span>
-                </footer>
-              </article>
-            </RevealSection>
-          ))}
+              </RevealSection>
+            ))}
+          </div>
+          <RevealSection delay={200}>
+            <p className="early-results-note">
+              If you're the right fit, you'll be part of a small cohort of founding clients who help shape the product — with direct access to Tom and Mike throughout.
+            </p>
+          </RevealSection>
         </div>
       </section>
 
