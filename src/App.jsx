@@ -672,7 +672,7 @@ function App() {
         <section className="hero-section" aria-labelledby="hero-title">
           <img
             className="hero-image"
-            src="/assets/cs-lobby-hero.png"
+            src="/assets/cs-hero-lobby-v2.png"
             alt="Corner Systems AI front office — premium lobby with autonomous AI reception system"
             fetchpriority="high"
           />
@@ -735,6 +735,35 @@ function App() {
             </div>
           </div>
         </section>
+
+        {/* Scrolling ticker band */}
+        <div className="ticker-band" aria-hidden="true">
+          <div className="ticker-inner">
+            {[
+              { label: "Calls answered", value: "24/7" },
+              { label: "Leads captured", value: "100%" },
+              { label: "DMs replied", value: "Instantly" },
+              { label: "Missed calls recovered", value: "Automated" },
+              { label: "Booking requests handled", value: "Zero dropped" },
+              { label: "CRM handoff", value: "Clean" },
+              { label: "Follow-up sequences", value: "Always running" },
+              { label: "Staff time saved", value: "Every day" },
+              { label: "Calls answered", value: "24/7" },
+              { label: "Leads captured", value: "100%" },
+              { label: "DMs replied", value: "Instantly" },
+              { label: "Missed calls recovered", value: "Automated" },
+              { label: "Booking requests handled", value: "Zero dropped" },
+              { label: "CRM handoff", value: "Clean" },
+              { label: "Follow-up sequences", value: "Always running" },
+              { label: "Staff time saved", value: "Every day" },
+            ].map((item, i) => (
+              <span className="ticker-item" key={i}>
+                <span className="ticker-dot" />
+                {item.label} — <strong>{item.value}</strong>
+              </span>
+            ))}
+          </div>
+        </div>
 
         <section className="snapshot-band" aria-label="System snapshot">
           <div className="snapshot-inner">
@@ -823,22 +852,17 @@ function App() {
         </section>
 
         <section className="section proof-section" aria-label="Operational value">
-          <div className="proof-media">
-            <div className="metric-strip">
-              <span>Lead Source</span>
-              <strong>Website Chat</strong>
-            </div>
-            <div className="metric-line">
-              <span>Consultation booked</span>
-              <strong>8:15 PM</strong>
-            </div>
-            <div className="metric-line">
-              <span>Reminder sent</span>
-              <strong>Next morning</strong>
-            </div>
-            <div className="metric-line">
-              <span>Staff handoff</span>
-              <strong>Assigned</strong>
+          <div className="proof-media proof-media-img">
+            <img
+              src="/assets/cs-dashboard.png"
+              alt="Corner Systems live lead pipeline dashboard"
+              loading="lazy"
+              className="proof-dashboard-img"
+            />
+            <div className="proof-media-chips">
+              <span className="proof-chip proof-chip-teal">✓ Lead captured</span>
+              <span className="proof-chip proof-chip-blue">✓ Consultation booked 8:15 PM</span>
+              <span className="proof-chip proof-chip-teal">✓ Staff handoff assigned</span>
             </div>
           </div>
 
@@ -1016,18 +1040,18 @@ function App() {
 
           <div className="social-grid">
             {[
-              { src: "/assets/cs-lobby-hero.png",       label: "24/7 Reception — Active",          tag: "Always On"    },
-              { src: "/assets/cs-gym-night-sq.png",     label: "Fitness & Combat Sports",          tag: "Your Niche"   },
+              { src: "/assets/cs-hero-lobby-v2.png",    label: "24/7 AI Reception — Active",        tag: "Always On"    },
+              { src: "/assets/cs-gym-night-v2.png",     label: "Combat Sports & Fitness",           tag: "Your Niche"   },
               { src: "/assets/cs-phone-story.png",      label: "Every Lead. Captured.",             tag: "Zero Dropped" },
-              { src: "/assets/cs-reception-hero.png",   label: "Front Office Infrastructure",       tag: "Premium"      },
-              { src: "/assets/cs-before-after-v2.png",  label: "Before Corner Systems → After",    tag: "The Result"   },
-              { src: "/assets/cs-clinic-story-v2.png",  label: "Clinics & Aesthetics",             tag: "Your Niche"   },
-              { src: "/assets/cs-medspa-story.png",     label: "Med Spa Coverage",                  tag: "24/7"         },
+              { src: "/assets/cs-medspa-v2.png",        label: "Med Spa & Aesthetic Clinics",       tag: "Premium"      },
+              { src: "/assets/cs-dashboard.png",        label: "Lead Pipeline — Live View",         tag: "Real-Time"    },
+              { src: "/assets/cs-clinic-story-v2.png",  label: "Clinics & Patient Intake",          tag: "Your Niche"   },
+              { src: "/assets/cs-reception-hero.png",   label: "Front Office Infrastructure",       tag: "Built For You"},
               { src: "/assets/cs-gym-aerial.png",       label: "Gym Operations — Automated",        tag: "Systemised"   },
-              { src: "/assets/cs-email-header.png",     label: "Professional Outreach System",      tag: "Done For You" },
+              { src: "/assets/cs-before-after-v2.png",  label: "Before Corner Systems → After",    tag: "The Result"   },
               { src: "/assets/cs-clinic-square.png",    label: "Patient Intake — Seamless",         tag: "Clinics"      },
-              { src: "/assets/cs-hero-blue-v2.jpg",     label: "AI Infrastructure — Dark",          tag: "Powered"      },
-              { src: "/assets/cs-blue-square.png",      label: "Corner Systems Network",            tag: "Connected"    },
+              { src: "/assets/cs-lobby-hero.png",       label: "Premium Reception Coverage",        tag: "24/7"         },
+              { src: "/assets/cs-gym-night-sq.png",     label: "Corner Systems Network",            tag: "Connected"    },
             ].map((item, i) => (
               <RevealSection delay={i * 55} key={item.src}>
                 <div className="social-card">
