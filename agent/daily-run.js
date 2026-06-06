@@ -1,18 +1,19 @@
 #!/usr/bin/env node
 /**
- * Corner Systems — Daily Automation (Research + Sheets Only)
+ * Corner Systems — Daily Automation
  *
- * Runs every morning at 7am automatically.
- * Does NOT send any emails or make any calls — Thomas handles all outreach manually.
+ * Runs every morning at 7am. Research only — no emails, no calls.
  *
- * What it does (in order):
- *   1. Reads "Top 10 Today" sheet — advances any leads Tom marked "yes" to emailed_d0
- *   2. Reads "📬 Follow-ups" sheet — advances D3/D7 sent marks to emailed_d3/emailed_d7
- *   3. Researches new leads in the current geographic phase
- *   4. Syncs everything to Google Sheets:
- *        - "Leads" tab        — full CRM sorted by score
- *        - "Top 10 Today" tab — 10 best leads, subject + email body + Sent? column
- *        - "📬 Follow-ups" tab — D3 and D7 follow-up queue with pre-written messages
+ * Run order:
+ *   1. Read-back phase (BEFORE research, BEFORE sync)
+ *      a. Leads tab   → apply dead marks + persist notes
+ *      b. Top 10 tab  → advance "Sent?" marks to emailed_d0
+ *      c. Follow-ups  → advance D3/D7 sent marks
+ *      d. Replies tab → advance Gmail replies to 'replied'
+ *      e. Inbound tab → add website contact form leads to CRM
+ *   2. Research new leads
+ *   3. Sync all tabs
+ *      - Leads, Top 10 Today, 📬 Follow-ups, 🔥 Hot Leads, 📊 Dashboard
  *
  * Usage: node agent/daily-run.js
  */
@@ -24,12 +25,23 @@ import {
   syncTop10Daily,
   syncFollowUpQueue,
   syncHotLeads,
+  syncDashboard,
+  readBackLeadOverrides,
   readBackTop10SentMarks,
   readBackFollowUpSentMarks,
   readBackReplies,
   markReplyProcessed,
+  readBackInboundLeads,
+  markInboundProcessed,
 } from "./sync-to-sheets.js";
-import { markLeadSent, markLeadReplied, getStats } from "./db.js";
+import {
+  markLeadSent,
+  markLeadReplied,
+  markLeadDead,
+  updateLeadNotes,
+  addInboundLead,
+  getStats,
+} from "./db.js";
 
 async function run() {
   const startTime = Date.now();
@@ -44,66 +56,88 @@ async function run() {
 
   const hasSheets = !!process.env.GOOGLE_SHEET_ID;
 
-  // ── 1. Read back sent marks from last night ───────────────────────────────
+  // ── 1. Read-back phase ────────────────────────────────────────────────────
   if (hasSheets) {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("  Checking for leads Tom marked as sent yesterday...");
+    console.log("  Reading back sheet changes from yesterday...");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
+    // a. Dead marks + notes from Leads tab
+    try {
+      const { dead, noteUpdates } = await readBackLeadOverrides();
+
+      for (const bizName of dead) {
+        const ok = markLeadDead(bizName);
+        console.log(ok
+          ? `   💀 Killed: ${bizName}`
+          : `   ⚠️  Not found for dead mark: ${bizName}`);
+      }
+      for (const { business_name, notes } of noteUpdates) {
+        updateLeadNotes(business_name, notes);
+      }
+      if (noteUpdates.length) {
+        console.log(`   📝 Persisted notes for ${noteUpdates.length} lead(s)`);
+      }
+    } catch (e) {
+      console.error(`  Lead overrides read-back failed: ${e.message}`);
+    }
+
+    // b. Top 10 sent marks → emailed_d0
+    // c. Follow-up sent marks → emailed_d3 / emailed_d7
     let markedCount = 0;
     try {
-      // Top 10 tab — cold emails sent → emailed_d0
       const top10Sent = await readBackTop10SentMarks();
       for (const { business_name, stage } of top10Sent) {
         const ok = markLeadSent(business_name, stage);
-        if (ok) {
-          console.log(`   ✅ Marked sent (${stage}): ${business_name}`);
-          markedCount++;
-        } else {
-          console.log(`   ⚠️  Not found in DB: ${business_name}`);
-        }
+        if (ok) { console.log(`   📬 Sent (${stage}): ${business_name}`); markedCount++; }
       }
 
-      // Follow-up tab — D3/D7 follow-ups sent
       const fuSent = await readBackFollowUpSentMarks();
       for (const { business_name, stage } of fuSent) {
         const ok = markLeadSent(business_name, stage);
-        if (ok) {
-          console.log(`   ✅ Marked sent (${stage}): ${business_name}`);
-          markedCount++;
-        } else {
-          console.log(`   ⚠️  Not found in DB: ${business_name}`);
-        }
+        if (ok) { console.log(`   📬 Sent (${stage}): ${business_name}`); markedCount++; }
       }
 
-      if (markedCount === 0) {
-        console.log("   (No new sent marks found — continuing)");
-      } else {
-        console.log(`\n   📬 ${markedCount} lead(s) advanced in pipeline`);
-      }
-
-      // Gmail replies logged by Apps Script → advance to 'replied'
-      try {
-        const replies = await readBackReplies();
-        let replyCount = 0;
-        for (const reply of replies) {
-          const ok = markLeadReplied(reply.business_name);
-          if (ok) {
-            console.log(`   💬 Reply detected — advancing to replied: ${reply.business_name}`);
-            await markReplyProcessed(reply.sheetRow);
-            replyCount++;
-          } else {
-            console.log(`   ⚠️  Reply found but lead not in DB: ${reply.business_name}`);
-          }
-        }
-        if (replyCount > 0) {
-          console.log(`\n   🎉 ${replyCount} lead(s) moved to 'replied' — check Hot Leads tab`);
-        }
-      } catch (e) {
-        console.error(`  Reply read-back failed: ${e.message}`);
-      }
+      if (markedCount === 0) console.log("   (No sent marks — continuing)");
+      else console.log(`\n   📬 ${markedCount} lead(s) advanced`);
     } catch (e) {
       console.error(`  Sent-mark read-back failed: ${e.message}`);
+    }
+
+    // d. Gmail replies → 'replied'
+    try {
+      const replies = await readBackReplies();
+      let replyCount = 0;
+      for (const reply of replies) {
+        const ok = markLeadReplied(reply.business_name);
+        if (ok) {
+          await markReplyProcessed(reply.sheetRow);
+          console.log(`   💬 Reply → replied: ${reply.business_name}`);
+          replyCount++;
+        }
+      }
+      if (replyCount > 0) {
+        console.log(`\n   🎉 ${replyCount} lead(s) moved to 'replied' — check Hot Leads`);
+      }
+    } catch (e) {
+      console.error(`  Reply read-back failed: ${e.message}`);
+    }
+
+    // e. Inbound website leads
+    try {
+      const inbound = await readBackInboundLeads();
+      let inboundCount = 0;
+      for (const lead of inbound) {
+        addInboundLead(lead);
+        await markInboundProcessed(lead.sheetRow);
+        console.log(`   🌐 Inbound added: ${lead.business} (${lead.email})`);
+        inboundCount++;
+      }
+      if (inboundCount > 0) {
+        console.log(`\n   🌐 ${inboundCount} website lead(s) added to CRM — check Hot Leads`);
+      }
+    } catch (e) {
+      console.error(`  Inbound read-back failed: ${e.message}`);
     }
   }
 
@@ -119,17 +153,18 @@ async function run() {
     console.error(`  Research failed: ${e.message}`);
   }
 
-  // ── 3. Sync to Google Sheets ──────────────────────────────────────────────
+  // ── 3. Sync all tabs ──────────────────────────────────────────────────────
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("  Updating Google Sheets...");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   if (hasSheets) {
     try {
-      await syncToSheets();
-      await syncTop10Daily();
-      await syncFollowUpQueue();
-      await syncHotLeads();
+      await syncToSheets();       // Leads tab (with Mark Dead + Notes columns)
+      await syncTop10Daily();     // Top 10 Today
+      await syncFollowUpQueue();  // 📬 Follow-ups
+      await syncHotLeads();       // 🔥 Hot Leads
+      await syncDashboard();      // 📊 Dashboard
     } catch (e) {
       console.error(`  Sheets sync failed: ${e.message}`);
     }
@@ -145,9 +180,10 @@ async function run() {
   console.log("\n╔══════════════════════════════════════════════════════╗");
   console.log("║                      Summary                         ║");
   console.log("╠══════════════════════════════════════════════════════╣");
-  console.log(`║  New leads added today:  ${String(newLeads).padEnd(28)}║`);
-  console.log(`║  Total in CRM:           ${String(total).padEnd(28)}║`);
-  console.log(`║  Active clients (MRR):   $${String(stats.mrr.toFixed(0)).padEnd(27)}║`);
+  console.log(`║  New leads today:   ${String(newLeads).padEnd(33)}║`);
+  console.log(`║  Total in CRM:      ${String(total).padEnd(33)}║`);
+  console.log(`║  Active clients:    ${String(stats.activeClients).padEnd(33)}║`);
+  console.log(`║  MRR:               $${String(stats.mrr.toFixed(0)).padEnd(32)}║`);
   console.log("╠══════════════════════════════════════════════════════╣");
   for (const row of stats.stages) {
     const line = `  ${row.stage}: ${row.count}`;
@@ -156,10 +192,12 @@ async function run() {
   console.log("╠══════════════════════════════════════════════════════╣");
   console.log(`║  Run time: ${elapsed}s${" ".repeat(Math.max(0, 43 - elapsed.length))}║`);
   console.log("╚══════════════════════════════════════════════════════╝");
-  console.log("\n📋 Open your sheet:");
-  console.log("   → 'Top 10 Today'   — copy subject + body, send emails, type YES when done");
-  console.log("   → '📬 Follow-ups'  — anyone needing a D3 or D7 follow-up today");
-  console.log("   → '🔥 Hot Leads'   — replied / booked leads needing your next move\n");
+  console.log("\n📋 Your sheet tabs:");
+  console.log("   → 📊 Dashboard     — pipeline health at a glance");
+  console.log("   → Top 10 Today     — send these, mark yes when done");
+  console.log("   → 🔥 Hot Leads     — replied / inbound — needs your reply");
+  console.log("   → 📬 Follow-ups    — D3/D7 nudges due today");
+  console.log("   → Leads            — full CRM (edit Notes, Mark Dead here)\n");
 }
 
 run().catch((err) => {

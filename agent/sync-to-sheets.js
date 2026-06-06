@@ -20,31 +20,44 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { google } from "googleapis";
-import { getAllLeads, getTop10ForOutreach, getD3FollowUps, getD7FollowUps, getHotLeads } from "./db.js";
+import {
+  getAllLeads, getTop10ForOutreach, getD3FollowUps, getD7FollowUps,
+  getHotLeads, getDashboardStats,
+} from "./db.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const SHEET_ID     = process.env.GOOGLE_SHEET_ID;
-const KEY_PATH     = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "./agent/google-key.json";
-const LEADS_TAB    = process.env.GOOGLE_SHEET_TAB || "Leads";
-const TOP10_TAB    = "Top 10 Today";
-const FOLLOWUP_TAB = "📬 Follow-ups";
-const REPLIES_TAB  = "📩 Replies";     // written by Apps Script, read by this agent
-const HOT_TAB      = "🔥 Hot Leads";  // replied, booked, clients
+const SHEET_ID      = process.env.GOOGLE_SHEET_ID;
+const KEY_PATH      = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "./agent/google-key.json";
+const LEADS_TAB     = process.env.GOOGLE_SHEET_TAB || "Leads";
+const TOP10_TAB     = "Top 10 Today";
+const FOLLOWUP_TAB  = "📬 Follow-ups";
+const REPLIES_TAB   = "📩 Replies";    // written by Apps Script, read by this agent
+const HOT_TAB       = "🔥 Hot Leads"; // replied, booked, clients
+const DASHBOARD_TAB = "📊 Dashboard"; // auto-generated pipeline overview
+const INBOUND_TAB   = "🌐 Inbound";   // website contact form leads (written by Apps Script)
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
 // Full leads tab
+// ⚠️  If you add columns here, update LEADS_*_COL constants below too
 const LEAD_COLS = [
   "business_name", "owner_name", "city", "state", "phone", "email",
   "website", "niche", "lead_score", "stage", "pain_signal",
   "has_website", "has_chatbot", "has_voice_agent", "notes",
+  "_mark_dead",   // user-editable: type "yes" to kill this lead
 ];
 const LEAD_HEADERS = [
   "Rank", "Business", "Owner", "City", "State", "Phone", "Email",
   "Website", "Niche", "Score", "Stage", "Pain Signal",
   "Has Website", "Has AI Chatbot", "Has Voice Agent", "Notes",
+  "⚠️ Mark Dead? (type yes)",
 ];
+
+// Column indices in the Leads tab row array (0-indexed, Rank is [0])
+const LEADS_BIZ_COL   = 1;   // "Business"
+const LEADS_NOTES_COL = 15;  // "Notes"
+const LEADS_DEAD_COL  = 16;  // "⚠️ Mark Dead?"
 
 // Top 10 tab — columns in display order
 // ⚠️  If you change this order, update the COLUMN INDEX CONSTANTS below too
@@ -137,6 +150,7 @@ export async function syncToSheets() {
     ...leads.map((l, i) => [
       String(i + 1),
       ...LEAD_COLS.map((c) => {
+        if (c === "_mark_dead")  return "";  // always blank — user fills in
         if (c === "has_website" || c === "has_chatbot" || c === "has_voice_agent") return boolLabel(l[c]);
         return l[c] == null ? "" : String(l[c]);
       }),
@@ -150,6 +164,57 @@ export async function syncToSheets() {
     valueInputOption: "RAW",
     requestBody: { values },
   });
+
+  // Style the header row and Mark Dead column
+  const meta2    = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const sheetId2 = meta2.data.sheets.find((s) => s.properties.title === LEADS_TAB)?.properties.sheetId;
+  if (sheetId2 != null) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: {
+        requests: [
+          // Header row
+          {
+            repeatCell: {
+              range: { sheetId: sheetId2, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: LEAD_HEADERS.length },
+              cell: { userEnteredFormat: {
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+                backgroundColor: { red: 0.12, green: 0.13, blue: 0.16 },
+              }},
+              fields: "userEnteredFormat(textFormat,backgroundColor)",
+            },
+          },
+          // Mark Dead column header — red tint
+          {
+            repeatCell: {
+              range: { sheetId: sheetId2, startRowIndex: 0, endRowIndex: 1, startColumnIndex: LEADS_DEAD_COL, endColumnIndex: LEADS_DEAD_COL + 1 },
+              cell: { userEnteredFormat: {
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+                backgroundColor: { red: 0.6, green: 0.1, blue: 0.1 },
+              }},
+              fields: "userEnteredFormat(textFormat,backgroundColor)",
+            },
+          },
+          // Notes column wide
+          {
+            updateDimensionProperties: {
+              range: { sheetId: sheetId2, dimension: "COLUMNS", startIndex: LEADS_NOTES_COL, endIndex: LEADS_NOTES_COL + 1 },
+              properties: { pixelSize: 280 },
+              fields: "pixelSize",
+            },
+          },
+          // Business name column wide
+          {
+            updateDimensionProperties: {
+              range: { sheetId: sheetId2, dimension: "COLUMNS", startIndex: LEADS_BIZ_COL, endIndex: LEADS_BIZ_COL + 1 },
+              properties: { pixelSize: 200 },
+              fields: "pixelSize",
+            },
+          },
+        ],
+      },
+    });
+  }
 
   console.log(`\n✅ Synced ${leads.length} leads → "${LEADS_TAB}" tab`);
   return leads.length;
@@ -561,6 +626,249 @@ export async function readBackFollowUpSentMarks() {
   }
 }
 
+// ── Read-back: Leads tab overrides (Mark Dead + Notes) ───────────────────────
+
+/**
+ * Reads the Leads tab before the daily sync overwrites it.
+ * Returns dead leads to kill and notes to persist.
+ * Must be called BEFORE syncToSheets() so DB is updated first.
+ */
+export async function readBackLeadOverrides() {
+  const sheets = await getSheets();
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${LEADS_TAB}!A1:R1000`,
+    });
+    const rows = response.data.values || [];
+    if (rows.length < 2) return { dead: [], noteUpdates: [] };
+
+    const headers     = rows[0];
+    const bizIdx      = headers.indexOf("Business");
+    const notesIdx    = headers.indexOf("Notes");
+    const deadIdx     = headers.findIndex((h) => h?.includes("Mark Dead"));
+
+    if (bizIdx === -1) return { dead: [], noteUpdates: [] };
+
+    const dead        = [];
+    const noteUpdates = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row     = rows[i] || [];
+      const bizName = (row[bizIdx]  || "").trim();
+      if (!bizName) continue;
+
+      if (deadIdx !== -1) {
+        const deadVal = (row[deadIdx] || "").toLowerCase().trim();
+        if (deadVal) dead.push(bizName);
+      }
+
+      if (notesIdx !== -1) {
+        const notesVal = (row[notesIdx] || "").trim();
+        if (notesVal) noteUpdates.push({ business_name: bizName, notes: notesVal });
+      }
+    }
+
+    if (dead.length)        console.log(`   💀 ${dead.length} lead(s) marked dead in sheet`);
+    if (noteUpdates.length) console.log(`   📝 ${noteUpdates.length} note(s) to persist`);
+
+    return { dead, noteUpdates };
+  } catch (e) {
+    console.log(`   ⚠️  Could not read lead overrides: ${e.message}`);
+    return { dead: [], noteUpdates: [] };
+  }
+}
+
+// ── Tab: 📊 Dashboard ─────────────────────────────────────────────────────────
+
+export async function syncDashboard() {
+  const sheets = await getSheets();
+  const meta   = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const existingTabs = meta.data.sheets.map((s) => s.properties.title);
+  await ensureTab(sheets, DASHBOARD_TAB, existingTabs);
+
+  const s    = getDashboardStats();
+  const now  = new Date().toLocaleDateString("en-CA", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
+
+  const stageDisplayNames = {
+    found:             "Found (not contacted)",
+    emailed_d0:        "Emailed — Day 0",
+    emailed_d3:        "Emailed — Day 3",
+    emailed_d7:        "Emailed — Day 7",
+    replied:           "💬 Replied",
+    discovery_booked:  "📅 Discovery Booked",
+    client:            "✅ Client",
+    dead:              "💀 Dead / Not interested",
+    inbound:           "🌐 Inbound (website form)",
+  };
+
+  const funnelRows = s.stages.map((r) => [
+    stageDisplayNames[r.stage] || r.stage,
+    String(r.count),
+  ]);
+
+  const emailPct  = s.total > 0 ? Math.round((s.withEmail    / s.total) * 100) : 0;
+  const noEmailPct= s.total > 0 ? Math.round((s.withoutEmail / s.total) * 100) : 0;
+
+  const rows = [
+    [`📊 CORNER SYSTEMS — PIPELINE DASHBOARD`, ""],
+    [`Updated: ${now}`, ""],
+    ["", ""],
+
+    ["PIPELINE FUNNEL", ""],
+    ["Stage", "Count"],
+    ...funnelRows,
+    ["─────────────────────────", "──────"],
+    ["Total tracked", String(s.total)],
+    ["", ""],
+
+    ["EMAIL COVERAGE", ""],
+    ["Leads with email",    `${s.withEmail} (${emailPct}%)`],
+    ["Leads without email", `${s.withoutEmail} (${noEmailPct}%)`],
+    ["Leads with AI tools already", String(s.withAI)],
+    ["", ""],
+
+    ["THIS WEEK (last 7 days)", ""],
+    ["New leads found",        String(s.newThisWeek)],
+    ["Cold emails sent",       String(s.coldSent)],
+    ["D3 follow-ups sent",     String(s.d3Sent)],
+    ["D7 final touches sent",  String(s.d7Sent)],
+    ["Replies received",       String(s.repliesIn)],
+    ["Inbound (website form)", String(s.inboundForm)],
+    ["Reply rate",             s.replyRate],
+    ["", ""],
+
+    ["REVENUE", ""],
+    ["Active clients", String(s.activeClients)],
+    ["Monthly MRR",   `$${s.mrr.toFixed(0)}`],
+    ["", ""],
+
+    ["TOP NICHES IN PIPELINE", ""],
+    ["Niche", "Leads"],
+    ...s.topNiches.map((n) => [n.niche, String(n.count)]),
+  ];
+
+  await sheets.spreadsheets.values.clear({ spreadsheetId: SHEET_ID, range: `${DASHBOARD_TAB}!A:Z` });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${DASHBOARD_TAB}!A1`,
+    valueInputOption: "RAW",
+    requestBody: { values: rows },
+  });
+
+  // Formatting
+  const sheetId = meta.data.sheets.find((s) => s.properties.title === DASHBOARD_TAB)?.properties.sheetId;
+  if (sheetId != null) {
+    // Find row indices of section headers dynamically
+    const sectionRows = [];
+    rows.forEach((row, i) => {
+      if (row[0] && !row[1] && row[0] !== "" && !row[0].startsWith("─") && i > 2) {
+        sectionRows.push(i);
+      }
+    });
+
+    const requests = [
+      // Title row — large bold
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 2 },
+          cell: { userEnteredFormat: { textFormat: { bold: true, fontSize: 14 } } },
+          fields: "userEnteredFormat.textFormat",
+        },
+      },
+      // Value column width
+      {
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
+          properties: { pixelSize: 260 },
+          fields: "pixelSize",
+        },
+      },
+      {
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 },
+          properties: { pixelSize: 140 },
+          fields: "pixelSize",
+        },
+      },
+      // Section header rows — amber background
+      ...sectionRows.map((rowIdx) => ({
+        repeatCell: {
+          range: { sheetId, startRowIndex: rowIdx, endRowIndex: rowIdx + 1, startColumnIndex: 0, endColumnIndex: 2 },
+          cell: { userEnteredFormat: {
+            textFormat: { bold: true, foregroundColor: { red: 0.94, green: 0.66, blue: 0.19 } },
+            backgroundColor: { red: 0.12, green: 0.11, blue: 0.09 },
+          }},
+          fields: "userEnteredFormat(textFormat,backgroundColor)",
+        },
+      })),
+    ];
+
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: { requests },
+    });
+  }
+
+  console.log(`✅ Dashboard synced → "${DASHBOARD_TAB}" tab`);
+}
+
+// ── Read-back: Inbound leads from Apps Script ─────────────────────────────────
+
+/**
+ * Reads the "🌐 Inbound" tab written by the Apps Script contact form tracker.
+ * Returns unprocessed rows so daily-run can add them to the DB as hot leads.
+ */
+export async function readBackInboundLeads() {
+  const sheets = await getSheets();
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${INBOUND_TAB}!A1:H100`,
+    });
+    const rows = response.data.values || [];
+    if (rows.length < 2) return [];
+
+    const unprocessed = [];
+    for (let i = 1; i < rows.length; i++) {
+      const row       = rows[i] || [];
+      const processed = (row[6] || "").trim();
+      const business  = (row[1] || "").trim();
+      if (!processed && business) {
+        unprocessed.push({
+          sheetRow:   i + 1,
+          name:       row[0] || "",
+          business:   row[1] || "",
+          email:      row[2] || "",
+          bottleneck: row[3] || "",
+          bestTime:   row[4] || "",
+          date:       row[5] || "",
+        });
+      }
+    }
+
+    if (unprocessed.length) {
+      console.log(`   🌐 Found ${unprocessed.length} unprocessed inbound lead(s)`);
+    }
+    return unprocessed;
+  } catch (e) {
+    console.log(`   ⚠️  Could not read Inbound tab (may not exist yet): ${e.message}`);
+    return [];
+  }
+}
+
+export async function markInboundProcessed(sheetRow) {
+  const sheets = await getSheets();
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${INBOUND_TAB}!G${sheetRow}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [["✅ Added to CRM"]] },
+  });
+}
+
 // ── Read-back: Gmail replies logged by Apps Script ───────────────────────────
 
 /**
@@ -743,6 +1051,7 @@ if (isDirect) {
     await syncTop10Daily();
     await syncFollowUpQueue();
     await syncHotLeads();
+    await syncDashboard();
   })().catch((err) => {
     console.error("Sheets sync error:", err.message);
     if (err.message.toLowerCase().includes("permission")) {

@@ -208,6 +208,123 @@ export function getUnresearchedLeads(limit = 30) {
   `).all(limit);
 }
 
+// ── Dead lead management ──────────────────────────────────────────────────────
+
+export function markLeadDead(businessName) {
+  const lead = db.prepare(
+    "SELECT id FROM leads WHERE lower(trim(business_name)) = lower(trim(?))"
+  ).get(businessName);
+  if (!lead) return false;
+  updateStage(lead.id, "dead");
+  return true;
+}
+
+export function updateLeadNotes(businessName, notes) {
+  if (!notes || !businessName) return;
+  db.prepare(
+    "UPDATE leads SET notes = ?, updated_at = datetime('now') WHERE lower(trim(business_name)) = lower(trim(?))"
+  ).run(notes, businessName);
+}
+
+// ── Inbound leads (website contact form) ─────────────────────────────────────
+
+export function addInboundLead(data) {
+  const existing = db.prepare(
+    "SELECT id FROM leads WHERE lower(trim(business_name)) = lower(trim(?))"
+  ).get(data.business || "");
+
+  if (existing) {
+    updateStage(existing.id, "replied");
+    db.prepare(`UPDATE leads SET
+      email     = COALESCE(NULLIF(?, ''), email),
+      notes     = ?,
+      lead_score = 10,
+      updated_at = datetime('now')
+      WHERE id = ?`).run(
+      data.email || "",
+      `🌐 INBOUND — website form. Bottleneck: "${data.bottleneck}". Best time: ${data.bestTime || "not specified"}`,
+      existing.id
+    );
+    logTouch(existing.id, "email", "inbound_form", "received");
+    return existing.id;
+  }
+
+  const result = db.prepare(`INSERT INTO leads
+    (business_name, owner_name, email, lead_score, stage, pain_signal, notes, city, state, niche)
+    VALUES (?, ?, ?, 10, 'replied', ?, ?, 'Toronto', 'ON', 'inbound')`).run(
+    data.business || "Unknown",
+    data.name     || null,
+    data.email    || null,
+    data.bottleneck || "Submitted via website contact form",
+    `🌐 INBOUND — website form. Best time: ${data.bestTime || "not specified"}`
+  );
+
+  const leadId = result.lastInsertRowid;
+  logTouch(leadId, "email", "inbound_form", "received");
+  return leadId;
+}
+
+// ── Dashboard stats ───────────────────────────────────────────────────────────
+
+export function getDashboardStats() {
+  // Full stage breakdown
+  const stages = db.prepare(
+    "SELECT stage, COUNT(*) as count FROM leads GROUP BY stage ORDER BY count DESC"
+  ).all();
+  const total = stages.reduce((s, r) => s + r.count, 0);
+
+  // Coverage
+  const withEmail = db.prepare(
+    "SELECT COUNT(*) as c FROM leads WHERE email IS NOT NULL AND email != ''"
+  ).get().c;
+  const withAI = db.prepare(
+    "SELECT COUNT(*) as c FROM leads WHERE has_chatbot = 1 OR has_voice_agent = 1"
+  ).get().c;
+
+  // New leads this week (last 7 days)
+  const newThisWeek = db.prepare(
+    "SELECT COUNT(*) as c FROM leads WHERE created_at >= datetime('now', '-7 days')"
+  ).get().c;
+
+  // Touch counts this week
+  const weekTouches = db.prepare(`
+    SELECT channel, COUNT(*) as count FROM touches
+    WHERE created_at >= datetime('now', '-7 days')
+    GROUP BY channel
+  `).all();
+  const tc = {};
+  for (const t of weekTouches) tc[t.channel] = t.count;
+
+  const coldSent     = tc["cold_d0"]       || 0;
+  const d3Sent       = tc["follow_d3"]     || 0;
+  const d7Sent       = tc["follow_d7"]     || 0;
+  const repliesIn    = tc["reply_received"]|| 0;
+  const inboundForm  = tc["inbound_form"]  || 0;
+  const totalSent    = coldSent + d3Sent + d7Sent;
+  const replyRate    = totalSent > 0
+    ? ((repliesIn / totalSent) * 100).toFixed(1) + "%"
+    : "—";
+
+  // Top niches
+  const topNiches = db.prepare(
+    "SELECT niche, COUNT(*) as count FROM leads WHERE niche IS NOT NULL AND niche != 'inbound' GROUP BY niche ORDER BY count DESC LIMIT 8"
+  ).all();
+
+  // Revenue
+  const mrrRow       = db.prepare("SELECT SUM(mrr) as total FROM clients WHERE status='active'").get();
+  const clientCount  = db.prepare("SELECT COUNT(*) as c FROM clients WHERE status='active'").get().c;
+
+  return {
+    stages, total, withEmail,
+    withoutEmail: total - withEmail,
+    withAI, newThisWeek,
+    coldSent, d3Sent, d7Sent, repliesIn, inboundForm,
+    totalSent, replyRate, topNiches,
+    mrr: mrrRow?.total || 0,
+    activeClients: clientCount,
+  };
+}
+
 // ── Reply + hot lead queries ──────────────────────────────────────────────────
 
 // Leads that replied, booked, or converted — the active pipeline
