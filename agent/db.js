@@ -71,16 +71,19 @@ db.exec(`
   );
 `);
 
-// ── Schema migration: add research columns if they don't exist ─────────────────
+// ── Schema migrations — add columns if they don't exist ───────────────────────
 {
   const existing = db.prepare("PRAGMA table_info(leads)").all().map((c) => c.name);
   const migrations = [
-    ["has_website",    "INTEGER DEFAULT 0"],
-    ["website_url",    "TEXT"],
-    ["has_chatbot",    "INTEGER DEFAULT 0"],
-    ["has_voice_agent","INTEGER DEFAULT 0"],
-    ["email_draft",    "TEXT"],
-    ["last_researched","TEXT"],
+    ["has_website",        "INTEGER DEFAULT 0"],
+    ["website_url",        "TEXT"],
+    ["has_chatbot",        "INTEGER DEFAULT 0"],
+    ["has_voice_agent",    "INTEGER DEFAULT 0"],
+    ["email_draft",        "TEXT"],
+    ["email_subject",      "TEXT"],          // NEW — subject line for cold email
+    ["followup_d3_draft",  "TEXT"],          // NEW — pre-written D3 follow-up body
+    ["followup_d7_draft",  "TEXT"],          // NEW — pre-written D7 follow-up body
+    ["last_researched",    "TEXT"],
   ];
   for (const [col, def] of migrations) {
     if (!existing.includes(col)) {
@@ -91,7 +94,6 @@ db.exec(`
 
 // ── Lead queries ──────────────────────────────────────────────────────────────
 export function upsertLead(data) {
-  // If discovery found a website URL, mark has_website = 1 immediately
   const hasWebsite = (data.website && data.website.trim()) ? 1 : 0;
 
   const existing = db.prepare(
@@ -131,6 +133,11 @@ export function updateStage(leadId, stage) {
     .run(stage, leadId);
 }
 
+export function updateLeadScore(leadId, score) {
+  db.prepare("UPDATE leads SET lead_score=?, updated_at=datetime('now') WHERE id=?")
+    .run(score, leadId);
+}
+
 export function logTouch(leadId, type, channel, status, extra = {}) {
   db.prepare(`INSERT INTO touches (lead_id, type, channel, status, subject, body, call_sid, notes)
     VALUES (?,?,?,?,?,?,?,?)`).run(
@@ -165,6 +172,7 @@ export function updateResearchData(leadId, data) {
     has_chatbot      = ?,
     has_voice_agent  = ?,
     email_draft      = COALESCE(NULLIF(?, ''), email_draft),
+    email_subject    = COALESCE(NULLIF(?, ''), email_subject),
     last_researched  = datetime('now'),
     updated_at       = datetime('now')
     WHERE id = ?`).run(
@@ -173,6 +181,7 @@ export function updateResearchData(leadId, data) {
     data.has_chatbot ? 1 : 0,
     data.has_voice_agent ? 1 : 0,
     data.email_draft || "",
+    data.email_subject || "",
     leadId
   );
 }
@@ -197,6 +206,60 @@ export function getUnresearchedLeads(limit = 30) {
     ORDER BY lead_score DESC, created_at ASC
     LIMIT ?
   `).all(limit);
+}
+
+// ── Follow-up queue queries ───────────────────────────────────────────────────
+
+// Leads that had first email sent 3+ days ago — need D3 follow-up
+export function getD3FollowUps() {
+  return db.prepare(`
+    SELECT * FROM leads
+    WHERE stage = 'emailed_d0'
+      AND last_touched < datetime('now', '-3 days')
+      AND email IS NOT NULL AND email != ''
+    ORDER BY lead_score DESC
+  `).all();
+}
+
+// Leads that had D3 follow-up sent 4+ days ago — need D7 final touch
+export function getD7FollowUps() {
+  return db.prepare(`
+    SELECT * FROM leads
+    WHERE stage = 'emailed_d3'
+      AND last_touched < datetime('now', '-4 days')
+      AND email IS NOT NULL AND email != ''
+    ORDER BY lead_score DESC
+  `).all();
+}
+
+/**
+ * Mark a lead as sent — called when Tom marks "yes" in the sheet.
+ * stage: 'emailed_d0' | 'emailed_d3' | 'emailed_d7'
+ * Returns true if lead was found and updated, false otherwise.
+ */
+export function markLeadSent(businessName, stage = "emailed_d0") {
+  const channelMap = {
+    emailed_d0: "cold_d0",
+    emailed_d3: "follow_d3",
+    emailed_d7: "follow_d7",
+  };
+
+  // Case-insensitive match on business name
+  const lead = db.prepare(
+    "SELECT id, stage FROM leads WHERE lower(trim(business_name)) = lower(trim(?))"
+  ).get(businessName);
+
+  if (!lead) return false;
+
+  // Don't downgrade a stage (in case of duplicate marks)
+  const stageOrder = ["found", "emailed_d0", "emailed_d3", "emailed_d7", "replied", "discovery_booked", "client"];
+  const currentIdx = stageOrder.indexOf(lead.stage);
+  const newIdx     = stageOrder.indexOf(stage);
+  if (newIdx <= currentIdx) return false;  // already at or past this stage
+
+  updateStage(lead.id, stage);
+  logTouch(lead.id, "email", channelMap[stage] || stage, "sent");
+  return true;
 }
 
 // ── Client queries ────────────────────────────────────────────────────────────

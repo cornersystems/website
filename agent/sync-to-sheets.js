@@ -2,9 +2,15 @@
 /**
  * Corner Systems — Google Sheets Sync
  *
- * Syncs CRM to two tabs in your Google Sheet:
- *   1. "Leads"       — full lead list with all research data (auto-sorted by score)
- *   2. "Top 10 Today" — today's 10 best uncontacted leads + pre-drafted outreach email
+ * Syncs CRM to three tabs in your Google Sheet:
+ *   1. "Leads"         — full lead list with all research data (auto-sorted by score)
+ *   2. "Top 10 Today"  — 10 best uncontacted leads with subject + email draft + Sent? column
+ *   3. "📬 Follow-ups" — D3 and D7 follow-up queues with pre-written follow-up messages
+ *
+ * The "Sent?" column is a feedback loop:
+ *   - Tom types "yes" next to any lead he emails
+ *   - Next morning, daily-run.js reads it back and advances that lead's stage in the DB
+ *   - Those leads then disappear from tomorrow's Top 10 and appear in the Follow-up tab on day 3/7
  *
  * Runs automatically every day via agent/daily-run.js
  * Can also be run manually: node agent/sync-to-sheets.js
@@ -14,41 +20,74 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { google } from "googleapis";
-import { getAllLeads, getTop10ForOutreach } from "./db.js";
+import { getAllLeads, getTop10ForOutreach, getD3FollowUps, getD7FollowUps } from "./db.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const KEY_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "./agent/google-key.json";
-const LEADS_TAB = process.env.GOOGLE_SHEET_TAB || "Leads";
-const TOP10_TAB = "Top 10 Today";
+const SHEET_ID    = process.env.GOOGLE_SHEET_ID;
+const KEY_PATH    = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "./agent/google-key.json";
+const LEADS_TAB   = process.env.GOOGLE_SHEET_TAB || "Leads";
+const TOP10_TAB   = "Top 10 Today";
+const FOLLOWUP_TAB = "📬 Follow-ups";
 
 // ── Column definitions ────────────────────────────────────────────────────────
+
+// Full leads tab
 const LEAD_COLS = [
   "business_name", "owner_name", "city", "state", "phone", "email",
   "website", "niche", "lead_score", "stage", "pain_signal",
   "has_website", "has_chatbot", "has_voice_agent", "notes",
 ];
-
 const LEAD_HEADERS = [
   "Rank", "Business", "Owner", "City", "State", "Phone", "Email",
   "Website", "Niche", "Score", "Stage", "Pain Signal",
   "Has Website", "Has AI Chatbot", "Has Voice Agent", "Notes",
 ];
 
-// Email draft is column 3 — right next to the business name for easy copy-paste
+// Top 10 tab — columns in display order
+// ⚠️  If you change this order, update the COLUMN INDEX CONSTANTS below too
 const TOP10_COLS = [
-  "business_name", "email_draft", "owner_name", "city", "phone", "email",
-  "has_website", "has_chatbot", "has_voice_agent",
-  "niche", "lead_score", "pain_signal",
+  "business_name",  // col 1 (after Rank)
+  "email_subject",  // col 2 — subject line
+  "email_draft",    // col 3 — email body
+  "_sent",          // col 4 — "Sent?" user-editable — NOT a real DB column
+  "owner_name",     // col 5
+  "city",           // col 6
+  "email",          // col 7
+  "niche",          // col 8
+  "lead_score",     // col 9
+  "pain_signal",    // col 10
+  "has_chatbot",    // col 11
+  "has_voice_agent",// col 12
+];
+const TOP10_HEADERS = [
+  "Rank",
+  "Business",
+  "📋 Subject Line — copy this",
+  "✉️ Email Body — personalise & send",
+  "✅ Sent? (type yes)",
+  "Owner",
+  "City",
+  "Email",
+  "Niche",
+  "Score",
+  "Pain Signal",
+  "Has AI Chatbot",
+  "Has Voice Agent",
 ];
 
-const TOP10_HEADERS = [
-  "Rank", "Business", "⚡ OUTREACH EMAIL — copy, personalise, send",
-  "Owner", "City", "Phone", "Email",
-  "Has Website", "Has AI Chatbot", "Has Voice Agent",
-  "Niche", "Score", "Pain Signal",
+// Column index constants for read-back (0-indexed within the row array, after Rank at [0])
+// These correspond to TOP10_HEADERS positions
+const TOP10_BIZ_COL  = 1;  // "Business"
+const TOP10_SENT_COL = 4;  // "✅ Sent?"
+
+// Follow-up tab data columns
+const FOLLOWUP_HEADERS = [
+  "Business", "Email", "📋 Subject — copy this", "✉️ Follow-up Message — copy this",
+  "✅ Sent? (type yes)", "Niche", "Score",
 ];
+const FU_BIZ_COL  = 0;
+const FU_SENT_COL = 4;
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 async function getSheets() {
@@ -83,10 +122,8 @@ function boolLabel(val) {
 // ── Tab 1: Full Leads list ────────────────────────────────────────────────────
 export async function syncToSheets() {
   const sheets = await getSheets();
-
   const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
   const existingTabs = meta.data.sheets.map((s) => s.properties.title);
-
   await ensureTab(sheets, LEADS_TAB, existingTabs);
 
   const leads = getAllLeads().sort(
@@ -98,9 +135,7 @@ export async function syncToSheets() {
     ...leads.map((l, i) => [
       String(i + 1),
       ...LEAD_COLS.map((c) => {
-        if (c === "has_website" || c === "has_chatbot" || c === "has_voice_agent") {
-          return boolLabel(l[c]);
-        }
+        if (c === "has_website" || c === "has_chatbot" || c === "has_voice_agent") return boolLabel(l[c]);
         return l[c] == null ? "" : String(l[c]);
       }),
     ]),
@@ -121,10 +156,8 @@ export async function syncToSheets() {
 // ── Tab 2: Top 10 Today ───────────────────────────────────────────────────────
 export async function syncTop10Daily() {
   const sheets = await getSheets();
-
   const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
   const existingTabs = meta.data.sheets.map((s) => s.properties.title);
-
   await ensureTab(sheets, TOP10_TAB, existingTabs);
 
   const top10 = getTop10ForOutreach();
@@ -132,19 +165,21 @@ export async function syncTop10Daily() {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
 
-  const titleRow = [`📅 Top 10 Leads — ${today}`, "", "", "", "", "", "", "", "", "", "", "", ""];
-  const subRow   = ["Send 10 emails today. Review each draft, personalise the opener if you have time, hit send.", ...Array(12).fill("")];
-  const blankRow = Array(TOP10_HEADERS.length).fill("");
+  const colCount = TOP10_HEADERS.length;
+  const titleRow = [`📅 Top 10 Leads — ${today}`, ...Array(colCount - 1).fill("")];
+  const subRow   = [
+    "Copy the subject + body → paste into Gmail → personalise the opener if you have time → send → type YES in the Sent? column.",
+    ...Array(colCount - 1).fill(""),
+  ];
+  const blankRow = Array(colCount).fill("");
 
   const rows = top10.map((l, i) => [
     String(i + 1),
     ...TOP10_COLS.map((c) => {
-      if (c === "has_website" || c === "has_chatbot" || c === "has_voice_agent") {
-        return boolLabel(l[c]);
-      }
-      if (c === "email_draft") {
-        return l.email_draft || "(draft not generated yet — run research-daily.js)";
-      }
+      if (c === "_sent")          return "";       // blank for Tom to fill in
+      if (c === "has_chatbot" || c === "has_voice_agent") return boolLabel(l[c]);
+      if (c === "email_subject")  return l.email_subject || "(not generated — run research-daily.js)";
+      if (c === "email_draft")    return l.email_draft    || "(not generated — run research-daily.js)";
       return l[c] == null ? "" : String(l[c]);
     }),
   ]);
@@ -159,58 +194,99 @@ export async function syncTop10Daily() {
     requestBody: { values },
   });
 
-  // Styling: email draft is now column index 2 (right next to business name)
+  // ── Formatting ─────────────────────────────────────────────────────────────
   const sheetId = meta.data.sheets.find((s) => s.properties.title === TOP10_TAB)?.properties.sheetId;
   if (sheetId != null) {
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SHEET_ID,
       requestBody: {
         requests: [
-          // Bold + large title row
+          // Bold title row
           {
             repeatCell: {
-              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 13 },
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount },
               cell: { userEnteredFormat: { textFormat: { bold: true, fontSize: 13 } } },
               fields: "userEnteredFormat.textFormat",
             },
           },
-          // Bold header row (row 4, index 3)
+          // Header row style
           {
             repeatCell: {
-              range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: 13 },
+              range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: colCount },
               cell: { userEnteredFormat: { textFormat: { bold: true }, backgroundColor: { red: 0.035, green: 0.039, blue: 0.047 } } },
               fields: "userEnteredFormat(textFormat,backgroundColor)",
             },
           },
-          // Business name column wide (col 1)
+          // Business name column width
           {
             updateDimensionProperties: {
               range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 },
-              properties: { pixelSize: 220 },
+              properties: { pixelSize: 200 },
               fields: "pixelSize",
             },
           },
-          // Email draft column very wide (col 2 — right next to business)
+          // Subject line column width
           {
             updateDimensionProperties: {
               range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 },
-              properties: { pixelSize: 560 },
+              properties: { pixelSize: 280 },
               fields: "pixelSize",
             },
           },
-          // Wrap text in email draft column (rows 5-14, col 2)
+          // Email body column — wide
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 3, endIndex: 4 },
+              properties: { pixelSize: 520 },
+              fields: "pixelSize",
+            },
+          },
+          // Sent? column — narrow
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 4, endIndex: 5 },
+              properties: { pixelSize: 120 },
+              fields: "pixelSize",
+            },
+          },
+          // Wrap text in subject + body columns (data rows)
           {
             repeatCell: {
-              range: { sheetId, startRowIndex: 4, endRowIndex: 14, startColumnIndex: 2, endColumnIndex: 3 },
+              range: { sheetId, startRowIndex: 4, endRowIndex: 14, startColumnIndex: 2, endColumnIndex: 4 },
               cell: { userEnteredFormat: { wrapStrategy: "WRAP", verticalAlignment: "TOP" } },
               fields: "userEnteredFormat(wrapStrategy,verticalAlignment)",
             },
           },
-          // Light blue fill on email draft column header to make it pop
+          // Blue highlight on subject column header
           {
             repeatCell: {
               range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 2, endColumnIndex: 3 },
-              cell: { userEnteredFormat: { backgroundColor: { red: 0.086, green: 0.247, blue: 0.624 }, textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } } } },
+              cell: { userEnteredFormat: {
+                backgroundColor: { red: 0.086, green: 0.247, blue: 0.624 },
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+              }},
+              fields: "userEnteredFormat(backgroundColor,textFormat)",
+            },
+          },
+          // Blue highlight on email body column header
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 3, endColumnIndex: 4 },
+              cell: { userEnteredFormat: {
+                backgroundColor: { red: 0.086, green: 0.247, blue: 0.624 },
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+              }},
+              fields: "userEnteredFormat(backgroundColor,textFormat)",
+            },
+          },
+          // Green highlight on Sent? column header
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 4, endColumnIndex: 5 },
+              cell: { userEnteredFormat: {
+                backgroundColor: { red: 0.18, green: 0.49, blue: 0.20 },
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+              }},
               fields: "userEnteredFormat(backgroundColor,textFormat)",
             },
           },
@@ -223,12 +299,270 @@ export async function syncTop10Daily() {
   return top10.length;
 }
 
-// Run directly
+// ── Tab 3: Follow-up Queue ────────────────────────────────────────────────────
+
+function d3Template(lead) {
+  const first = lead.owner_name ? lead.owner_name.split(" ")[0] : "there";
+  return [
+    `Hi ${first},`,
+    "",
+    `Wanted to make sure my last note didn't get buried — I know things move fast.`,
+    "",
+    `Quick recap: we help ${lead.niche || "businesses"} like yours make sure every call, DM, and enquiry gets a professional response — automatically, 24/7. Most owners we talk to are losing 2–4 leads a week just to slow or missed replies.`,
+    "",
+    `Worth 20 minutes to see if it fits? Book here: https://cornersystems.vercel.app/contact`,
+    "",
+    `Thomas\nCorner Systems AI`,
+  ].join("\n");
+}
+
+function d7Template(lead) {
+  const first = lead.owner_name ? lead.owner_name.split(" ")[0] : "there";
+  return [
+    `Hi ${first},`,
+    "",
+    `Last one from me — I'll leave it here.`,
+    "",
+    `If you ever want to look at tightening up your front-office response times, I'm easy to reach. No pitch, just a quick conversation.`,
+    "",
+    `https://cornersystems.vercel.app/contact`,
+    "",
+    `Thomas\nCorner Systems AI`,
+  ].join("\n");
+}
+
+export async function syncFollowUpQueue() {
+  const sheets = await getSheets();
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const existingTabs = meta.data.sheets.map((s) => s.properties.title);
+  await ensureTab(sheets, FOLLOWUP_TAB, existingTabs);
+
+  const d3Leads = getD3FollowUps();
+  const d7Leads = getD7FollowUps();
+
+  const today = new Date().toLocaleDateString("en-CA", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
+
+  const colCount = FOLLOWUP_HEADERS.length;
+  const pad = (n) => Array(colCount - 1).fill("");
+
+  const rows = [
+    [`📬 Follow-up Queue — ${today}`, ...pad()],
+    [`These leads already heard from you. Time to follow up. Short, warm, no pressure. Type YES in Sent? when done.`, ...pad()],
+    Array(colCount).fill(""),
+
+    // ── D3 section ──────────────────────────────────────────────────────────
+    [`⏰ DAY 3 FOLLOW-UPS — ${d3Leads.length} lead(s)`, ...pad()],
+    FOLLOWUP_HEADERS,
+    ...(d3Leads.length
+      ? d3Leads.map((l) => [
+          l.business_name,
+          l.email || "",
+          `Re: your front office — quick follow-up`,
+          d3Template(l),
+          "",   // Sent? — Tom fills this in
+          l.niche || "",
+          String(l.lead_score || ""),
+        ])
+      : [["— No D3 follow-ups today —", ...pad()]]
+    ),
+
+    Array(colCount).fill(""),
+
+    // ── D7 section ──────────────────────────────────────────────────────────
+    [`🏁 DAY 7 FINAL TOUCH — ${d7Leads.length} lead(s)`, ...pad()],
+    FOLLOWUP_HEADERS,
+    ...(d7Leads.length
+      ? d7Leads.map((l) => [
+          l.business_name,
+          l.email || "",
+          `Last note — ${l.business_name}`,
+          d7Template(l),
+          "",   // Sent? — Tom fills this in
+          l.niche || "",
+          String(l.lead_score || ""),
+        ])
+      : [["— No D7 follow-ups today —", ...pad()]]
+    ),
+  ];
+
+  await sheets.spreadsheets.values.clear({ spreadsheetId: SHEET_ID, range: `${FOLLOWUP_TAB}!A:Z` });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${FOLLOWUP_TAB}!A1`,
+    valueInputOption: "RAW",
+    requestBody: { values: rows },
+  });
+
+  // ── Formatting for follow-up tab ──────────────────────────────────────────
+  const sheetId = meta.data.sheets.find((s) => s.properties.title === FOLLOWUP_TAB)?.properties.sheetId;
+  if (sheetId != null) {
+    // D3 header row is at index 4; D7 header row is at 4 + d3Leads.length + 1 + 3
+    const d3DataStart  = 5;
+    const d3DataEnd    = d3DataStart + Math.max(d3Leads.length, 1);
+    const d7HeaderRow  = d3DataEnd + 3; // blank + section label + headers
+    const d7DataStart  = d7HeaderRow + 1;
+    const d7DataEnd    = d7DataStart + Math.max(d7Leads.length, 1);
+
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: {
+        requests: [
+          // Title row bold
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount },
+              cell: { userEnteredFormat: { textFormat: { bold: true, fontSize: 13 } } },
+              fields: "userEnteredFormat.textFormat",
+            },
+          },
+          // Message body column wide
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 3, endIndex: 4 },
+              properties: { pixelSize: 500 },
+              fields: "pixelSize",
+            },
+          },
+          // Subject column
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 },
+              properties: { pixelSize: 280 },
+              fields: "pixelSize",
+            },
+          },
+          // Business name column
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
+              properties: { pixelSize: 210 },
+              fields: "pixelSize",
+            },
+          },
+          // Sent? column narrow
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 4, endIndex: 5 },
+              properties: { pixelSize: 120 },
+              fields: "pixelSize",
+            },
+          },
+          // Wrap text in message body + subject for D3 data
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: d3DataStart, endRowIndex: d3DataEnd, startColumnIndex: 2, endColumnIndex: 4 },
+              cell: { userEnteredFormat: { wrapStrategy: "WRAP", verticalAlignment: "TOP" } },
+              fields: "userEnteredFormat(wrapStrategy,verticalAlignment)",
+            },
+          },
+          // Wrap text for D7 data
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: d7DataStart, endRowIndex: d7DataEnd, startColumnIndex: 2, endColumnIndex: 4 },
+              cell: { userEnteredFormat: { wrapStrategy: "WRAP", verticalAlignment: "TOP" } },
+              fields: "userEnteredFormat(wrapStrategy,verticalAlignment)",
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  console.log(`✅ Synced follow-up queue → "${FOLLOWUP_TAB}" tab (${d3Leads.length} D3, ${d7Leads.length} D7)`);
+  return { d3: d3Leads.length, d7: d7Leads.length };
+}
+
+// ── Read-back: detect what Tom marked as sent overnight ───────────────────────
+
+/**
+ * Reads the "Top 10 Today" tab and returns business names Tom marked as sent.
+ * These get advanced to 'emailed_d0' stage in the DB before the next sync.
+ */
+export async function readBackTop10SentMarks() {
+  const sheets = await getSheets();
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${TOP10_TAB}!A1:Z20`,
+    });
+    const rows = response.data.values || [];
+
+    // Find the header row by looking for our "Business" header
+    const headerIdx = rows.findIndex((r) => r[TOP10_BIZ_COL] === "Business");
+    if (headerIdx === -1) return [];
+
+    const sent = [];
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const row      = rows[i] || [];
+      const sentVal  = (row[TOP10_SENT_COL] || "").toLowerCase().trim();
+      const bizName  = (row[TOP10_BIZ_COL]  || "").trim();
+      if (bizName && sentVal && sentVal !== "") {
+        sent.push({ business_name: bizName, stage: "emailed_d0" });
+      }
+    }
+    if (sent.length) {
+      console.log(`   📬 Found ${sent.length} sent mark(s) in "${TOP10_TAB}" — advancing stages...`);
+    }
+    return sent;
+  } catch (e) {
+    console.log(`   ⚠️  Could not read Top 10 sent marks: ${e.message}`);
+    return [];
+  }
+}
+
+/**
+ * Reads the "📬 Follow-ups" tab and returns business names Tom marked as sent,
+ * along with the correct stage (d3 or d7) based on which section they're in.
+ */
+export async function readBackFollowUpSentMarks() {
+  const sheets = await getSheets();
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${FOLLOWUP_TAB}!A1:Z60`,
+    });
+    const rows = response.data.values || [];
+
+    const sent = [];
+    let currentStage = null;
+
+    for (const row of rows) {
+      const cell0 = (row[0] || "").trim();
+
+      // Detect which section we're in
+      if (cell0.includes("DAY 3 FOLLOW-UPS"))  { currentStage = "emailed_d3"; continue; }
+      if (cell0.includes("DAY 7 FINAL TOUCH")) { currentStage = "emailed_d7"; continue; }
+      if (cell0 === "Business")                 { continue; } // skip header rows
+
+      if (!currentStage) continue;
+
+      const bizName = (row[FU_BIZ_COL]  || "").trim();
+      const sentVal = (row[FU_SENT_COL] || "").toLowerCase().trim();
+
+      if (bizName && sentVal && sentVal !== "") {
+        sent.push({ business_name: bizName, stage: currentStage });
+      }
+    }
+
+    if (sent.length) {
+      console.log(`   📬 Found ${sent.length} follow-up sent mark(s) in "${FOLLOWUP_TAB}" — advancing stages...`);
+    }
+    return sent;
+  } catch (e) {
+    console.log(`   ⚠️  Could not read Follow-up sent marks: ${e.message}`);
+    return [];
+  }
+}
+
+// ── Run directly ──────────────────────────────────────────────────────────────
 const isDirect = process.argv[1]?.endsWith("sync-to-sheets.js");
 if (isDirect) {
   (async () => {
     await syncToSheets();
     await syncTop10Daily();
+    await syncFollowUpQueue();
   })().catch((err) => {
     console.error("Sheets sync error:", err.message);
     if (err.message.toLowerCase().includes("permission")) {

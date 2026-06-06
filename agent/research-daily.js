@@ -4,8 +4,9 @@
  *
  * Runs automatically each day. Finds new leads in the current geographic
  * phase, deep-dives to find real contact emails, detects whether the
- * business already has a website / AI chatbot / voice agent, and
- * generates a personalized cold outreach email draft stored in the CRM.
+ * business already has a website / AI chatbot / voice agent, generates
+ * a personalized cold outreach email + subject line, and rescores each
+ * lead after research is complete.
  *
  * Powered by Claude Code CLI (claude -p) — uses your existing Claude
  * subscription. No separate Anthropic API key needed.
@@ -18,7 +19,7 @@ import "dotenv/config";
 import { spawnSync } from "child_process";
 import fs from "fs";
 import os from "os";
-import { upsertLead, updateResearchData, getUnresearchedLeads } from "./db.js";
+import { upsertLead, updateResearchData, updateLeadScore, getUnresearchedLeads } from "./db.js";
 
 // ── Geographic expansion schedule ─────────────────────────────────────────────
 const START_DATE = new Date("2026-06-06T00:00:00-05:00");
@@ -66,6 +67,47 @@ const NICHE_ROTATION = {
   6: ["boutique fitness studio", "CrossFit gym", "wellness studio"],
 };
 
+// ── Niche priority scoring ────────────────────────────────────────────────────
+// Higher-value niches (more MRR potential) get a score boost after research.
+const NICHE_PRIORITY_BOOST = [
+  { keywords: ["med spa", "medspa", "cosmetic clinic", "laser clinic", "cosmetic dentistry", "aesthetic clinic"], boost: 3 },
+  { keywords: ["dental practice", "dentist", "skin clinic"],                                                       boost: 2 },
+  { keywords: ["chiropractic", "physiotherapy", "sports medicine", "osteopathy", "rehab clinic"],                  boost: 1 },
+];
+
+function nichePriorityBoost(niche) {
+  if (!niche) return 0;
+  const lower = niche.toLowerCase();
+  for (const { keywords, boost } of NICHE_PRIORITY_BOOST) {
+    if (keywords.some((k) => lower.includes(k))) return boost;
+  }
+  return 0;
+}
+
+/**
+ * Recalculate lead score after deep research completes.
+ * Takes the original discovery score and adjusts based on real findings.
+ */
+function rescoreAfterResearch(originalScore, niche, research) {
+  let score = originalScore || 5;
+
+  // Email found = real outreach opportunity
+  if (research.email) score += 2;
+  else score -= 1;
+
+  // Already has AI tools = harder sell, lower priority
+  if (research.has_chatbot) score -= 3;
+  if (research.has_voice_agent) score -= 4;
+
+  // No website = more opportunity (they're behind the curve)
+  if (!research.has_website) score += 1;
+
+  // Niche value boost
+  score += nichePriorityBoost(niche);
+
+  return Math.max(1, Math.min(10, Math.round(score)));
+}
+
 // ── Phase selection ───────────────────────────────────────────────────────────
 function getCurrentPhase() {
   const daysElapsed = Math.floor((Date.now() - START_DATE.getTime()) / 86_400_000);
@@ -87,14 +129,11 @@ function getDailyTargets() {
 }
 
 // ── Claude CLI helper ─────────────────────────────────────────────────────────
-// Uses the claude CLI — your Claude Code subscription, zero API cost.
-// Writes prompt to C:\Temp to avoid shell quoting issues with long JSON prompts.
 const CLAUDE_CMD = "C:\\Users\\thoma\\AppData\\Roaming\\npm\\claude.cmd";
 const TMP_DIR    = "C:\\Temp";
 const TMP_PROMPT = `${TMP_DIR}\\cs-prompt.txt`;
 
 function askClaude(prompt) {
-  // Ensure temp dir exists
   fs.mkdirSync(TMP_DIR, { recursive: true });
   fs.writeFileSync(TMP_PROMPT, prompt, "utf8");
 
@@ -103,18 +142,16 @@ function askClaude(prompt) {
     ["/c", `${CLAUDE_CMD} --output-format text --dangerously-skip-permissions < ${TMP_PROMPT}`],
     {
       encoding: "utf8",
-      timeout: 300_000,    // 5 min — web search calls can take a while
+      timeout: 300_000,
       maxBuffer: 10 * 1024 * 1024,
-      cwd: os.homedir(),      // neutral dir — not project, so claude acts as general assistant
+      cwd: os.homedir(),
       windowsHide: true,
     }
   );
 
   try { fs.unlinkSync(TMP_PROMPT); } catch {}
 
-  if (result.error) {
-    throw new Error(`Claude CLI error: ${result.error.message}`);
-  }
+  if (result.error) throw new Error(`Claude CLI error: ${result.error.message}`);
 
   const stderr = (result.stderr || "").trim();
   if (result.status !== 0) {
@@ -128,7 +165,6 @@ function askClaude(prompt) {
 }
 
 function parseJson(text) {
-  // Strip markdown code fences if claude wrapped the response
   const stripped = text.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "");
   try {
     const match = stripped.match(/\{[\s\S]*\}/);
@@ -218,24 +254,54 @@ Return ONLY:
   };
 }
 
-// ── Step 3: Generate personalized email draft ─────────────────────────────────
+// ── Step 3: Generate subject line + personalized email draft ──────────────────
 async function draftEmail(lead) {
-  const prompt = `Write a short cold outreach email from Thomas at Corner Systems to ${lead.owner_name || "the owner"} of ${lead.business_name}, a ${lead.niche} in ${lead.city}.
+  const ownerFirst = lead.owner_name ? lead.owner_name.split(" ")[0] : null;
+  const greeting   = ownerFirst ? `Hi ${ownerFirst},` : "Hi there,";
+  const hasChatbot = lead.has_chatbot ? "yes" : "no";
+  const hasVoice   = lead.has_voice_agent ? "yes" : "no";
+  const angle      = (lead.has_chatbot || lead.has_voice_agent)
+    ? "they already have some AI tools — angle on upgrading or filling the gaps they still have"
+    : "they have no AI front-office tools — angle on what they're currently losing";
 
-Pain signal: "${lead.pain_signal}"
-Has website: ${lead.has_website ? "yes" : "no"}
-Has chatbot already: ${lead.has_chatbot ? "yes" : "no"}
-Has voice agent already: ${lead.has_voice_agent ? "yes" : "no"}
+  const prompt = `Write a cold outreach email from Thomas at Corner Systems to ${lead.owner_name || "the owner"} of ${lead.business_name}, a ${lead.niche} in ${lead.city}.
 
-Rules:
-- 4-6 sentences MAX. No fluff. Peer-to-peer tone.
-- Lead with a specific observation about their front-office gap.
-- If they already have a chatbot/voice agent, angle is "upgrade/improve" not "you're missing this".
-- One clear CTA: book a 20-min discovery call — https://cornersystems.vercel.app/#contact
-- Sign off as Thomas.
-- Body only. No subject line.`;
+Context:
+- Pain signal: "${lead.pain_signal}"
+- Has website: ${lead.has_website ? "yes" : "no"}
+- Has chatbot already: ${hasChatbot}
+- Has voice agent already: ${hasVoice}
+- Angle: ${angle}
 
-  return askClaude(prompt);
+Corner Systems builds AI front-office systems: AI chat, missed-call recovery, DM automation, lead capture, CRM handoff. Pricing starts at $149/month.
+
+Rules for the EMAIL BODY:
+- Start with: ${greeting}
+- 4-6 sentences MAX. No fluff. Peer-to-peer tone. No buzzwords.
+- Lead with a specific observation about their front-office gap based on the pain signal.
+- One clear CTA: book a 20-minute discovery call at https://cornersystems.vercel.app/contact
+- Sign off: "Thomas\nCorner Systems AI"
+- Body only. No subject line in the body.
+
+Rules for the SUBJECT LINE:
+- 6-9 words, lowercase, sounds like a human sent it, not a marketing email
+- Reference their specific business type or gap, not generic
+- Good examples: "quick question about your front desk", "missing leads after 9pm?", "your instagram DMs after hours"
+- Bad examples: "Revolutionize Your Business With AI", "Partnership Opportunity"
+
+Return ONLY valid JSON with no extra text:
+{
+  "subject": "...",
+  "body": "..."
+}`;
+
+  const raw    = askClaude(prompt);
+  const parsed = parseJson(raw);
+
+  return {
+    subject: parsed?.subject || `quick question — ${lead.business_name}`,
+    body:    parsed?.body    || raw,
+  };
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -271,21 +337,36 @@ export async function researchNewLeads() {
 
   // Deep research leads that still need email/AI check
   const needsResearch = getUnresearchedLeads(15);
-  console.log(`\n🔬 Deep-researching ${needsResearch.length} leads for emails & AI presence...`);
+  console.log(`\n🔬 Deep-researching ${needsResearch.length} leads for emails, AI presence & drafts...`);
 
   let emailsFound = 0;
   for (const lead of needsResearch) {
     try {
       process.stdout.write(`   ${lead.business_name}... `);
-      const research = await deepResearch(lead);
-      const draft = await draftEmail({ ...lead, ...research });
 
-      updateResearchData(lead.id, { ...research, email_draft: draft });
+      // Step 2: deep research
+      const research = await deepResearch(lead);
+
+      // Step 3: draft email (subject + body)
+      const { subject, body } = await draftEmail({ ...lead, ...research });
+
+      // Rescore based on real findings
+      const newScore = rescoreAfterResearch(lead.lead_score, lead.niche, research);
+
+      // Persist everything
+      updateResearchData(lead.id, {
+        ...research,
+        email_draft:   body,
+        email_subject: subject,
+      });
+      updateLeadScore(lead.id, newScore);
 
       if (research.email) emailsFound++;
-      console.log(research.email ? `✅ ${research.email}` : "⚠️  no email found");
 
-      // Small pause between calls
+      const scoreStr = `score ${lead.lead_score || "?"} → ${newScore}`;
+      console.log(research.email ? `✅ ${research.email} (${scoreStr})` : `⚠️  no email (${scoreStr})`);
+
+      // Small pause between Claude calls
       await new Promise((r) => setTimeout(r, 2000));
     } catch (e) {
       console.log(`❌ ${e.message.split("\n")[0]}`);
