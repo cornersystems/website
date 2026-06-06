@@ -620,24 +620,13 @@ function App() {
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Corner Systems home">
-          <span className="brand-mark">
-            <svg className="cs-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="100" height="100" rx="12" fill="#09090b"/>
-              {/* C — bold geometric, opens right, chamfered outer corners */}
-              <polygon points="4,14 14,4 58,4 68,14 68,38 30,38 30,62 68,62 68,86 58,96 14,96 4,86" fill="white"/>
-              {/* S top half — opens left */}
-              <polygon points="60,4 88,4 96,12 96,52 60,52 60,40 84,40 84,16 60,16" fill="white"/>
-              {/* S bottom half — opens right */}
-              <polygon points="60,48 96,48 96,60 74,60 74,84 96,84 96,88 86,96 60,96" fill="white"/>
-              {/* Blue diagonal slit — parallelogram across full CS mark */}
-              <polygon points="4,80 20,98 96,20 80,2" fill="#2563eb"/>
-            </svg>
-          </span>
-          <span className="brand-wordmark">
-            <strong>CORNER</strong>
-            <em>SYSTEMS</em>
-            <small>— AI —</small>
-          </span>
+          <img
+            className="cs-logo-img"
+            src="/assets/cs-logo-dark.png"
+            alt="Corner Systems AI"
+            width="120"
+            height="58"
+          />
         </a>
 
         <nav className="desktop-nav" aria-label="Primary navigation">
@@ -1155,20 +1144,13 @@ function App() {
 
       <footer className="site-footer">
         <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
-          <span className="brand-mark">
-            <svg className="cs-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="100" height="100" rx="12" fill="#09090b"/>
-              <polygon points="4,14 14,4 58,4 68,14 68,38 30,38 30,62 68,62 68,86 58,96 14,96 4,86" fill="white"/>
-              <polygon points="60,4 88,4 96,12 96,52 60,52 60,40 84,40 84,16 60,16" fill="white"/>
-              <polygon points="60,48 96,48 96,60 74,60 74,84 96,84 96,88 86,96 60,96" fill="white"/>
-              <polygon points="4,80 20,98 96,20 80,2" fill="#2563eb"/>
-            </svg>
-          </span>
-          <span className="brand-wordmark">
-            <strong>CORNER</strong>
-            <em>SYSTEMS</em>
-            <small>— AI —</small>
-          </span>
+          <img
+            className="cs-logo-img"
+            src="/assets/cs-logo-dark.png"
+            alt="Corner Systems AI"
+            width="120"
+            height="58"
+          />
         </a>
         <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
       </footer>
