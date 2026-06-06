@@ -12,3 +12,7 @@ pnpm-debug.log*
 .vercel
 agent/pipeline.db
 agent/raw-output.txt
+
+agent/google-key.json
+agent/leads-for-sheets.tsv
+agent/leads-export-*.csv

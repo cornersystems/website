@@ -6,12 +6,15 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock3,
+  Dumbbell,
+  HeartPulse,
   Mail,
   Menu,
   MessageSquareText,
   PhoneCall,
   Quote,
   ShieldCheck,
+  Sparkles,
   Star,
   Target,
   X,
@@ -53,18 +56,25 @@ const services = [
   },
 ];
 
-const markets = [
-  "MMA gyms",
-  "Muay Thai gyms",
-  "BJJ academies",
-  "Boxing gyms",
-  "Strength and conditioning gyms",
-  "Personal trainers",
-  "Fitness studios",
-  "Recovery clinics",
-  "Physio, chiro, and sports medicine",
-  "Supplement brands",
-  "Fightwear brands",
+const marketGroups = [
+  {
+    icon: Dumbbell,
+    title: "Fitness & Combat",
+    text: "Gyms and studios that live on trials, memberships, and fast response.",
+    items: ["MMA & Muay Thai gyms", "BJJ academies", "Boxing gyms", "Strength & conditioning", "Personal training studios", "Fitness studios"],
+  },
+  {
+    icon: HeartPulse,
+    title: "Clinics & Recovery",
+    text: "Practices where a missed new-patient inquiry is real revenue walking away.",
+    items: ["Chiropractic clinics", "Physiotherapy", "Sports medicine", "Recovery & rehab clinics", "Massage & wellness", "Osteopathy"],
+  },
+  {
+    icon: Sparkles,
+    title: "Aesthetics & Dental",
+    text: "High-ticket bookings where every lead is worth protecting around the clock.",
+    items: ["Med spas", "Cosmetic & laser clinics", "Cosmetic dentistry", "Dental practices", "Skin & injectables", "Aesthetic medicine"],
+  },
 ];
 
 const channels = [
@@ -152,55 +162,84 @@ const deliverables = [
   "Reporting view",
 ];
 
-const pricingPlans = [
-  {
-    id: "starter",
-    name: "Starter",
-    monthly: "$149",
-    setup: "$497",
-    note: "For basic lead capture and fast website response.",
-    badge: "Essentials",
-    accent: "blue",
-    cta: "Start with Starter",
-    highlights: ["AI chatbot", "Lead capture", "FAQ answers", "100 chats included"],
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    monthly: "$299",
-    setup: "$997",
-    note: "For operators who want qualification, CRM handoff, and stronger follow-up.",
-    badge: "Best value",
-    accent: "teal",
-    cta: "Choose Growth",
-    highlights: ["Lead qualification", "CRM integration", "250 chats included", "Lower chat overages"],
-  },
-  {
-    id: "receptionist",
-    name: "AI Receptionist",
-    monthly: "$499",
-    setup: "$1,497",
-    note: "For businesses that need voice coverage, missed-call recovery, and chat coverage.",
-    badge: "Most coverage",
-    accent: "amber",
-    cta: "Book AI Receptionist",
-    highlights: ["AI voice agent", "Missed-call recovery", "200 voice minutes", "Full front-office stack"],
-  },
+const pricingAudiences = [
+  { id: "fitness", label: "Fitness & Studios" },
+  { id: "clinical", label: "Clinics & Aesthetics" },
 ];
 
-const pricingRows = [
-  { label: "Monthly price", values: ["$149", "$299", "$499"], strong: true },
-  { label: "Setup fee", values: ["$497", "$997", "$1,497"], strong: true },
-  { label: "AI chatbot", values: [true, true, true] },
-  { label: "Lead capture", values: [true, true, true] },
-  { label: "FAQ answers", values: [true, true, true] },
-  { label: "Lead qualification", values: [false, true, true] },
-  { label: "CRM integration", values: [false, true, true] },
-  { label: "AI voice agent", values: [false, false, true] },
-  { label: "Missed-call recovery", values: [false, false, true] },
-  { label: "Included usage", values: ["100 chats", "250 chats", "250 chats + 200 voice min"] },
-  { label: "Overages", values: ["$0.50/chat", "$0.40/chat", "$0.40/chat + $0.20/min"] },
-];
+const pricingByAudience = {
+  fitness: {
+    plans: [
+      {
+        id: "starter", name: "Starter", monthly: "$149", setup: "$497",
+        note: "For basic lead capture and fast website response.",
+        badge: "Essentials", accent: "blue", cta: "Start with Starter",
+        highlights: ["AI chatbot", "Lead capture", "FAQ answers", "100 chats included"],
+      },
+      {
+        id: "growth", name: "Growth", monthly: "$299", setup: "$997",
+        note: "For operators who want qualification, CRM handoff, and stronger follow-up.",
+        badge: "Best value", accent: "teal", cta: "Choose Growth",
+        highlights: ["Lead qualification", "CRM integration", "250 chats included", "Lower chat overages"],
+      },
+      {
+        id: "receptionist", name: "AI Receptionist", monthly: "$499", setup: "$1,497",
+        note: "Full voice coverage, missed-call recovery, and chat in one stack.",
+        badge: "Most coverage", accent: "amber", cta: "Book AI Receptionist",
+        highlights: ["AI voice agent", "Missed-call recovery", "200 voice minutes", "Full front-office stack"],
+      },
+    ],
+    rows: [
+      { label: "Monthly price", values: ["$149", "$299", "$499"], strong: true },
+      { label: "Setup fee", values: ["$497", "$997", "$1,497"], strong: true },
+      { label: "AI chatbot", values: [true, true, true] },
+      { label: "Lead capture", values: [true, true, true] },
+      { label: "FAQ answers", values: [true, true, true] },
+      { label: "Lead qualification", values: [false, true, true] },
+      { label: "CRM integration", values: [false, true, true] },
+      { label: "AI voice agent", values: [false, false, true] },
+      { label: "Missed-call recovery", values: [false, false, true] },
+      { label: "Included usage", values: ["100 chats", "250 chats", "250 chats + 200 voice min"] },
+      { label: "Overages", values: ["$0.50/chat", "$0.40/chat", "$0.40/chat + $0.20/min"] },
+    ],
+  },
+  clinical: {
+    plans: [
+      {
+        id: "intake", name: "Intake", monthly: "$299", setup: "$997",
+        note: "For practices that need every new-patient inquiry captured and qualified.",
+        badge: "Foundation", accent: "blue", cta: "Start with Intake",
+        highlights: ["AI chatbot + web intake", "New-patient lead capture", "FAQ & insurance answers", "250 chats included"],
+      },
+      {
+        id: "practice", name: "Practice", monthly: "$549", setup: "$1,997",
+        note: "For clinics that want booking, CRM/EMR handoff, and recall follow-up.",
+        badge: "Best value", accent: "teal", cta: "Choose Practice",
+        highlights: ["Patient qualification", "CRM / EMR integration", "Booking + reminders", "Recall & reactivation"],
+      },
+      {
+        id: "concierge", name: "AI Concierge", monthly: "$899", setup: "$2,997",
+        note: "For high-ticket clinics and med spas that can't afford a missed call.",
+        badge: "Premium", accent: "amber", cta: "Book AI Concierge",
+        highlights: ["AI voice agent", "Missed-call recovery", "500 voice minutes", "Full concierge front office"],
+      },
+    ],
+    rows: [
+      { label: "Monthly price", values: ["$299", "$549", "$899"], strong: true },
+      { label: "Setup fee", values: ["$997", "$1,997", "$2,997"], strong: true },
+      { label: "AI chatbot + web intake", values: [true, true, true] },
+      { label: "New-patient lead capture", values: [true, true, true] },
+      { label: "FAQ & insurance answers", values: [true, true, true] },
+      { label: "Patient qualification", values: [false, true, true] },
+      { label: "CRM / EMR integration", values: [false, true, true] },
+      { label: "Booking + reminders", values: [false, true, true] },
+      { label: "AI voice agent", values: [false, false, true] },
+      { label: "Missed-call recovery", values: [false, false, true] },
+      { label: "Included usage", values: ["250 chats", "400 chats", "400 chats + 500 voice min"] },
+      { label: "Overages", values: ["$0.40/chat", "$0.35/chat", "$0.35/chat + $0.20/min"] },
+    ],
+  },
+};
 
 // Replace these with real client quotes before launch
 const testimonials = [
@@ -358,8 +397,12 @@ function RevealSection({ children, className = "", delay = 0 }) {
 function App() {
   const { rows: consoleRows, flash: consoleFlash } = useLiveConsole();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pricingAudience, setPricingAudience] = useState("fitness");
   const [formData, setFormData] = useState(initialForm);
   const [formStatus, setFormStatus] = useState("idle"); // idle | sending | sent | error
+
+  const pricingPlans = pricingByAudience[pricingAudience].plans;
+  const pricingRows = pricingByAudience[pricingAudience].rows;
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -443,13 +486,13 @@ function App() {
 
           <div className="hero-content">
             <div className="hero-copy">
-              <p className="eyebrow">Professional front-office coverage</p>
+              <p className="eyebrow">Premium front-office infrastructure</p>
               <h1 id="hero-title">
                 <span>Corner</span>
                 <span>Systems</span>
               </h1>
               <p className="hero-lede">
-                We make sure every call, text, email, message, and DM is handled with the same professional standard every day.
+                For service businesses where every inquiry is worth real money. We make sure every call, text, email, message, and DM is captured, qualified, and booked — with the same professional standard, every day.
               </p>
               <div className="hero-proofline" aria-label="Coverage channels">
                 <span>Calls</span>
@@ -530,17 +573,33 @@ function App() {
           </RevealSection>
         </section>
 
-        <section className="section market-section">
-          <div className="compact-heading">
-            <p className="eyebrow">Built for lead-driven operators</p>
-            <h2>Especially useful when every new inquiry matters.</h2>
+        <section className="section verticals-section" aria-label="Industries served">
+          <div className="section-heading">
+            <p className="eyebrow">Built for high-value service businesses</p>
+            <h2>One standard of coverage. Every industry that lives on inquiries.</h2>
+            <p className="section-copy">
+              If your business depends on people reaching out — and a missed one costs you real money — Corner Systems keeps the front door covered.
+            </p>
           </div>
-          <div className="market-grid" aria-label="Businesses served">
-            {markets.map((market) => (
-              <div className="market-pill" key={market}>
-                <CheckCircle2 aria-hidden="true" size={18} />
-                <span>{market}</span>
-              </div>
+          <div className="vertical-grid">
+            {marketGroups.map(({ icon: Icon, title, text, items }, i) => (
+              <RevealSection delay={i * 110} key={title}>
+                <article className="vertical-card">
+                  <span className="vertical-icon">
+                    <Icon aria-hidden="true" size={24} />
+                  </span>
+                  <h3>{title}</h3>
+                  <p className="vertical-blurb">{text}</p>
+                  <ul className="vertical-list">
+                    {items.map((item) => (
+                      <li key={item}>
+                        <CheckCircle2 aria-hidden="true" size={16} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              </RevealSection>
             ))}
           </div>
         </section>
@@ -632,6 +691,32 @@ function App() {
           </div>
         </section>
 
+        <section className="section reel-section" aria-label="See it in action">
+          <RevealSection>
+            <div className="reel-heading">
+              <p className="eyebrow">See it in action</p>
+              <h2>What a covered front office looks like.</h2>
+              <p className="section-copy">
+                Every inquiry — call, DM, form, or message — captured, qualified, and booked the moment it lands.
+              </p>
+            </div>
+          </RevealSection>
+          <RevealSection delay={120}>
+            <div className="reel-frame">
+              <video
+                className="reel-video"
+                src="/assets/cs-reel.mp4"
+                poster="/assets/cs-hero-wide.png"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+              <div className="reel-glow" aria-hidden="true" />
+            </div>
+          </RevealSection>
+        </section>
+
         <section id="pricing" className="section pricing-section" aria-labelledby="pricing-title">
           <div className="pricing-heading">
             <div>
@@ -645,6 +730,21 @@ function App() {
               <strong>We&apos;re in your corner.</strong>
               <span>AI receptionists, AI chatbots, and lead capture systems built around your workflow.</span>
             </div>
+          </div>
+
+          <div className="pricing-toggle" role="tablist" aria-label="Choose your industry">
+            {pricingAudiences.map((aud) => (
+              <button
+                key={aud.id}
+                type="button"
+                role="tab"
+                aria-selected={pricingAudience === aud.id}
+                className={`pricing-toggle-btn ${pricingAudience === aud.id ? "active" : ""}`}
+                onClick={() => setPricingAudience(aud.id)}
+              >
+                {aud.label}
+              </button>
+            ))}
           </div>
 
           <div className="pricing-card-grid" aria-label="Pricing plans">

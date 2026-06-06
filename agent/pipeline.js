@@ -108,6 +108,16 @@ async function run() {
   console.log(`║  Active clients:   ${String(stats.activeClients).padEnd(30)}║`);
   console.log(`║  MRR:              $${String(stats.mrr.toFixed(2)).padEnd(29)}║`);
   console.log("╚══════════════════════════════════════════════════╝\n");
+
+  // ── Auto-sync to Google Sheet (if configured) ──────────────────────────────
+  if (process.env.GOOGLE_SHEET_ID) {
+    try {
+      const { syncToSheets } = await import("./sync-to-sheets.js").catch(() => ({}));
+      if (syncToSheets) await syncToSheets();
+    } catch (e) {
+      console.log(`   (Sheet sync skipped: ${e.message})`);
+    }
+  }
 }
 
 run().catch((err) => {
