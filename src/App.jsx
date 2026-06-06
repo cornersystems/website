@@ -713,6 +713,17 @@ function App() {
                 playsInline
               />
               <div className="reel-glow" aria-hidden="true" />
+              <div className="reel-overlay" aria-hidden="true">
+                <div className="reel-chip">
+                  <PhoneCall size={15} /> Inbound call <strong>Handled</strong>
+                </div>
+                <div className="reel-chip">
+                  <MessageSquareText size={15} /> New DM <strong>Qualified</strong>
+                </div>
+                <div className="reel-chip">
+                  <Calendar size={15} /> Booking <strong>Confirmed</strong>
+                </div>
+              </div>
             </div>
           </RevealSection>
         </section>
