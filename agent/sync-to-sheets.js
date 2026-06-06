@@ -20,15 +20,17 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { google } from "googleapis";
-import { getAllLeads, getTop10ForOutreach, getD3FollowUps, getD7FollowUps } from "./db.js";
+import { getAllLeads, getTop10ForOutreach, getD3FollowUps, getD7FollowUps, getHotLeads } from "./db.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const SHEET_ID    = process.env.GOOGLE_SHEET_ID;
-const KEY_PATH    = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "./agent/google-key.json";
-const LEADS_TAB   = process.env.GOOGLE_SHEET_TAB || "Leads";
-const TOP10_TAB   = "Top 10 Today";
+const SHEET_ID     = process.env.GOOGLE_SHEET_ID;
+const KEY_PATH     = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "./agent/google-key.json";
+const LEADS_TAB    = process.env.GOOGLE_SHEET_TAB || "Leads";
+const TOP10_TAB    = "Top 10 Today";
 const FOLLOWUP_TAB = "📬 Follow-ups";
+const REPLIES_TAB  = "📩 Replies";     // written by Apps Script, read by this agent
+const HOT_TAB      = "🔥 Hot Leads";  // replied, booked, clients
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
@@ -209,11 +211,14 @@ export async function syncTop10Daily() {
               fields: "userEnteredFormat.textFormat",
             },
           },
-          // Header row style
+          // Header row style — dark bg + white text so labels are visible
           {
             repeatCell: {
               range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: colCount },
-              cell: { userEnteredFormat: { textFormat: { bold: true }, backgroundColor: { red: 0.035, green: 0.039, blue: 0.047 } } },
+              cell: { userEnteredFormat: {
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+                backgroundColor: { red: 0.12, green: 0.13, blue: 0.16 },
+              }},
               fields: "userEnteredFormat(textFormat,backgroundColor)",
             },
           },
@@ -556,6 +561,180 @@ export async function readBackFollowUpSentMarks() {
   }
 }
 
+// ── Read-back: Gmail replies logged by Apps Script ───────────────────────────
+
+/**
+ * Reads the "📩 Replies" tab written by the Apps Script Gmail tracker.
+ * Returns unprocessed rows so daily-run can advance their stage to 'replied'.
+ */
+export async function readBackReplies() {
+  const sheets = await getSheets();
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${REPLIES_TAB}!A1:G200`,
+    });
+    const rows = response.data.values || [];
+    if (rows.length < 2) return [];
+
+    const unprocessed = [];
+    for (let i = 1; i < rows.length; i++) {
+      const row       = rows[i] || [];
+      const processed = (row[5] || "").trim();
+      const bizName   = (row[0] || "").trim();
+      if (!processed && bizName) {
+        unprocessed.push({
+          sheetRow:      i + 1,   // 1-indexed row number in the sheet
+          business_name: bizName,
+          from_email:    row[1] || "",
+          subject:       row[2] || "",
+          date:          row[3] || "",
+          preview:       row[4] || "",
+        });
+      }
+    }
+
+    if (unprocessed.length) {
+      console.log(`   📩 Found ${unprocessed.length} unprocessed reply(ies) in "${REPLIES_TAB}"`);
+    }
+    return unprocessed;
+  } catch (e) {
+    console.log(`   ⚠️  Could not read Replies tab: ${e.message}`);
+    return [];
+  }
+}
+
+/**
+ * Marks a reply row as processed so it isn't re-processed tomorrow.
+ * Called after the DB stage has been updated successfully.
+ */
+export async function markReplyProcessed(sheetRow) {
+  const sheets = await getSheets();
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${REPLIES_TAB}!F${sheetRow}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [["✅ Done"]] },
+  });
+}
+
+// ── Tab: 🔥 Hot Leads ─────────────────────────────────────────────────────────
+
+/**
+ * Writes a focused view of replied / booked / client leads.
+ * This is Tom's active sales list — everything that needs a next action.
+ */
+export async function syncHotLeads() {
+  const sheets = await getSheets();
+  const meta   = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const existingTabs = meta.data.sheets.map((s) => s.properties.title);
+  await ensureTab(sheets, HOT_TAB, existingTabs);
+
+  const hot   = getHotLeads();
+  const today = new Date().toLocaleDateString("en-CA", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
+
+  const HEADERS = [
+    "Business", "Owner", "Email", "Phone",
+    "Stage", "Last Touched", "Niche", "Score", "Notes",
+  ];
+
+  const stageLabel = {
+    replied:          "💬 Replied",
+    discovery_booked: "📅 Call Booked",
+    client:           "✅ Client",
+  };
+
+  const titleRow = [`🔥 Hot Leads — ${today}`, ...Array(HEADERS.length - 1).fill("")];
+  const subRow   = [
+    hot.length
+      ? `${hot.length} lead(s) need your attention. These replied or are in active conversations.`
+      : "No hot leads yet — keep sending. They'll appear here when someone replies.",
+    ...Array(HEADERS.length - 1).fill(""),
+  ];
+
+  const dataRows = hot.map((l) => [
+    l.business_name,
+    l.owner_name  || "—",
+    l.email       || "—",
+    l.phone       || "—",
+    stageLabel[l.stage] || l.stage,
+    l.last_touched ? l.last_touched.slice(0, 10) : "—",
+    l.niche       || "—",
+    String(l.lead_score || "—"),
+    l.notes       || "",
+  ]);
+
+  const values = [titleRow, subRow, Array(HEADERS.length).fill(""), HEADERS, ...dataRows];
+
+  await sheets.spreadsheets.values.clear({ spreadsheetId: SHEET_ID, range: `${HOT_TAB}!A:Z` });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${HOT_TAB}!A1`,
+    valueInputOption: "RAW",
+    requestBody: { values },
+  });
+
+  // Formatting
+  const sheetId = meta.data.sheets.find((s) => s.properties.title === HOT_TAB)?.properties.sheetId;
+  if (sheetId != null) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: {
+        requests: [
+          // Title bold + large
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: HEADERS.length },
+              cell: { userEnteredFormat: { textFormat: { bold: true, fontSize: 13 } } },
+              fields: "userEnteredFormat.textFormat",
+            },
+          },
+          // Header row — dark bg, white text
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: HEADERS.length },
+              cell: { userEnteredFormat: {
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+                backgroundColor: { red: 0.12, green: 0.13, blue: 0.16 },
+              }},
+              fields: "userEnteredFormat(textFormat,backgroundColor)",
+            },
+          },
+          // Business name column wide
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
+              properties: { pixelSize: 210 },
+              fields: "pixelSize",
+            },
+          },
+          // Email column wide
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 },
+              properties: { pixelSize: 220 },
+              fields: "pixelSize",
+            },
+          },
+          // Notes column wide
+          {
+            updateDimensionProperties: {
+              range: { sheetId, dimension: "COLUMNS", startIndex: 8, endIndex: 9 },
+              properties: { pixelSize: 300 },
+              fields: "pixelSize",
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  console.log(`✅ Synced ${hot.length} hot lead(s) → "${HOT_TAB}" tab`);
+  return hot.length;
+}
+
 // ── Run directly ──────────────────────────────────────────────────────────────
 const isDirect = process.argv[1]?.endsWith("sync-to-sheets.js");
 if (isDirect) {
@@ -563,6 +742,7 @@ if (isDirect) {
     await syncToSheets();
     await syncTop10Daily();
     await syncFollowUpQueue();
+    await syncHotLeads();
   })().catch((err) => {
     console.error("Sheets sync error:", err.message);
     if (err.message.toLowerCase().includes("permission")) {

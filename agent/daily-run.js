@@ -23,10 +23,13 @@ import {
   syncToSheets,
   syncTop10Daily,
   syncFollowUpQueue,
+  syncHotLeads,
   readBackTop10SentMarks,
   readBackFollowUpSentMarks,
+  readBackReplies,
+  markReplyProcessed,
 } from "./sync-to-sheets.js";
-import { markLeadSent, getStats } from "./db.js";
+import { markLeadSent, markLeadReplied, getStats } from "./db.js";
 
 async function run() {
   const startTime = Date.now();
@@ -78,6 +81,27 @@ async function run() {
       } else {
         console.log(`\n   📬 ${markedCount} lead(s) advanced in pipeline`);
       }
+
+      // Gmail replies logged by Apps Script → advance to 'replied'
+      try {
+        const replies = await readBackReplies();
+        let replyCount = 0;
+        for (const reply of replies) {
+          const ok = markLeadReplied(reply.business_name);
+          if (ok) {
+            console.log(`   💬 Reply detected — advancing to replied: ${reply.business_name}`);
+            await markReplyProcessed(reply.sheetRow);
+            replyCount++;
+          } else {
+            console.log(`   ⚠️  Reply found but lead not in DB: ${reply.business_name}`);
+          }
+        }
+        if (replyCount > 0) {
+          console.log(`\n   🎉 ${replyCount} lead(s) moved to 'replied' — check Hot Leads tab`);
+        }
+      } catch (e) {
+        console.error(`  Reply read-back failed: ${e.message}`);
+      }
     } catch (e) {
       console.error(`  Sent-mark read-back failed: ${e.message}`);
     }
@@ -105,6 +129,7 @@ async function run() {
       await syncToSheets();
       await syncTop10Daily();
       await syncFollowUpQueue();
+      await syncHotLeads();
     } catch (e) {
       console.error(`  Sheets sync failed: ${e.message}`);
     }
@@ -133,7 +158,8 @@ async function run() {
   console.log("╚══════════════════════════════════════════════════════╝");
   console.log("\n📋 Open your sheet:");
   console.log("   → 'Top 10 Today'   — copy subject + body, send emails, type YES when done");
-  console.log("   → '📬 Follow-ups'  — anyone needing a D3 or D7 follow-up today\n");
+  console.log("   → '📬 Follow-ups'  — anyone needing a D3 or D7 follow-up today");
+  console.log("   → '🔥 Hot Leads'   — replied / booked leads needing your next move\n");
 }
 
 run().catch((err) => {

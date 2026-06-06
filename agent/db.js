@@ -208,6 +208,31 @@ export function getUnresearchedLeads(limit = 30) {
   `).all(limit);
 }
 
+// ── Reply + hot lead queries ──────────────────────────────────────────────────
+
+// Leads that replied, booked, or converted — the active pipeline
+export function getHotLeads() {
+  return db.prepare(`
+    SELECT * FROM leads
+    WHERE stage IN ('replied', 'discovery_booked', 'client')
+    ORDER BY last_touched DESC
+  `).all();
+}
+
+// Mark a lead as having replied to outreach (called when Gmail reply detected)
+export function markLeadReplied(businessName) {
+  const lead = db.prepare(
+    "SELECT id, stage FROM leads WHERE lower(trim(business_name)) = lower(trim(?))"
+  ).get(businessName);
+  if (!lead) return false;
+  // Don't overwrite a stage that's already further along
+  const advanceable = ["found", "emailed_d0", "emailed_d3", "emailed_d7"];
+  if (!advanceable.includes(lead.stage)) return false;
+  updateStage(lead.id, "replied");
+  logTouch(lead.id, "email", "reply_received", "received");
+  return true;
+}
+
 // ── Follow-up queue queries ───────────────────────────────────────────────────
 
 // Leads that had first email sent 3+ days ago — need D3 follow-up
