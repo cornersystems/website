@@ -9,6 +9,7 @@ import {
   Clock3,
   Dumbbell,
   HeartPulse,
+  Instagram,
   Mail,
   Menu,
   MessageSquareText,
@@ -1251,12 +1252,12 @@ function HomePage() {
               </a>
             </div>
 
-            <div className="hero-proofline" aria-label="Coverage channels">
-              <span>Calls</span>
-              <span>Texts</span>
-              <span>Email</span>
-              <span>Messages</span>
-              <span>DMs</span>
+            <div className="hero-channels" aria-label="Every communication channel captured">
+              <span className="hero-channel"><PhoneCall size={15} aria-hidden="true" /> Calls</span>
+              <span className="hero-channel"><MessageSquareText size={15} aria-hidden="true" /> SMS</span>
+              <span className="hero-channel"><Mail size={15} aria-hidden="true" /> Email</span>
+              <span className="hero-channel"><Instagram size={15} aria-hidden="true" /> DMs</span>
+              <span className="hero-channel"><Bot size={15} aria-hidden="true" /> AI Chat</span>
             </div>
           </div>
 
