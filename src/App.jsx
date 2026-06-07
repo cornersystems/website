@@ -1173,8 +1173,8 @@ function HomePage() {
       <section className="hero-section" aria-labelledby="hero-title">
         <img
           className="hero-image"
-          src="/assets/cs-hero-dark-v1.png"
-          alt="Corner Systems AI — premium dark front office infrastructure"
+          src="/assets/cs-hero-lobby-v2.png"
+          alt="Corner Systems AI front office — premium lobby with autonomous AI reception system"
           fetchPriority="high"
         />
         <div className="hero-overlay" />

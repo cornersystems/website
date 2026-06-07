@@ -250,9 +250,9 @@ textarea {
 
 .hero-overlay {
   background:
-    linear-gradient(90deg, rgba(6,8,18,0.90) 0%, rgba(6,8,18,0.72) 45%, rgba(6,8,18,0.30) 72%, rgba(6,8,18,0.60) 100%),
-    linear-gradient(180deg, rgba(6,8,18,0.10) 0%, rgba(6,8,18,0.82) 100%),
-    linear-gradient(135deg, rgba(20,184,166,0.07) 0%, rgba(68,144,255,0.04) 50%, transparent 70%);
+    linear-gradient(90deg, rgba(14,12,11,0.92) 0%, rgba(14,12,11,0.72) 36%, rgba(14,12,11,0.12) 62%, rgba(14,12,11,0.50) 100%),
+    linear-gradient(180deg, rgba(14,12,11,0.06) 0%, rgba(14,12,11,0.88) 100%),
+    linear-gradient(135deg, rgba(240,168,48,0.06) 0%, rgba(68,144,255,0.04) 50%, transparent 70%);
 }
 
 .hero-content {
@@ -3333,6 +3333,59 @@ body::selection {
   background: rgba(255, 255, 255, 0.78);
   color: var(--muted-strong);
   box-shadow: 0 8px 22px rgba(24, 55, 85, 0.06);
+}
+
+/* Light-theme: hero brand badge */
+.hero-brand-badge {
+  background: rgba(15, 174, 158, 0.08);
+  border-color: rgba(15, 174, 158, 0.22);
+  color: #0c8a7e;
+}
+
+.hero-brand-dot {
+  background: #0c8a7e;
+  box-shadow: 0 0 8px rgba(15, 174, 158, 0.5);
+}
+
+/* Light-theme: challenge selector */
+.selector-trigger {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(20, 49, 74, 0.18);
+  color: var(--muted-strong);
+  box-shadow: 0 2px 8px rgba(24, 55, 85, 0.06);
+}
+
+.selector-trigger:hover,
+.selector-trigger.open {
+  border-color: rgba(15, 174, 158, 0.4);
+  background: #ffffff;
+  color: var(--text);
+}
+
+.selector-dropdown {
+  background: #ffffff;
+  border-color: rgba(20, 49, 74, 0.12);
+  box-shadow: 0 12px 40px rgba(24, 55, 85, 0.14);
+}
+
+.selector-option {
+  color: var(--muted-strong);
+  border-bottom-color: rgba(20, 49, 74, 0.07);
+}
+
+.selector-option:hover,
+.selector-option.selected {
+  background: rgba(15, 174, 158, 0.07);
+  color: var(--text);
+}
+
+.selector-answer {
+  background: rgba(15, 174, 158, 0.07);
+  border-color: rgba(15, 174, 158, 0.2);
+}
+
+.selector-answer span {
+  color: var(--text);
 }
 
 .lead-console {
