@@ -1745,11 +1745,15 @@ function App() {
         <a className="brand" href="/" aria-label="Corner Systems home">
           <img
             className="cs-logo-img"
-            src="/assets/cs-logo-3d.png"
-            alt="Corner Systems AI"
-            width="52"
-            height="52"
+            src="/assets/cs-logo-v2b.png"
+            alt=""
+            width="44"
+            height="44"
           />
+          <div className="brand-wordmark">
+            <span className="brand-name">Corner Systems</span>
+            <span className="brand-ai-badge">AI</span>
+          </div>
         </a>
 
         <nav className="desktop-nav" aria-label="Primary navigation">
@@ -1807,11 +1811,15 @@ function App() {
           <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
             <img
               className="cs-logo-img"
-              src="/assets/cs-logo-3d.png"
-              alt="Corner Systems AI"
-              width="52"
-              height="52"
+              src="/assets/cs-logo-v2b.png"
+              alt=""
+              width="44"
+              height="44"
             />
+            <div className="brand-wordmark">
+              <span className="brand-name">Corner Systems</span>
+              <span className="brand-ai-badge">AI</span>
+            </div>
           </a>
           <p className="footer-tagline">Corner Systems AI<span>We're in your corner.</span></p>
         </div>
