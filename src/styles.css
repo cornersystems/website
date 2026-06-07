@@ -2217,9 +2217,104 @@ h3 {
   color: var(--muted);
 }
 
-.site-footer > a:last-child {
+.site-footer > a[href^="mailto"] {
   color: var(--muted-strong);
   font-weight: 800;
+}
+
+/* ── Footer legal strip ──────────────────────────────────────────────────────── */
+.footer-legal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.footer-legal a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-legal a:hover {
+  color: var(--teal);
+}
+
+.footer-legal span[aria-hidden] {
+  color: var(--muted);
+  opacity: 0.4;
+}
+
+/* ── Pricing ROI bar ─────────────────────────────────────────────────────────── */
+.pricing-roi-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  background: rgba(20, 184, 166, 0.07);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  border-radius: 10px;
+  padding: 14px 22px;
+  margin-bottom: 36px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.pricing-roi-bar strong {
+  color: var(--teal);
+  font-weight: 700;
+}
+
+.roi-item {
+  display: inline;
+}
+
+.roi-divider {
+  color: var(--muted);
+  opacity: 0.35;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* ── Legal pages ─────────────────────────────────────────────────────────────── */
+.legal-section {
+  padding: 64px 24px 96px;
+}
+
+.legal-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.legal-inner h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 40px 0 10px;
+  letter-spacing: -0.01em;
+}
+
+.legal-inner h2:first-child {
+  margin-top: 0;
+}
+
+.legal-inner p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  margin: 0 0 12px;
+}
+
+.legal-inner a {
+  color: var(--teal);
+  text-decoration: none;
+}
+
+.legal-inner a:hover {
+  text-decoration: underline;
 }
 
 /* ── Active nav link ────────────────────────────────────────────────────────── */
@@ -2863,6 +2958,16 @@ h3 {
   .site-footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .pricing-roi-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .roi-divider {
+    display: none;
   }
 }
 

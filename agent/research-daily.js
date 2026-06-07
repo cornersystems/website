@@ -19,7 +19,8 @@ import "dotenv/config";
 import { spawnSync } from "child_process";
 import fs from "fs";
 import os from "os";
-import { upsertLead, updateResearchData, updateLeadScore, getUnresearchedLeads } from "./db.js";
+import { upsertLead, updateResearchData, updateScoreMeta, getUnresearchedLeads } from "./db.js";
+import { detectTools } from "./detect-tools.js";
 
 // ── Geographic expansion schedule ─────────────────────────────────────────────
 const START_DATE = new Date("2026-06-06T00:00:00-05:00");
@@ -85,27 +86,42 @@ function nichePriorityBoost(niche) {
 }
 
 /**
- * Recalculate lead score after deep research completes.
- * Takes the original discovery score and adjusts based on real findings.
+ * Recalculate lead score after deep research completes, and build a
+ * human-readable breakdown of WHY (so bad calls are catchable at a glance).
+ * Returns { score, reason }.
+ *
+ * Lower score = worse fit. A business that already runs a booking platform,
+ * chatbot, or voice agent is doing the job we'd sell them — so they drop.
  */
-function rescoreAfterResearch(originalScore, niche, research) {
+export function rescoreAfterResearch(originalScore, niche, research) {
   let score = originalScore || 5;
+  const parts = [`base ${score}`];
 
-  // Email found = real outreach opportunity
-  if (research.email) score += 2;
-  else score -= 1;
+  // Email found = real, reachable outreach opportunity
+  if (research.email) { score += 2; parts.push("email found +2"); }
+  else                { score -= 1; parts.push("no email -1"); }
 
-  // Already has AI tools = harder sell, lower priority
-  if (research.has_chatbot) score -= 3;
-  if (research.has_voice_agent) score -= 4;
+  const tools = (research.tools_found && research.tools_found.length)
+    ? ` (${research.tools_found.join(", ")})` : "";
+
+  // Already has front-office tooling = they're doing the job we'd sell them.
+  // A real booking platform is the strongest "already handled" signal.
+  const alreadyTooled = research.has_booking || research.has_chatbot || research.has_voice_agent;
+  if (research.has_booking)     { score -= 4; parts.push(`has booking platform${tools} -4`); }
+  if (research.has_chatbot)     { score -= 3; parts.push(`has chat widget${research.has_booking ? "" : tools} -3`); }
+  if (research.has_voice_agent) { score -= 4; parts.push("has voice agent -4"); }
 
   // No website = more opportunity (they're behind the curve)
-  if (!research.has_website) score += 1;
+  if (!research.has_website) { score += 1; parts.push("no website +1"); }
 
-  // Niche value boost
-  score += nichePriorityBoost(niche);
+  // Niche value boost — only counts if they're actually a viable prospect.
+  // A high-value niche shouldn't rescue a lead that already has the tooling.
+  const boost = nichePriorityBoost(niche);
+  if (boost && !alreadyTooled) { score += boost; parts.push(`${niche} +${boost}`); }
+  else if (boost && alreadyTooled) { parts.push(`${niche} boost suppressed (already tooled)`); }
 
-  return Math.max(1, Math.min(10, Math.round(score)));
+  const final = Math.max(1, Math.min(10, Math.round(score)));
+  return { score: final, reason: `${parts.join(", ")} = ${final}` };
 }
 
 // ── Phase selection ───────────────────────────────────────────────────────────
@@ -211,46 +227,52 @@ Only include real, verifiable businesses. Do NOT make any up.`;
   return parsed.leads;
 }
 
-// ── Step 2: Deep-dive — find real email + detect AI presence ─────────────────
+// ── Step 2: Deep-dive — real tool detection (scrape) + email (Claude) ─────────
 async function deepResearch(business) {
-  const prompt = `You are a contact information researcher. Find real email addresses and check for AI tools.
-Return ONLY valid JSON.
+  // 2a. Deterministically detect existing front-office tooling from the live site.
+  //     This is the reliable part — no LLM guessing. Catches Jane/Mindbody/chat widgets.
+  const toolInfo = business.website
+    ? await detectTools(business.website)
+    : { has_website: false, has_chatbot: false, has_booking: false, has_voice_agent: false, tools_found: [] };
 
-Research this business:
-Name: ${business.business_name}
+  // 2b. Use Claude only for what it's actually good at: finding the email address.
+  const emailPrompt = `You are a contact-information researcher. Find the best public email address for this business.
+Return ONLY valid JSON — no commentary.
+
+Business: ${business.business_name}
 City: ${business.city}, ${business.state || "ON"}
 Website: ${business.website || "unknown"}
 Phone: ${business.phone || "unknown"}
 
-Tasks:
-1. FIND THEIR EMAIL. Try:
-   - Search "${business.business_name} ${business.city} email contact"
-   - If they have a website, check /contact, /about, footer
-   - Search "${business.business_name} ${business.city} instagram" — check bio
-   - Try info@[domain], hello@[domain] if you found their domain
-
-2. Confirm they have a working website (true/false)
-
-3. Check if website/Google listing mentions:
-   - A chatbot / live chat widget → has_chatbot
-   - An AI voice agent / "never miss a call" service → has_voice_agent
+Try, in order:
+- Search "${business.business_name} ${business.city} email contact"
+- If they have a website, check /contact, /about, the footer
+- Search "${business.business_name} ${business.city} instagram" — check the bio
+- Try info@[domain] or hello@[domain] if you found their domain
 
 Return ONLY:
-{
-  "email": "found@email.com or null",
-  "website_url": "https://... or null",
-  "has_website": true or false,
-  "has_chatbot": true or false,
-  "has_voice_agent": true or false,
-  "research_notes": "brief note on what you found"
-}`;
+{ "email": "found@email.com or null", "website_url": "https://... or null" }`;
 
-  const raw = askClaude(prompt);
-  return parseJson(raw) || {
-    email: null, website_url: null,
-    has_website: !!business.website,
-    has_chatbot: false, has_voice_agent: false,
-    research_notes: "No parseable result",
+  let emailData = {};
+  try {
+    emailData = parseJson(askClaude(emailPrompt)) || {};
+  } catch {
+    emailData = {};
+  }
+
+  const notes = toolInfo.tools_found.length
+    ? `Detected on site: ${toolInfo.tools_found.join(", ")}`
+    : (toolInfo.reachable ? "Site reachable, no booking/chat tools detected" : "Site unreachable");
+
+  return {
+    email:           emailData.email || null,
+    website_url:     emailData.website_url || business.website || null,
+    has_website:     toolInfo.has_website || !!business.website,
+    has_chatbot:     toolInfo.has_chatbot,
+    has_booking:     toolInfo.has_booking,
+    has_voice_agent: toolInfo.has_voice_agent,
+    tools_found:     toolInfo.tools_found,
+    research_notes:  notes,
   };
 }
 
@@ -350,8 +372,8 @@ export async function researchNewLeads() {
       // Step 3: draft email (subject + body)
       const { subject, body } = await draftEmail({ ...lead, ...research });
 
-      // Rescore based on real findings
-      const newScore = rescoreAfterResearch(lead.lead_score, lead.niche, research);
+      // Rescore based on real findings (returns score + reason)
+      const { score: newScore, reason } = rescoreAfterResearch(lead.lead_score, lead.niche, research);
 
       // Persist everything
       updateResearchData(lead.id, {
@@ -359,12 +381,18 @@ export async function researchNewLeads() {
         email_draft:   body,
         email_subject: subject,
       });
-      updateLeadScore(lead.id, newScore);
+      updateScoreMeta(lead.id, {
+        score:      newScore,
+        reason,
+        tools:      research.tools_found.join(", "),
+        hasBooking: research.has_booking,
+      });
 
       if (research.email) emailsFound++;
 
+      const toolStr  = research.tools_found.length ? ` [${research.tools_found.join(", ")}]` : "";
       const scoreStr = `score ${lead.lead_score || "?"} → ${newScore}`;
-      console.log(research.email ? `✅ ${research.email} (${scoreStr})` : `⚠️  no email (${scoreStr})`);
+      console.log(research.email ? `✅ ${research.email} (${scoreStr})${toolStr}` : `⚠️  no email (${scoreStr})${toolStr}`);
 
       // Small pause between Claude calls
       await new Promise((r) => setTimeout(r, 2000));
