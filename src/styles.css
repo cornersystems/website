@@ -369,31 +369,49 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(20, 184, 166, 0.10);
-  border: 1px solid rgba(20, 184, 166, 0.28);
-  border-radius: 100px;
-  padding: 5px 12px 5px 9px;
-  margin-bottom: 14px;
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  color: var(--teal);
+  height: 32px;
+  padding: 0 13px 0 11px;
+  margin-bottom: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(15, 39, 66, 0.15);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  backdrop-filter: blur(8px) saturate(140%);
+  box-shadow: 0 1px 2px rgba(16, 32, 51, 0.05), 0 6px 18px rgba(16, 32, 51, 0.06);
+  color: #0f2742;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .hero-brand-dot {
+  position: relative;
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--teal);
-  box-shadow: 0 0 10px var(--teal), 0 0 4px var(--teal);
-  animation: badgepulse 2.2s ease-in-out infinite;
+  background: #2563eb;
   flex-shrink: 0;
 }
 
-@keyframes badgepulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--teal), 0 0 4px var(--teal); }
-  50%       { opacity: 0.55; box-shadow: 0 0 4px var(--teal); }
+.hero-brand-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.4);
+  animation: brandDotPulse 2.6s ease-out infinite;
+}
+
+@keyframes brandDotPulse {
+  0%   { transform: scale(0.5); opacity: 0.7; }
+  70%  { transform: scale(1.7); opacity: 0; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-brand-dot::after { animation: none; }
 }
 
 .hero-brand-sep {
@@ -661,24 +679,91 @@ h3 {
   line-height: 1.62;
 }
 
-.hero-proofline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 30px;
-}
-
-.hero-proofline span {
+/* ── Hero channel bar — one unified "every channel captured" pill ─────────────── */
+.hero-channels {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.07);
-  padding: 0 11px;
-  color: var(--muted-strong);
-  font-size: 0.8rem;
-  font-weight: 850;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 30px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(15, 39, 66, 0.1);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: 0 1px 2px rgba(16, 32, 51, 0.04), 0 10px 30px rgba(16, 32, 51, 0.07);
+  animation: heroChannelsIn 0.5s ease both;
+}
+
+.hero-channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  color: rgba(20, 38, 57, 0.82);
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+  animation: heroChannelIn 0.45s ease both;
+}
+
+.hero-channel svg {
+  color: var(--blue);
+  opacity: 0.9;
+  transition: transform 0.2s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+.hero-channel + .hero-channel {
+  border-left: 1px solid rgba(15, 39, 66, 0.1);
+}
+
+.hero-channel:hover {
+  color: #0f2742;
+}
+
+.hero-channel:hover svg {
+  color: #2563eb;
+  opacity: 1;
+  transform: translateY(-1px) scale(1.08);
+}
+
+.hero-channel:nth-child(1) { animation-delay: 0.18s; }
+.hero-channel:nth-child(2) { animation-delay: 0.26s; }
+.hero-channel:nth-child(3) { animation-delay: 0.34s; }
+.hero-channel:nth-child(4) { animation-delay: 0.42s; }
+.hero-channel:nth-child(5) { animation-delay: 0.50s; }
+
+@keyframes heroChannelsIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroChannelIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 560px) {
+  .hero-channels {
+    gap: 2px 0;
+    border-radius: 18px;
+    padding: 6px 8px;
+  }
+  .hero-channel {
+    padding: 5px 11px;
+    font-size: 0.8rem;
+  }
+  .hero-channel + .hero-channel {
+    border-left: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-channels,
+  .hero-channel { animation: none; }
 }
 
 .hero-actions {
@@ -3484,7 +3569,6 @@ body::selection {
   color: var(--muted);
 }
 
-.hero-proofline span,
 .market-pill,
 .deliverable-item,
 .tool-chip,
@@ -3538,16 +3622,16 @@ body::selection {
   background: #ffffff;
 }
 
-/* Light-theme: hero brand badge */
+/* Light-theme: hero brand badge (premium frosted pill) */
 .hero-brand-badge {
-  background: rgba(15, 174, 158, 0.08);
-  border-color: rgba(15, 174, 158, 0.22);
-  color: #0c8a7e;
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(15, 39, 66, 0.15);
+  color: #0f2742;
 }
 
 .hero-brand-dot {
-  background: #0c8a7e;
-  box-shadow: 0 0 8px rgba(15, 174, 158, 0.5);
+  background: #2563eb;
+  box-shadow: none;
 }
 
 /* Light-theme: challenge selector */
