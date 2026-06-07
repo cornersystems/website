@@ -250,9 +250,9 @@ textarea {
 
 .hero-overlay {
   background:
-    linear-gradient(90deg, rgba(14,12,11,0.92) 0%, rgba(14,12,11,0.72) 36%, rgba(14,12,11,0.12) 62%, rgba(14,12,11,0.50) 100%),
-    linear-gradient(180deg, rgba(14,12,11,0.06) 0%, rgba(14,12,11,0.88) 100%),
-    linear-gradient(135deg, rgba(240,168,48,0.06) 0%, rgba(68,144,255,0.04) 50%, transparent 70%);
+    linear-gradient(90deg, rgba(6,8,18,0.90) 0%, rgba(6,8,18,0.72) 45%, rgba(6,8,18,0.30) 72%, rgba(6,8,18,0.60) 100%),
+    linear-gradient(180deg, rgba(6,8,18,0.10) 0%, rgba(6,8,18,0.82) 100%),
+    linear-gradient(135deg, rgba(20,184,166,0.07) 0%, rgba(68,144,255,0.04) 50%, transparent 70%);
 }
 
 .hero-content {
@@ -264,7 +264,168 @@ textarea {
   gap: clamp(28px, 5vw, 72px);
   width: min(1180px, calc(100% - 36px));
   margin: 0 auto;
-  padding: clamp(76px, 10vw, 120px) 0 clamp(44px, 7vw, 80px);
+  padding: clamp(52px, 7vw, 88px) 0 clamp(44px, 7vw, 80px);
+}
+
+/* ── Hero brand badge ────────────────────────────────────────────────────────── */
+.hero-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(20, 184, 166, 0.10);
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  border-radius: 100px;
+  padding: 6px 14px 6px 10px;
+  margin-bottom: 22px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: var(--teal);
+  text-transform: uppercase;
+}
+
+.hero-brand-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 10px var(--teal), 0 0 4px var(--teal);
+  animation: badgepulse 2.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes badgepulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--teal), 0 0 4px var(--teal); }
+  50%       { opacity: 0.55; box-shadow: 0 0 4px var(--teal); }
+}
+
+.hero-brand-sep {
+  opacity: 0.4;
+  font-weight: 400;
+}
+
+/* ── Hero challenge selector ─────────────────────────────────────────────────── */
+.hero-selector {
+  position: relative;
+  margin-bottom: 28px;
+  max-width: 460px;
+}
+
+.selector-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 13px 16px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.93rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.selector-trigger:hover,
+.selector-trigger.open {
+  border-color: rgba(20, 184, 166, 0.45);
+  background: rgba(20, 184, 166, 0.07);
+  color: #fff;
+}
+
+.selector-chevron {
+  flex-shrink: 0;
+  color: var(--teal);
+  transition: transform 0.22s ease;
+}
+
+.selector-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.selector-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: rgba(9, 12, 24, 0.98);
+  border: 1px solid rgba(20, 184, 166, 0.22);
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 20;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  animation: dropfade 0.18s ease;
+}
+
+@keyframes dropfade {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.selector-option {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 13px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.selector-option:last-child {
+  border-bottom: none;
+}
+
+.selector-option:hover,
+.selector-option.selected {
+  background: rgba(20, 184, 166, 0.10);
+  color: #fff;
+}
+
+.selector-option svg {
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.selector-answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 10px;
+  background: rgba(20, 184, 166, 0.08);
+  border: 1px solid rgba(20, 184, 166, 0.22);
+  border-radius: 10px;
+  padding: 13px 16px;
+  animation: answerfade 0.25s ease;
+}
+
+@keyframes answerfade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.selector-answer svg {
+  color: var(--teal);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.selector-answer span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.91rem;
+  line-height: 1.55;
+  font-weight: 500;
 }
 
 .hero-copy {

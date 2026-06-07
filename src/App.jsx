@@ -4,6 +4,7 @@ import {
   Bot,
   Calendar,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Clock3,
   Dumbbell,
@@ -1077,6 +1078,84 @@ function ContactPage() {
   );
 }
 
+// ── Hero challenge selector ───────────────────────────────────────────────────
+const CHALLENGES = [
+  {
+    id: "missed-calls",
+    icon: PhoneCall,
+    label: "Missed calls after hours",
+    fix: "AI voice agent catches every call — 24/7, response in under 8 seconds.",
+  },
+  {
+    id: "cold-leads",
+    icon: Zap,
+    label: "Leads going cold before follow-up",
+    fix: "Every inquiry replied to within 2 minutes — day, night, and weekends.",
+  },
+  {
+    id: "booking-drop",
+    icon: Calendar,
+    label: "Booking requests not converting",
+    fix: "Qualified leads get booked automatically. No phone tag, no back-and-forth.",
+  },
+  {
+    id: "no-system",
+    icon: MessageSquareText,
+    label: "No consistent follow-up system",
+    fix: "Automated sequences reactivate cold leads without lifting a finger.",
+  },
+];
+
+function HeroSelector() {
+  const [open, setOpen]       = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  return (
+    <div className="hero-selector">
+      <button
+        className={`selector-trigger${open ? " open" : ""}`}
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+      >
+        <span>{selected ? selected.label : "What's your biggest gap?"}</span>
+        <ChevronDown
+          size={17}
+          aria-hidden="true"
+          className={`selector-chevron${open ? " rotated" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="selector-dropdown" role="listbox">
+          {CHALLENGES.map((c) => {
+            const Icon = c.icon;
+            return (
+              <button
+                key={c.id}
+                role="option"
+                aria-selected={selected?.id === c.id}
+                className={`selector-option${selected?.id === c.id ? " selected" : ""}`}
+                onClick={() => { setSelected(c); setOpen(false); }}
+              >
+                <Icon size={16} aria-hidden="true" />
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {selected && !open && (
+        <div className="selector-answer">
+          {React.createElement(selected.icon, { size: 18, "aria-hidden": true })}
+          <span>{selected.fix}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── / homepage ────────────────────────────────────────────────────────────────
 function HomePage() {
   const { rows: consoleRows, flash: consoleFlash } = useLiveConsole();
@@ -1094,29 +1173,34 @@ function HomePage() {
       <section className="hero-section" aria-labelledby="hero-title">
         <img
           className="hero-image"
-          src="/assets/cs-hero-lobby-v2.png"
-          alt="Corner Systems AI front office — premium lobby with autonomous AI reception system"
+          src="/assets/cs-hero-dark-v1.png"
+          alt="Corner Systems AI — premium dark front office infrastructure"
           fetchPriority="high"
         />
         <div className="hero-overlay" />
         <div className="hero-content">
           <div className="hero-copy">
-            <p className="eyebrow">Premium front-office infrastructure</p>
+
+            {/* Brand badge — top of hero */}
+            <div className="hero-brand-badge">
+              <span className="hero-brand-dot" aria-hidden="true" />
+              Corner Systems AI
+              <span className="hero-brand-sep" aria-hidden="true">·</span>
+              Toronto
+            </div>
+
             <h1 id="hero-title">
               <span>Corner</span>
               <span>Systems</span>
             </h1>
             <p className="hero-tagline">We're in your corner.</p>
             <p className="hero-lede">
-              For service businesses where every inquiry is worth real money. We make sure every call, text, email, message, and DM is captured, qualified, and booked — with the same professional standard, every day.
+              For service businesses where every inquiry is worth real money. Every call, DM, text, and form — captured, qualified, and booked 24/7.
             </p>
-            <div className="hero-proofline" aria-label="Coverage channels">
-              <span>Calls</span>
-              <span>Texts</span>
-              <span>Email</span>
-              <span>Messages</span>
-              <span>DMs</span>
-            </div>
+
+            {/* Interactive challenge dropdown */}
+            <HeroSelector />
+
             <div className="hero-actions" aria-label="Primary actions">
               <a className="button button-primary" href="/contact">
                 Book a Discovery Call
@@ -1126,6 +1210,14 @@ function HomePage() {
                 See Services
                 <ChevronRight aria-hidden="true" size={20} />
               </a>
+            </div>
+
+            <div className="hero-proofline" aria-label="Coverage channels">
+              <span>Calls</span>
+              <span>Texts</span>
+              <span>Email</span>
+              <span>Messages</span>
+              <span>DMs</span>
             </div>
           </div>
 
