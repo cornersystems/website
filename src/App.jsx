@@ -352,6 +352,42 @@ function useLiveConsole() {
   return { rows, flash };
 }
 
+// Typing / cycling headline hook
+const HERO_LINES = [
+  "never misses a call.",
+  "books leads around the clock.",
+  "captures every inquiry.",
+  "works while you sleep.",
+];
+
+function useTypingCycle(lines, typeSpeed = 55, pause = 2500, deleteSpeed = 28) {
+  const [text, setText]   = useState("");
+  const [phase, setPhase] = useState("typing");
+  const [idx, setIdx]     = useState(0);
+
+  useEffect(() => {
+    const target = lines[idx];
+    if (phase === "typing") {
+      if (text.length < target.length) {
+        const t = setTimeout(() => setText(target.slice(0, text.length + 1)), typeSpeed);
+        return () => clearTimeout(t);
+      }
+      const t = setTimeout(() => setPhase("deleting"), pause);
+      return () => clearTimeout(t);
+    }
+    if (phase === "deleting") {
+      if (text.length > 0) {
+        const t = setTimeout(() => setText(text.slice(0, -1)), deleteSpeed);
+        return () => clearTimeout(t);
+      }
+      setIdx((i) => (i + 1) % lines.length);
+      setPhase("typing");
+    }
+  }, [text, phase, idx, lines, typeSpeed, pause, deleteSpeed]);
+
+  return text;
+}
+
 function useCountUp(target, duration = 1800) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
@@ -1159,6 +1195,7 @@ function HeroSelector() {
 // ── / homepage ────────────────────────────────────────────────────────────────
 function HomePage() {
   const { rows: consoleRows, flash: consoleFlash } = useLiveConsole();
+  const typedText = useTypingCycle(HERO_LINES);
 
   useEffect(() => {
     const m = PAGE_META["/"];
@@ -1173,8 +1210,8 @@ function HomePage() {
       <section className="hero-section" aria-labelledby="hero-title">
         <img
           className="hero-image"
-          src="/assets/cs-hero-lobby-v2.png"
-          alt="Corner Systems AI front office — premium lobby with autonomous AI reception system"
+          src="/assets/cs-hero-light-v2.png"
+          alt="Corner Systems AI — premium modern service business front office"
           fetchPriority="high"
         />
         <div className="hero-overlay" />
@@ -1185,17 +1222,19 @@ function HomePage() {
             <div className="hero-brand-badge">
               <span className="hero-brand-dot" aria-hidden="true" />
               Corner Systems AI
-              <span className="hero-brand-sep" aria-hidden="true">·</span>
-              Toronto
             </div>
 
-            <h1 id="hero-title">
-              <span>Corner</span>
-              <span>Systems</span>
+            {/* Typing headline */}
+            <h1 id="hero-title" aria-label="Your front office, never misses a call.">
+              <span className="h1-static">Your front office,</span>
+              <span className="h1-typed" aria-hidden="true">
+                {typedText}
+                <span className="type-cursor" />
+              </span>
             </h1>
-            <p className="hero-tagline">We're in your corner.</p>
+
             <p className="hero-lede">
-              For service businesses where every inquiry is worth real money. Every call, DM, text, and form — captured, qualified, and booked 24/7.
+              For gyms, clinics, and med spas where every inquiry is real money. Every call, DM, text, and form — captured, qualified, and booked 24/7.
             </p>
 
             {/* Interactive challenge dropdown */}
@@ -1248,6 +1287,15 @@ function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* Scroll cue */}
+        <button
+          className="hero-scroll-cue"
+          aria-label="Scroll to content"
+          onClick={() => document.querySelector(".ticker-band")?.scrollIntoView({ behavior: "smooth" })}
+        >
+          <ChevronDown size={20} aria-hidden="true" />
+        </button>
       </section>
 
       {/* Ticker */}
