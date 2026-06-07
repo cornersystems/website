@@ -1808,7 +1808,7 @@ function App() {
               height="52"
             />
           </a>
-          <p className="footer-tagline">Corner Systems AI<span>We're in your corner.</span></p>
+          <p className="footer-tagline">Corner Systems<span>We're in your corner.</span></p>
         </div>
         <nav className="footer-nav" aria-label="Footer navigation">
           {navItems.map((item) => (
