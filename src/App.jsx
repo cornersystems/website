@@ -53,6 +53,16 @@ const PAGE_META = {
       "Corner Systems serves boutique gyms, CrossFit boxes, chiropractic clinics, physiotherapy, med spas, cosmetic dentistry, and more across Toronto and Canada.",
     canonical: "https://cornersystems.vercel.app/industries",
   },
+  "/privacy": {
+    title: "Privacy Policy | Corner Systems",
+    description: "How Corner Systems collects, uses, and protects your personal information in accordance with PIPEDA.",
+    canonical: "https://cornersystems.vercel.app/privacy",
+  },
+  "/terms": {
+    title: "Terms of Service | Corner Systems",
+    description: "Terms governing the use of Corner Systems services, software, and website.",
+    canonical: "https://cornersystems.vercel.app/terms",
+  },
   "/team": {
     title: "Our Team — Founders Tom Morris & Michael Mastrella | Corner Systems",
     description:
@@ -277,7 +287,7 @@ const faqs = [
   },
   {
     question: "How does pricing work?",
-    answer: "Pricing depends on workflow complexity, volume, tools, and scope. We keep it practical.",
+    answer: "Fixed monthly packages starting at $149/mo for fitness or $299/mo for clinical, plus a one-time setup fee. Pick the plan closest to your coverage needs — we scope the exact build around your tools and volume from there. No hourly rates, no surprise add-ons.",
   },
   {
     question: "What happens after we reach out?",
@@ -470,6 +480,26 @@ function PricingSection({ pricingAudience, setPricingAudience, page = false }) {
             {aud.label}
           </button>
         ))}
+      </div>
+
+      <div className="pricing-roi-bar" aria-label="Return on investment context">
+        {pricingAudience === "fitness" ? (
+          <>
+            <span className="roi-item"><strong>3 extra leads/mo</strong> at $80 avg = $240 — Growth pays for itself</span>
+            <span className="roi-divider" aria-hidden="true">·</span>
+            <span className="roi-item"><strong>1 less no-show/week</strong> at $40 = $160/mo recovered</span>
+            <span className="roi-divider" aria-hidden="true">·</span>
+            <span className="roi-item"><strong>After-hours inquiries</strong> answered instantly, not the next morning</span>
+          </>
+        ) : (
+          <>
+            <span className="roi-item"><strong>2 extra patients/mo</strong> at $200 avg = $400 — Intake pays for itself</span>
+            <span className="roi-divider" aria-hidden="true">·</span>
+            <span className="roi-item"><strong>1 recall reactivation/week</strong> = $800+/mo in recovered revenue</span>
+            <span className="roi-divider" aria-hidden="true">·</span>
+            <span className="roi-item"><strong>Every missed call</strong> caught and followed up automatically</span>
+          </>
+        )}
       </div>
 
       <div className="pricing-card-grid" aria-label="Pricing plans">
@@ -1452,6 +1482,104 @@ function HomePage() {
   );
 }
 
+// ── /privacy page ─────────────────────────────────────────────────────────────
+function PrivacyPage() {
+  useEffect(() => {
+    const m = PAGE_META["/privacy"];
+    document.title = m.title;
+    document.querySelector('meta[name="description"]')?.setAttribute("content", m.description);
+    document.querySelector('link[rel="canonical"]')?.setAttribute("href", m.canonical);
+  }, []);
+
+  return (
+    <>
+      <PageHero
+        eyebrow="Privacy Policy"
+        title="How we handle your information."
+        subtitle="Last updated: June 2026. We keep this short and plain-English."
+      />
+      <section className="legal-section" aria-labelledby="privacy-content">
+        <div className="legal-inner">
+          <h2 id="privacy-content">1. Who we are</h2>
+          <p>Corner Systems AI ("Corner Systems", "we", "us") operates cornersystems.vercel.app and provides AI front-office automation services to service businesses across Canada. You can reach us at <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.</p>
+
+          <h2>2. What we collect</h2>
+          <p>When you submit the discovery call form we collect your name, business name, email address, the bottleneck you describe, and your preferred meeting time. We do not collect payment information on this website.</p>
+          <p>We may also collect basic analytics (page views, referring URLs) through Vercel's built-in infrastructure. No third-party tracking pixels or advertising cookies are used.</p>
+
+          <h2>3. How we use it</h2>
+          <p>We use your contact information solely to respond to your enquiry and, if you become a client, to deliver and support your Corner Systems setup. We do not sell, rent, or share your information with third parties for marketing purposes.</p>
+
+          <h2>4. Storage and security</h2>
+          <p>Form submissions are delivered to our team via Resend (a transactional email provider) and stored in a private Google Sheet accessible only to Corner Systems staff. Data is retained for as long as the business relationship is active or as required by law.</p>
+
+          <h2>5. Your rights (PIPEDA)</h2>
+          <p>Under Canada's Personal Information Protection and Electronic Documents Act (PIPEDA) you have the right to access the personal information we hold about you, request corrections, and withdraw consent at any time. To exercise any of these rights, email us at <a href={`mailto:${contactEmail}`}>{contactEmail}</a> and we will respond within 30 days.</p>
+
+          <h2>6. Cookies</h2>
+          <p>This site does not use cookies for tracking or advertising. Session state is managed entirely in-browser (React component state) and is not persisted beyond your visit.</p>
+
+          <h2>7. Changes to this policy</h2>
+          <p>If we make material changes we will update the "Last updated" date above. Continued use of the site after changes constitutes acceptance of the revised policy.</p>
+
+          <h2>8. Contact</h2>
+          <p>Questions about this policy? Email <a href={`mailto:${contactEmail}`}>{contactEmail}</a> and we'll get back to you promptly.</p>
+        </div>
+      </section>
+    </>
+  );
+}
+
+// ── /terms page ───────────────────────────────────────────────────────────────
+function TermsPage() {
+  useEffect(() => {
+    const m = PAGE_META["/terms"];
+    document.title = m.title;
+    document.querySelector('meta[name="description"]')?.setAttribute("content", m.description);
+    document.querySelector('link[rel="canonical"]')?.setAttribute("href", m.canonical);
+  }, []);
+
+  return (
+    <>
+      <PageHero
+        eyebrow="Terms of Service"
+        title="What you agree to when working with us."
+        subtitle="Last updated: June 2026. Plain language, no traps."
+      />
+      <section className="legal-section" aria-labelledby="terms-content">
+        <div className="legal-inner">
+          <h2 id="terms-content">1. Services</h2>
+          <p>Corner Systems provides AI front-office automation services including (but not limited to) AI chatbot configuration, voice agent deployment, missed-call recovery, CRM integration, and follow-up automation for service businesses. The specific scope of each engagement is agreed in writing before any setup begins.</p>
+
+          <h2>2. Payment</h2>
+          <p>Services are billed as a one-time setup fee plus a recurring monthly retainer. Setup fees are due before work begins. Monthly fees are billed in advance on a recurring basis. All prices are in CAD unless otherwise stated. Setup fees are non-refundable once work has commenced.</p>
+
+          <h2>3. Client responsibilities</h2>
+          <p>You agree to provide accurate business information, timely access to relevant tools and accounts required for setup, and prompt feedback during the onboarding phase. Delays caused by missing access or approvals may extend delivery timelines at no fault of Corner Systems.</p>
+
+          <h2>4. Intellectual property</h2>
+          <p>Custom prompt libraries, workflows, and configurations built for your business during the engagement are owned by you upon full payment. Corner Systems retains the right to use general methodologies and non-proprietary techniques in other engagements.</p>
+
+          <h2>5. Limitation of liability</h2>
+          <p>Corner Systems is not liable for lost revenue, missed appointments, or business outcomes resulting from third-party platform outages, API changes, or events outside our reasonable control. Our total liability for any claim is limited to the fees paid in the 30 days preceding the claim.</p>
+
+          <h2>6. Termination</h2>
+          <p>Either party may terminate the monthly retainer with 30 days written notice. Setup fees already paid are non-refundable. Upon termination, Corner Systems will provide a handoff document covering all active configurations.</p>
+
+          <h2>7. Governing law</h2>
+          <p>These terms are governed by the laws of the Province of Ontario and the federal laws of Canada applicable therein. Any disputes will be resolved in the courts of Ontario.</p>
+
+          <h2>8. Changes</h2>
+          <p>We may update these terms from time to time. Active clients will be notified by email of material changes. Continued use of our services after notice constitutes acceptance.</p>
+
+          <h2>9. Contact</h2>
+          <p>Questions about these terms? Email <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.</p>
+        </div>
+      </section>
+    </>
+  );
+}
+
 // ── Root App ──────────────────────────────────────────────────────────────────
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1466,6 +1594,8 @@ function App() {
     pathname === "/industries" ? "industries" :
     pathname === "/team"       ? "team"       :
     pathname === "/contact"    ? "contact"    :
+    pathname === "/privacy"    ? "privacy"    :
+    pathname === "/terms"      ? "terms"      :
     "home";
 
   return (
@@ -1527,6 +1657,8 @@ function App() {
         {currentPage === "industries" && <IndustriesPage />}
         {currentPage === "team"       && <TeamPage />}
         {currentPage === "contact"    && <ContactPage />}
+        {currentPage === "privacy"    && <PrivacyPage />}
+        {currentPage === "terms"      && <TermsPage />}
         {currentPage === "home"       && <HomePage />}
       </main>
 
@@ -1549,6 +1681,13 @@ function App() {
           ))}
         </nav>
         <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+        <div className="footer-legal" aria-label="Legal links">
+          <a href="/privacy">Privacy Policy</a>
+          <span aria-hidden="true">·</span>
+          <a href="/terms">Terms of Service</a>
+          <span aria-hidden="true">·</span>
+          <span>© {new Date().getFullYear()} Corner Systems AI</span>
+        </div>
       </footer>
     </div>
   );
