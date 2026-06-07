@@ -1742,36 +1742,40 @@ function App() {
     <div className="site-shell">
       {/* Header */}
       <header className="site-header">
-        <a className="brand" href="/" aria-label="Corner Systems home">
-          <img
-            className="cs-logo-img"
-            src="/assets/cs-logo-v2b.png"
-            alt=""
-            width="46"
-            height="46"
-          />
-          <span className="brand-wordmark">
-            <span className="brand-name">Corner&nbsp;Systems</span>
-            <span className="brand-ai">AI</span>
-          </span>
-        </a>
+        <div className="nav-left-group">
+          <a className="brand" href="/" aria-label="Corner Systems home">
+            <img
+              className="cs-logo-img"
+              src="/assets/cs-logo-3d.png"
+              alt=""
+              width="42"
+              height="42"
+            />
+            <span className="brand-wordmark">
+              <span className="brand-name">Corner&nbsp;Systems</span>
+              <span className="brand-ai">AI</span>
+            </span>
+          </a>
 
-        <nav className="desktop-nav" aria-label="Primary navigation">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className={pathname === item.href ? "nav-active" : ""}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
+          <nav className="desktop-nav" aria-label="Primary navigation">
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className={pathname === item.href ? "nav-active" : ""}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        </div>
 
-        <a className="header-cta" href="/contact">
-          Book Discovery
-          <ArrowRight aria-hidden="true" size={18} />
-        </a>
+        <div className="nav-right-group">
+          <a className="header-cta" href="/contact">
+            Book Discovery
+            <ArrowRight aria-hidden="true" size={16} />
+          </a>
+        </div>
 
         <button
           className="icon-button mobile-menu-button"
@@ -1811,7 +1815,7 @@ function App() {
           <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
             <img
               className="cs-logo-img"
-              src="/assets/cs-logo-v2b.png"
+              src="/assets/cs-logo-3d.png"
               alt="Corner Systems AI"
               width="52"
               height="52"
