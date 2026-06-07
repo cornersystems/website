@@ -355,8 +355,8 @@ function useLiveConsole() {
 // Typing / cycling headline hook
 const HERO_LINES = [
   "never misses a call.",
-  "books leads around the clock.",
-  "captures every inquiry.",
+  "books leads 24/7.",
+  "captures every lead.",
   "works while you sleep.",
 ];
 

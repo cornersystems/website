@@ -536,11 +536,8 @@ h1 span {
   font-weight: 760;
   font-style: italic;
   color: var(--teal);
-  /* Fixed height = one line — prevents layout shift as phrases change */
   min-height: 1.2em;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
   filter: drop-shadow(0 0 28px rgba(20, 184, 166, 0.35));
 }
 
