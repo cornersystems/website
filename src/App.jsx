@@ -192,84 +192,85 @@ const deliverables = [
   "Reporting view",
 ];
 
-const pricingAudiences = [
-  { id: "fitness",  label: "Fitness & Studios" },
-  { id: "clinical", label: "Clinics & Aesthetics" },
+const billingOptions = [
+  { id: "monthly", label: "Monthly" },
+  { id: "annual",  label: "Annual" },
 ];
 
-const pricingByAudience = {
-  fitness: {
-    plans: [
-      {
-        id: "starter", name: "Starter", monthly: "$149", setup: "$497",
-        note: "For basic lead capture and fast website response.",
-        badge: "Essentials", accent: "blue", cta: "Start with Starter",
-        highlights: ["AI chatbot", "Lead capture", "FAQ answers", "100 chats included"],
-      },
-      {
-        id: "growth", name: "Growth", monthly: "$299", setup: "$997",
-        note: "For operators who want qualification, CRM handoff, and stronger follow-up.",
-        badge: "Best value", accent: "teal", cta: "Choose Growth",
-        highlights: ["Lead qualification", "CRM integration", "250 chats included", "Lower chat overages"],
-      },
-      {
-        id: "receptionist", name: "AI Receptionist", monthly: "$499", setup: "$1,497",
-        note: "Full voice coverage, missed-call recovery, and chat in one stack.",
-        badge: "Most coverage", accent: "amber", cta: "Book AI Receptionist",
-        highlights: ["AI voice agent", "Missed-call recovery", "200 voice minutes", "Full front-office stack"],
-      },
-    ],
-    rows: [
-      { label: "Monthly price",    values: ["$149", "$299", "$499"],           strong: true },
-      { label: "Setup fee",        values: ["$497", "$997", "$1,497"],         strong: true },
-      { label: "AI chatbot",       values: [true, true, true] },
-      { label: "Lead capture",     values: [true, true, true] },
-      { label: "FAQ answers",      values: [true, true, true] },
-      { label: "Lead qualification",values: [false, true, true] },
-      { label: "CRM integration",  values: [false, true, true] },
-      { label: "AI voice agent",   values: [false, false, true] },
-      { label: "Missed-call recovery", values: [false, false, true] },
-      { label: "Included usage",   values: ["100 chats", "250 chats", "250 chats + 200 voice min"] },
-      { label: "Overages",         values: ["$0.50/chat", "$0.40/chat", "$0.40/chat + $0.20/min"] },
-    ],
+const pricingPlans = [
+  {
+    id: "starter",
+    name: "Starter",
+    prices: {
+      monthly: { amount: "$149", period: "/ month" },
+      annual: { amount: "$134", period: "/ month" },
+    },
+    setup: "$497",
+    note: "For basic lead capture and fast website response.",
+    badge: "Essentials",
+    accent: "blue",
+    cta: "Start with Starter",
+    highlights: ["AI chatbot", "Lead capture", "FAQ answers", "100 chats included"],
   },
-  clinical: {
-    plans: [
-      {
-        id: "intake", name: "Intake", monthly: "$299", setup: "$997",
-        note: "For practices that need every new-patient inquiry captured and qualified.",
-        badge: "Foundation", accent: "blue", cta: "Start with Intake",
-        highlights: ["AI chatbot + web intake", "New-patient lead capture", "FAQ & insurance answers", "250 chats included"],
-      },
-      {
-        id: "practice", name: "Practice", monthly: "$549", setup: "$1,997",
-        note: "For clinics that want booking, CRM/EMR handoff, and recall follow-up.",
-        badge: "Best value", accent: "teal", cta: "Choose Practice",
-        highlights: ["Patient qualification", "CRM / EMR integration", "Booking + reminders", "Recall & reactivation"],
-      },
-      {
-        id: "concierge", name: "AI Concierge", monthly: "$899", setup: "$2,997",
-        note: "For high-ticket clinics and med spas that can't afford a missed call.",
-        badge: "Premium", accent: "amber", cta: "Book AI Concierge",
-        highlights: ["AI voice agent", "Missed-call recovery", "500 voice minutes", "Full concierge front office"],
-      },
-    ],
-    rows: [
-      { label: "Monthly price",            values: ["$299", "$549", "$899"],    strong: true },
-      { label: "Setup fee",                values: ["$997", "$1,997", "$2,997"],strong: true },
-      { label: "AI chatbot + web intake",  values: [true, true, true] },
-      { label: "New-patient lead capture", values: [true, true, true] },
-      { label: "FAQ & insurance answers",  values: [true, true, true] },
-      { label: "Patient qualification",    values: [false, true, true] },
-      { label: "CRM / EMR integration",   values: [false, true, true] },
-      { label: "Booking + reminders",      values: [false, true, true] },
-      { label: "AI voice agent",           values: [false, false, true] },
-      { label: "Missed-call recovery",     values: [false, false, true] },
-      { label: "Included usage",           values: ["250 chats", "400 chats", "400 chats + 500 voice min"] },
-      { label: "Overages",                 values: ["$0.40/chat", "$0.35/chat", "$0.35/chat + $0.20/min"] },
-    ],
+  {
+    id: "growth",
+    name: "Growth",
+    prices: {
+      monthly: { amount: "$299", period: "/ month" },
+      annual: { amount: "$269", period: "/ month" },
+    },
+    setup: "$997",
+    note: "For operators who want qualification, CRM handoff, and stronger follow-up.",
+    badge: "Best value",
+    accent: "teal",
+    cta: "Choose Growth",
+    highlights: ["Lead qualification", "CRM integration", "250 chats included", "Lower chat overages"],
   },
-};
+  {
+    id: "receptionist",
+    name: "AI Receptionist",
+    prices: {
+      monthly: { amount: "$499", period: "/ month" },
+      annual: { amount: "$449", period: "/ month" },
+    },
+    setup: "$1,497",
+    note: "Full voice coverage, missed-call recovery, and chat in one stack.",
+    badge: "Most coverage",
+    accent: "amber",
+    cta: "Book AI Receptionist",
+    highlights: ["AI voice agent", "Missed-call recovery", "200 voice minutes", "Full front-office stack"],
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    prices: {
+      monthly: { amount: "Custom" },
+      annual: { amount: "Custom" },
+    },
+    setup: "Scoped",
+    note: "For multi-location teams, custom workflows, higher usage, and deeper operational control.",
+    badge: "Custom build",
+    accent: "violet",
+    cta: "Talk Enterprise",
+    highlights: ["Custom channels", "Advanced integrations", "Higher usage limits", "Priority optimization"],
+  },
+];
+
+const pricingRows = [
+  { label: "Monthly price", values: ["$149", "$299", "$499", "Custom"], strong: true, billing: "monthly" },
+  { label: "Annual monthly price", values: ["$134", "$269", "$449", "Custom"], strong: true, billing: "annual" },
+  { label: "Setup fee",     values: ["$497", "$997", "$1,497", "Scoped"], strong: true },
+  { label: "AI chatbot",    values: [true, true, true, true] },
+  { label: "Lead capture",  values: [true, true, true, true] },
+  { label: "FAQ answers",   values: [true, true, true, true] },
+  { label: "Lead qualification", values: [false, true, true, true] },
+  { label: "CRM integration",    values: [false, true, true, true] },
+  { label: "AI voice agent",     values: [false, false, true, true] },
+  { label: "Missed-call recovery", values: [false, false, true, true] },
+  { label: "Custom workflows",   values: [false, false, false, true] },
+  { label: "Included usage",     values: ["100 chats", "250 chats", "250 chats + 200 voice min", "Custom limits"] },
+  { label: "Overages",           values: ["$0.50/chat", "$0.40/chat", "$0.40/chat + $0.20/min", "Custom rates"] },
+];
 
 const earlyResults = [
   { metric: "< 2 min",  label: "average response time across all channels" },
@@ -289,7 +290,7 @@ const faqs = [
   },
   {
     question: "How does pricing work?",
-    answer: "Fixed monthly packages starting at $149/mo for fitness or $299/mo for clinical, plus a one-time setup fee. Pick the plan closest to your coverage needs — we scope the exact build around your tools and volume from there. No hourly rates, no surprise add-ons.",
+    answer: "Fixed monthly packages start at $149/mo, with 10% off the monthly rate when billed annually and Enterprise custom pricing for more complex builds. Pick the plan closest to your coverage needs — we scope the exact build around your tools and volume from there. No hourly rates, no surprise add-ons.",
   },
   {
     question: "What happens after we reach out?",
@@ -488,9 +489,10 @@ function PageHero({ eyebrow, title, subtitle, stats = [] }) {
 }
 
 // ── Pricing (shared between homepage teaser and /pricing page) ────────────────
-function PricingSection({ pricingAudience, setPricingAudience, page = false }) {
-  const pricingPlans = pricingByAudience[pricingAudience].plans;
-  const pricingRows  = pricingByAudience[pricingAudience].rows;
+function PricingSection({ page = false }) {
+  const [billingCycle, setBillingCycle] = useState("monthly");
+  const visiblePricingRows = pricingRows.filter((row) => !row.billing || row.billing === billingCycle);
+
   return (
     <section id="pricing" className={`section pricing-section ${page ? "pricing-page-section" : ""}`} aria-labelledby="pricing-title">
       <div className="pricing-heading">
@@ -507,37 +509,19 @@ function PricingSection({ pricingAudience, setPricingAudience, page = false }) {
         </div>
       </div>
 
-      <div className="pricing-toggle" role="tablist" aria-label="Choose your industry">
-        {pricingAudiences.map((aud) => (
+      <div className="pricing-toggle" role="tablist" aria-label="Choose billing cycle">
+        {billingOptions.map((option) => (
           <button
-            key={aud.id} type="button" role="tab"
-            aria-selected={pricingAudience === aud.id}
-            className={`pricing-toggle-btn ${pricingAudience === aud.id ? "active" : ""}`}
-            onClick={() => setPricingAudience(aud.id)}
+            key={option.id}
+            type="button"
+            role="tab"
+            aria-selected={billingCycle === option.id}
+            className={`pricing-toggle-btn ${billingCycle === option.id ? "active" : ""}`}
+            onClick={() => setBillingCycle(option.id)}
           >
-            {aud.label}
+            {option.label}
           </button>
         ))}
-      </div>
-
-      <div className="pricing-roi-bar" aria-label="Return on investment context">
-        {pricingAudience === "fitness" ? (
-          <>
-            <span className="roi-item"><strong>3 extra leads/mo</strong> at $80 avg = $240 — Growth pays for itself</span>
-            <span className="roi-divider" aria-hidden="true">·</span>
-            <span className="roi-item"><strong>1 less no-show/week</strong> at $40 = $160/mo recovered</span>
-            <span className="roi-divider" aria-hidden="true">·</span>
-            <span className="roi-item"><strong>After-hours inquiries</strong> answered instantly, not the next morning</span>
-          </>
-        ) : (
-          <>
-            <span className="roi-item"><strong>2 extra patients/mo</strong> at $200 avg = $400 — Intake pays for itself</span>
-            <span className="roi-divider" aria-hidden="true">·</span>
-            <span className="roi-item"><strong>1 recall reactivation/week</strong> = $800+/mo in recovered revenue</span>
-            <span className="roi-divider" aria-hidden="true">·</span>
-            <span className="roi-item"><strong>Every missed call</strong> caught and followed up automatically</span>
-          </>
-        )}
       </div>
 
       <div className="pricing-card-grid" aria-label="Pricing plans">
@@ -546,11 +530,13 @@ function PricingSection({ pricingAudience, setPricingAudience, page = false }) {
             <div className="pricing-card-top">
               <span className="plan-badge">{plan.badge}</span>
               <h3>{plan.name}</h3>
-              <p>{plan.note}</p>
+              <div className="plan-description">
+                <p>{plan.note}</p>
+              </div>
             </div>
             <div className="plan-price">
-              <strong>{plan.monthly}</strong>
-              <span>/ month</span>
+              <strong>{plan.prices[billingCycle].amount}</strong>
+              <span>{plan.prices[billingCycle].period}</span>
             </div>
             <div className="setup-price">
               <span>Setup</span>
@@ -584,7 +570,7 @@ function PricingSection({ pricingAudience, setPricingAudience, page = false }) {
             </tr>
           </thead>
           <tbody>
-            {pricingRows.map((row) => (
+            {visiblePricingRows.map((row) => (
               <tr key={row.label}>
                 <th scope="row">{row.label}</th>
                 {row.values.map((value, index) => (
@@ -605,7 +591,7 @@ function PricingSection({ pricingAudience, setPricingAudience, page = false }) {
   );
 }
 
-function PricingPage({ pricingAudience, setPricingAudience }) {
+function PricingPage() {
   return (
     <>
       <section className="pricing-hero" aria-labelledby="pricing-page-title">
@@ -622,7 +608,7 @@ function PricingPage({ pricingAudience, setPricingAudience }) {
           </div>
         </div>
       </section>
-      <PricingSection pricingAudience={pricingAudience} setPricingAudience={setPricingAudience} page />
+      <PricingSection page />
       <section className="cta-band pricing-final-cta" aria-label="Pricing call to action">
         <div className="cta-band-inner">
           <div>
@@ -1724,7 +1710,6 @@ function TermsPage() {
 // ── Root App ──────────────────────────────────────────────────────────────────
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [pricingAudience, setPricingAudience] = useState("fitness");
   const pathname = window.location.pathname;
 
   const closeMenu = () => setMenuOpen(false);
@@ -1755,7 +1740,6 @@ function App() {
               />
               <span className="brand-wordmark">
                 <span className="brand-name">Corner&nbsp;Systems</span>
-                <span className="brand-ai">AI</span>
               </span>
             </a>
 
@@ -1803,7 +1787,7 @@ function App() {
       )}
 
       <main id="top">
-        {currentPage === "pricing"    && <PricingPage pricingAudience={pricingAudience} setPricingAudience={setPricingAudience} />}
+        {currentPage === "pricing"    && <PricingPage />}
         {currentPage === "services"   && <ServicesPage />}
         {currentPage === "industries" && <IndustriesPage />}
         {currentPage === "team"       && <TeamPage />}
