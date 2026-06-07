@@ -4,6 +4,8 @@
     { "source": "/services",   "destination": "/" },
     { "source": "/industries", "destination": "/" },
     { "source": "/team",       "destination": "/" },
-    { "source": "/contact",    "destination": "/" }
+    { "source": "/contact",    "destination": "/" },
+    { "source": "/privacy",    "destination": "/" },
+    { "source": "/terms",      "destination": "/" }
   ]
 }
