@@ -44,20 +44,23 @@ const INBOUND_TAB   = "🌐 Inbound";   // website contact form leads (written b
 const LEAD_COLS = [
   "business_name", "owner_name", "city", "state", "phone", "email",
   "website", "niche", "lead_score", "stage", "pain_signal",
-  "has_website", "has_chatbot", "has_voice_agent", "notes",
+  "has_website", "has_chatbot", "has_voice_agent", "has_booking",
+  "detected_tools", "score_reason", "notes",
   "_mark_dead",   // user-editable: type "yes" to kill this lead
 ];
 const LEAD_HEADERS = [
   "Rank", "Business", "Owner", "City", "State", "Phone", "Email",
   "Website", "Niche", "Score", "Stage", "Pain Signal",
-  "Has Website", "Has AI Chatbot", "Has Voice Agent", "Notes",
+  "Has Website", "Has AI Chatbot", "Has Voice Agent", "Has Booking",
+  "Detected Tools", "Why Score", "Notes",
   "⚠️ Mark Dead? (type yes)",
 ];
 
 // Column indices in the Leads tab row array (0-indexed, Rank is [0])
-const LEADS_BIZ_COL   = 1;   // "Business"
-const LEADS_NOTES_COL = 15;  // "Notes"
-const LEADS_DEAD_COL  = 16;  // "⚠️ Mark Dead?"
+const LEADS_BIZ_COL    = 1;   // "Business"
+const LEADS_REASON_COL = 17;  // "Why Score"
+const LEADS_NOTES_COL  = 18;  // "Notes"
+const LEADS_DEAD_COL   = 19;  // "⚠️ Mark Dead?"
 
 // Top 10 tab — columns in display order
 // ⚠️  If you change this order, update the COLUMN INDEX CONSTANTS below too
@@ -151,7 +154,7 @@ export async function syncToSheets() {
       String(i + 1),
       ...LEAD_COLS.map((c) => {
         if (c === "_mark_dead")  return "";  // always blank — user fills in
-        if (c === "has_website" || c === "has_chatbot" || c === "has_voice_agent") return boolLabel(l[c]);
+        if (c === "has_website" || c === "has_chatbot" || c === "has_voice_agent" || c === "has_booking") return boolLabel(l[c]);
         return l[c] == null ? "" : String(l[c]);
       }),
     ]),
@@ -208,6 +211,14 @@ export async function syncToSheets() {
             updateDimensionProperties: {
               range: { sheetId: sheetId2, dimension: "COLUMNS", startIndex: LEADS_BIZ_COL, endIndex: LEADS_BIZ_COL + 1 },
               properties: { pixelSize: 200 },
+              fields: "pixelSize",
+            },
+          },
+          // "Why Score" column wide (the score breakdown)
+          {
+            updateDimensionProperties: {
+              range: { sheetId: sheetId2, dimension: "COLUMNS", startIndex: LEADS_REASON_COL, endIndex: LEADS_REASON_COL + 1 },
+              properties: { pixelSize: 300 },
               fields: "pixelSize",
             },
           },

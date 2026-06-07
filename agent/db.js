@@ -80,9 +80,12 @@ db.exec(`
     ["has_chatbot",        "INTEGER DEFAULT 0"],
     ["has_voice_agent",    "INTEGER DEFAULT 0"],
     ["email_draft",        "TEXT"],
-    ["email_subject",      "TEXT"],          // NEW — subject line for cold email
-    ["followup_d3_draft",  "TEXT"],          // NEW — pre-written D3 follow-up body
-    ["followup_d7_draft",  "TEXT"],          // NEW — pre-written D7 follow-up body
+    ["email_subject",      "TEXT"],          // subject line for cold email
+    ["followup_d3_draft",  "TEXT"],          // pre-written D3 follow-up body
+    ["followup_d7_draft",  "TEXT"],          // pre-written D7 follow-up body
+    ["has_booking",        "INTEGER DEFAULT 0"], // NEW — real online booking platform present
+    ["detected_tools",     "TEXT"],          // NEW — e.g. "Jane App, Tidio"
+    ["score_reason",       "TEXT"],          // NEW — human-readable score breakdown
     ["last_researched",    "TEXT"],
   ];
   for (const [col, def] of migrations) {
@@ -136,6 +139,23 @@ export function updateStage(leadId, stage) {
 export function updateLeadScore(leadId, score) {
   db.prepare("UPDATE leads SET lead_score=?, updated_at=datetime('now') WHERE id=?")
     .run(score, leadId);
+}
+
+// Update score + the "why" reason + detected tooling in one shot.
+export function updateScoreMeta(leadId, { score, reason, tools, hasBooking }) {
+  db.prepare(`UPDATE leads SET
+    lead_score     = ?,
+    score_reason   = ?,
+    detected_tools = ?,
+    has_booking    = ?,
+    updated_at     = datetime('now')
+    WHERE id = ?`).run(
+    score,
+    reason || "",
+    tools  || "",
+    hasBooking ? 1 : 0,
+    leadId
+  );
 }
 
 export function logTouch(leadId, type, channel, status, extra = {}) {
