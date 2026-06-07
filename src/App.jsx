@@ -1742,41 +1742,33 @@ function App() {
     <div className="site-shell">
       {/* Header */}
       <header className="site-header">
-        {/* Left nav links */}
-        <nav className="desktop-nav nav-left" aria-label="Primary navigation left">
-          {["Services", "Industries", "Pricing"].map((label) => {
-            const href = `/${label.toLowerCase()}`;
-            return (
-              <a key={href} href={href} className={`nav-link${pathname === href ? " nav-active" : ""}`}>
-                <span>{label}</span>
-              </a>
-            );
-          })}
-        </nav>
-
-        {/* Center brand */}
-        <a className="brand brand-center" href="/" aria-label="Corner Systems home">
-          <img className="cs-logo-img" src="/assets/cs-logo-v2b.png" alt="" width="42" height="42" />
-          <img className="cs-wordmark-img" src="/assets/cs-wordmark-neon.png" alt="Corner Systems AI" />
+        <a className="brand" href="/" aria-label="Corner Systems home">
+          <img
+            className="cs-logo-img"
+            src="/assets/cs-logo-3d.png"
+            alt="Corner Systems AI"
+            width="52"
+            height="52"
+          />
         </a>
 
-        {/* Right nav links + CTA */}
-        <nav className="desktop-nav nav-right" aria-label="Primary navigation right">
-          {["Team", "Contact"].map((label) => {
-            const href = `/${label.toLowerCase()}`;
-            return (
-              <a key={href} href={href} className={`nav-link${pathname === href ? " nav-active" : ""}`}>
-                <span>{label}</span>
-              </a>
-            );
-          })}
-          <a className="header-cta" href="/contact">
-            Book Discovery
-            <ArrowRight aria-hidden="true" size={16} />
-          </a>
+        <nav className="desktop-nav" aria-label="Primary navigation">
+          {navItems.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={pathname === item.href ? "nav-active" : ""}
+            >
+              {item.label}
+            </a>
+          ))}
         </nav>
 
-        {/* Mobile hamburger */}
+        <a className="header-cta" href="/contact">
+          Book Discovery
+          <ArrowRight aria-hidden="true" size={18} />
+        </a>
+
         <button
           className="icon-button mobile-menu-button"
           type="button"
@@ -1815,15 +1807,11 @@ function App() {
           <a className="brand footer-brand" href="/" aria-label="Corner Systems home">
             <img
               className="cs-logo-img"
-              src="/assets/cs-logo-v2b.png"
-              alt=""
-              width="44"
-              height="44"
+              src="/assets/cs-logo-3d.png"
+              alt="Corner Systems AI"
+              width="52"
+              height="52"
             />
-            <div className="brand-wordmark">
-              <span className="brand-name">Corner Systems</span>
-              <span className="brand-ai-badge">AI</span>
-            </div>
           </a>
           <p className="footer-tagline">Corner Systems AI<span>We're in your corner.</span></p>
         </div>
