@@ -1743,50 +1743,52 @@ function App() {
     <div className="site-shell">
       {/* Header */}
       <header className="site-header">
-        <div className="nav-left-group">
-          <a className="brand" href="/" aria-label="Corner Systems home">
-            <img
-              className="cs-logo-img"
-              src="/assets/cs-logo-3d.png"
-              alt=""
-              width="42"
-              height="42"
-            />
-            <span className="brand-wordmark">
-              <span className="brand-name">Corner&nbsp;Systems</span>
-              <span className="brand-ai">AI</span>
-            </span>
-          </a>
+        <div className="nav-inner">
+          <div className="nav-left-group">
+            <a className="brand" href="/" aria-label="Corner Systems home">
+              <img
+                className="cs-logo-img"
+                src="/assets/cs-logo-3d.png"
+                alt=""
+                width="42"
+                height="42"
+              />
+              <span className="brand-wordmark">
+                <span className="brand-name">Corner&nbsp;Systems</span>
+                <span className="brand-ai">AI</span>
+              </span>
+            </a>
 
-          <nav className="desktop-nav" aria-label="Primary navigation">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className={pathname === item.href ? "nav-active" : ""}
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
+            <nav className="desktop-nav" aria-label="Primary navigation">
+              {navItems.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={pathname === item.href ? "nav-active" : ""}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          <div className="nav-right-group">
+            <a className="header-cta" href="/contact">
+              Book Discovery
+              <ArrowRight aria-hidden="true" size={16} />
+            </a>
+          </div>
+
+          <button
+            className="icon-button mobile-menu-button"
+            type="button"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
-
-        <div className="nav-right-group">
-          <a className="header-cta" href="/contact">
-            Book Discovery
-            <ArrowRight aria-hidden="true" size={16} />
-          </a>
-        </div>
-
-        <button
-          className="icon-button mobile-menu-button"
-          type="button"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((o) => !o)}
-        >
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
       </header>
 
       {menuOpen && (

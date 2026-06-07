@@ -67,15 +67,22 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 30;
+  min-height: 72px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(30, 27, 22, 0.92);
+  backdrop-filter: blur(18px);
+}
+
+/* Same container as .hero-content — logo left-edge locks to badge/headline */
+.nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: 14px 0;
   min-height: 72px;
-  padding: 14px clamp(18px, 4vw, 56px);
-  border-bottom: 1px solid var(--line);
-  background: rgba(30, 27, 22, 0.92);
-  backdrop-filter: blur(18px);
 }
 
 /* ── Left group: brand + nav (Stripe/Ramp lockup) ─────────────────────────── */
@@ -3267,7 +3274,8 @@ h3 {
 }
 
 @media (max-width: 720px) {
-  .site-header {
+  .site-header,
+  .nav-inner {
     min-height: 68px;
   }
 
