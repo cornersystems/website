@@ -169,7 +169,7 @@ const proofPoints = [
 ];
 
 const process = [
-  { step: "01", title: "Review", text: "Where do leads come from, who handles them, and what slips?" },
+  { step: "01", title: "Review", text: "Where do leads come from, who handles them, and what gets missed?" },
   { step: "02", title: "Map",    text: "Define intake, routing, booking, follow-up, alerts, and ownership." },
   { step: "03", title: "Build",  text: "Set up the front office flow and test realistic customer scenarios." },
   { step: "04", title: "Improve",text: "Tighten weak points as the business learns what converts." },
@@ -178,7 +178,7 @@ const process = [
 const snapshots = [
   { value: "24/7",  label: "coverage" },
   { value: "All",   label: "channels" },
-  { value: "Zero",  label: "leads dropped" },
+  { value: "Zero",  label: "missed leads" },
 ];
 
 const deliverables = [
@@ -498,7 +498,7 @@ function PricingSection({ page = false }) {
       <div className="pricing-heading">
         <div>
           <p className="eyebrow">Pricing</p>
-          <h2 id="pricing-title">Clear packages. No mystery software bill.</h2>
+          <h2 id="pricing-title">Clear packages for real front-office coverage.</h2>
           <p className="section-copy">
             Start with chat and lead capture, add qualification and CRM handoff, or move into full AI receptionist coverage with voice and missed-call recovery.
           </p>
@@ -594,26 +594,22 @@ function PricingSection({ page = false }) {
 function PricingPage() {
   return (
     <>
-      <section className="pricing-hero" aria-labelledby="pricing-page-title">
-        <div className="pricing-hero-inner">
-          <p className="eyebrow">Dedicated pricing</p>
-          <h1 id="pricing-page-title">Pick the coverage level that stops the leak.</h1>
-          <p>
-            Transparent monthly packages for AI reception, lead capture, missed-call recovery, and follow-up automation. Every plan is tuned to the tools and workflow already inside your business.
-          </p>
-          <div className="pricing-hero-stats" aria-label="Pricing highlights">
-            <span><strong>24/7</strong> coverage</span>
-            <span><strong>$179+</strong> monthly, billed annually</span>
-            <span><strong>CRM</strong> ready</span>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Pricing"
+        title="Choose the front-office coverage your business needs."
+        subtitle="Start with lead capture, add qualification and CRM handoff, or move into full AI receptionist coverage. Annual plans are shown first so you can see the best monthly rate."
+        stats={[
+          { value: "$179+", label: "monthly, billed annually" },
+          { value: "10%", label: "annual savings" },
+          { value: "Setup", label: "quoted upfront" },
+        ]}
+      />
       <PricingSection page />
       <section className="cta-band pricing-final-cta" aria-label="Pricing call to action">
         <div className="cta-band-inner">
           <div>
-            <h2>Want the cleanest fit?</h2>
-            <p>Send the current intake flow and we will recommend the simplest package before you commit.</p>
+            <h2>Not sure which plan fits?</h2>
+            <p>Book a discovery call and we will recommend the simplest package for your current lead flow.</p>
           </div>
           <a className="button button-primary" href="/contact">
             Book Discovery
@@ -637,13 +633,13 @@ function ServicesPage() {
   return (
     <>
       <PageHero
-        eyebrow="What we build"
-        title="AI systems that handle the front office."
-        subtitle="From first inquiry to confirmed booking — we design, build, and maintain every piece of the intake and follow-up stack for your business."
+        eyebrow="Services"
+        title="AI front-office systems that answer, qualify, and book."
+        subtitle="Give every inquiry a fast, professional response across calls, texts, email, forms, and DMs. We build the workflow around the tools your team already uses."
         stats={[
           { value: "24/7", label: "coverage" },
-          { value: "All channels", label: "covered" },
-          { value: "Zero", label: "leads dropped" },
+          { value: "All channels", label: "handled" },
+          { value: "CRM", label: "handoff ready" },
         ]}
       />
 
@@ -673,7 +669,7 @@ function ServicesPage() {
       <section className="section deliverables-section" aria-label="What you get">
         <div className="section-heading">
           <p className="eyebrow">What you get</p>
-          <h2>Everything needed to stop leakage at the front door.</h2>
+          <h2>Everything needed to stop missed leads at the front door.</h2>
           <p className="section-copy">
             We focus on the moment someone reaches out, how they are handled, where the lead goes, who owns it, and what happens next.
           </p>
@@ -801,13 +797,13 @@ function IndustriesPage() {
   return (
     <>
       <PageHero
-        eyebrow="Industries we serve"
-        title="Built for businesses where every inquiry counts."
-        subtitle="If your business depends on people reaching out — and a missed one costs you real money — Corner Systems keeps the front door covered."
+        eyebrow="Industries"
+        title="Built for service businesses where every inquiry matters."
+        subtitle="Gyms, clinics, med spas, and other appointment-based businesses use Corner Systems to respond faster, capture more leads, and keep follow-up moving."
         stats={[
-          { value: "3+", label: "industries" },
-          { value: "10+", label: "business types" },
-          { value: "All channels", label: "covered" },
+          { value: "Gyms", label: "and studios" },
+          { value: "Clinics", label: "and med spas" },
+          { value: "All channels", label: "handled" },
         ]}
       />
 
@@ -1020,9 +1016,14 @@ function ContactPage() {
   return (
     <>
       <PageHero
-        eyebrow="Start clean"
-        title="Book your discovery call."
-        subtitle="Tell us where inquiries come from and what feels inconsistent. We'll use that context to map the cleanest next step on the call."
+        eyebrow="Contact"
+        title="Book a 20-minute discovery call."
+        subtitle="Tell us how leads reach you today. We will map the current flow, identify the missed opportunities, and recommend the clearest next step."
+        stats={[
+          { value: "20", label: "minutes" },
+          { value: "Clear", label: "recommendation" },
+          { value: "No", label: "pressure" },
+        ]}
       />
 
       <section className="section contact-section" id="contact">
@@ -1030,7 +1031,7 @@ function ContactPage() {
           <p className="eyebrow">Get in touch</p>
           <h2>Let's map your front office.</h2>
           <p className="section-copy">
-            A 20-minute call. No pitch deck. We look at where leads come from, who handles them, and what slips — then recommend the cleanest fix.
+            A focused call to review where leads come from, who handles them, and what is being missed. You leave with a clear recommendation.
           </p>
           <div className="trust-row" aria-label="Trust points">
             <span><ShieldCheck aria-hidden="true" size={18} /> Owner-first workflows</span>
@@ -1313,7 +1314,7 @@ function HomePage() {
         <div className="snapshot-inner">
           <SnapshotCounter value="24" suffix="/7" label="coverage" />
           <SnapshotCounter value="100" suffix="%" label="channels covered" />
-          <SnapshotCounter value="0" suffix="" label="leads dropped" />
+          <SnapshotCounter value="0" suffix="" label="missed leads" />
         </div>
       </section>
 
