@@ -23,7 +23,7 @@ const SEQUENCES = {
 
 Pain signal we found: "${lead.pain_signal}"
 
-Corner Systems sells AI front-office systems for gyms and service businesses — AI receptionists, lead capture, follow-up automation, CRM. Pricing: $149-$499/month + setup.
+Corner Systems sells AI front-office systems for gyms and service businesses — AI receptionists, lead capture, follow-up automation, CRM. Pricing: $199-$499/month + setup.
 
 Rules:
 - 4-6 sentences MAX. No fluff.

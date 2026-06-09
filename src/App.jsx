@@ -193,8 +193,8 @@ const deliverables = [
 ];
 
 const billingOptions = [
-  { id: "monthly", label: "Monthly" },
   { id: "annual",  label: "Annual" },
+  { id: "monthly", label: "Monthly" },
 ];
 
 const pricingPlans = [
@@ -202,8 +202,8 @@ const pricingPlans = [
     id: "starter",
     name: "Starter",
     prices: {
-      monthly: { amount: "$149", period: "/ month" },
-      annual: { amount: "$134", period: "/ month" },
+      monthly: { amount: "$199", period: "/ month" },
+      annual: { amount: "$179", period: "/ month" },
     },
     setup: "$497",
     note: "For basic lead capture and fast website response.",
@@ -217,7 +217,7 @@ const pricingPlans = [
     name: "Growth",
     prices: {
       monthly: { amount: "$299", period: "/ month" },
-      annual: { amount: "$269", period: "/ month" },
+      annual: { amount: "$249", period: "/ month" },
     },
     setup: "$997",
     note: "For operators who want qualification, CRM handoff, and stronger follow-up.",
@@ -257,8 +257,8 @@ const pricingPlans = [
 ];
 
 const pricingRows = [
-  { label: "Monthly price", values: ["$149", "$299", "$499", "Custom"], strong: true, billing: "monthly" },
-  { label: "Annual monthly price", values: ["$134", "$269", "$449", "Custom"], strong: true, billing: "annual" },
+  { label: "Monthly price", values: ["$199", "$299", "$499", "Custom"], strong: true, billing: "monthly" },
+  { label: "Annual monthly price", values: ["$179", "$249", "$449", "Custom"], strong: true, billing: "annual" },
   { label: "Setup fee",     values: ["$497", "$997", "$1,497", "Scoped"], strong: true },
   { label: "AI chatbot",    values: [true, true, true, true] },
   { label: "Lead capture",  values: [true, true, true, true] },
@@ -290,7 +290,7 @@ const faqs = [
   },
   {
     question: "How does pricing work?",
-    answer: "Fixed monthly packages start at $149/mo, with 10% off the monthly rate when billed annually and Enterprise custom pricing for more complex builds. Pick the plan closest to your coverage needs — we scope the exact build around your tools and volume from there. No hourly rates, no surprise add-ons.",
+    answer: "Fixed packages start at $179/mo when billed annually, or $199 month-to-month, with Enterprise custom pricing for more complex builds. Pick the plan closest to your coverage needs — we scope the exact build around your tools and volume from there. No hourly rates, no surprise add-ons.",
   },
   {
     question: "What happens after we reach out?",
@@ -490,7 +490,7 @@ function PageHero({ eyebrow, title, subtitle, stats = [] }) {
 
 // ── Pricing (shared between homepage teaser and /pricing page) ────────────────
 function PricingSection({ page = false }) {
-  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [billingCycle, setBillingCycle] = useState("annual");
   const visiblePricingRows = pricingRows.filter((row) => !row.billing || row.billing === billingCycle);
 
   return (
@@ -603,7 +603,7 @@ function PricingPage() {
           </p>
           <div className="pricing-hero-stats" aria-label="Pricing highlights">
             <span><strong>24/7</strong> coverage</span>
-            <span><strong>$149+</strong> monthly</span>
+            <span><strong>$179+</strong> monthly, billed annually</span>
             <span><strong>CRM</strong> ready</span>
           </div>
         </div>
@@ -1205,12 +1205,6 @@ function HomePage() {
         <div className="hero-content">
           <div className="hero-copy">
 
-            {/* Brand badge — top of hero */}
-            <div className="hero-brand-badge">
-              <span className="hero-brand-dot" aria-hidden="true" />
-              Corner Systems AI
-            </div>
-
             {/* Typing headline */}
             <h1 id="hero-title" aria-label="Your front office, never misses a call.">
               <span className="h1-static">Your front office,</span>
@@ -1219,6 +1213,14 @@ function HomePage() {
                 <span className="type-cursor" />
               </span>
             </h1>
+
+            <div className="hero-channels" aria-label="Every communication channel captured">
+              <span className="hero-channel"><PhoneCall size={15} aria-hidden="true" /> Calls</span>
+              <span className="hero-channel"><MessageSquareText size={15} aria-hidden="true" /> SMS</span>
+              <span className="hero-channel"><Mail size={15} aria-hidden="true" /> Email</span>
+              <span className="hero-channel"><Instagram size={15} aria-hidden="true" /> DMs</span>
+              <span className="hero-channel"><Bot size={15} aria-hidden="true" /> AI Chat</span>
+            </div>
 
             <p className="hero-lede">
               For gyms, clinics, and med spas where every inquiry is real money. Every call, DM, text, and form — captured, qualified, and booked 24/7.
@@ -1236,14 +1238,6 @@ function HomePage() {
                 See Services
                 <ChevronRight aria-hidden="true" size={20} />
               </a>
-            </div>
-
-            <div className="hero-channels" aria-label="Every communication channel captured">
-              <span className="hero-channel"><PhoneCall size={15} aria-hidden="true" /> Calls</span>
-              <span className="hero-channel"><MessageSquareText size={15} aria-hidden="true" /> SMS</span>
-              <span className="hero-channel"><Mail size={15} aria-hidden="true" /> Email</span>
-              <span className="hero-channel"><Instagram size={15} aria-hidden="true" /> DMs</span>
-              <span className="hero-channel"><Bot size={15} aria-hidden="true" /> AI Chat</span>
             </div>
           </div>
 
@@ -1553,7 +1547,7 @@ function HomePage() {
         <div className="pricing-teaser">
           <div>
             <p className="eyebrow">Pricing</p>
-            <h2>Packages from $149/month, scoped around your real front office.</h2>
+            <h2>Plans starting from $179/month when billed annually.</h2>
             <p className="section-copy">
               Compare the full chat, CRM, voice, and missed-call recovery packages on the dedicated pricing page.
             </p>

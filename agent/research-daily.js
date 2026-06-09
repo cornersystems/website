@@ -295,7 +295,7 @@ Context:
 - Has voice agent already: ${hasVoice}
 - Angle: ${angle}
 
-Corner Systems builds AI front-office systems: AI chat, missed-call recovery, DM automation, lead capture, CRM handoff. Pricing starts at $149/month.
+Corner Systems builds AI front-office systems: AI chat, missed-call recovery, DM automation, lead capture, CRM handoff. Pricing starts at $199/month.
 
 Rules for the EMAIL BODY:
 - Start with: ${greeting}
