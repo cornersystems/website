@@ -498,7 +498,7 @@ function PricingSection({ page = false }) {
       <div className="pricing-heading">
         <div>
           <p className="eyebrow">Pricing</p>
-          <h2 id="pricing-title">Clear packages for real front-office coverage.</h2>
+          <h2 id="pricing-title">Clear plans for front-office coverage.</h2>
           <p className="section-copy">
             Start with chat and lead capture, add qualification and CRM handoff, or move into full AI receptionist coverage with voice and missed-call recovery.
           </p>
@@ -596,11 +596,11 @@ function PricingPage() {
     <>
       <PageHero
         eyebrow="Pricing"
-        title="Choose the front-office coverage your business needs."
-        subtitle="Start with lead capture, add qualification and CRM handoff, or move into full AI receptionist coverage. Annual plans are shown first so you can see the best monthly rate."
+        title="AI front-office pricing."
+        subtitle="Annual plans start at $179/month. Choose the package that fits your lead volume and coverage needs."
         stats={[
-          { value: "$179+", label: "monthly, billed annually" },
-          { value: "10%", label: "annual savings" },
+          { value: "$179+", label: "billed annually" },
+          { value: "$199", label: "month-to-month" },
           { value: "Setup", label: "quoted upfront" },
         ]}
       />
@@ -634,11 +634,11 @@ function ServicesPage() {
     <>
       <PageHero
         eyebrow="Services"
-        title="AI front-office systems that answer, qualify, and book."
-        subtitle="Give every inquiry a fast, professional response across calls, texts, email, forms, and DMs. We build the workflow around the tools your team already uses."
+        title="AI front-office services."
+        subtitle="Capture, qualify, and book leads across calls, texts, email, forms, and DMs."
         stats={[
           { value: "24/7", label: "coverage" },
-          { value: "All channels", label: "handled" },
+          { value: "All", label: "channels handled" },
           { value: "CRM", label: "handoff ready" },
         ]}
       />
@@ -647,7 +647,7 @@ function ServicesPage() {
       <section className="section services-section" aria-labelledby="services-title">
         <div className="section-heading">
           <p className="eyebrow">Core services</p>
-          <h2 id="services-title">Simple pieces that make the whole business sharper.</h2>
+          <h2 id="services-title">Keep leads moving.</h2>
           <p className="section-copy">
             The goal is not more software. The goal is a business that answers well, books cleanly, follows up consistently, and knows where every lead stands.
           </p>
@@ -798,12 +798,12 @@ function IndustriesPage() {
     <>
       <PageHero
         eyebrow="Industries"
-        title="Built for service businesses where every inquiry matters."
-        subtitle="Gyms, clinics, med spas, and other appointment-based businesses use Corner Systems to respond faster, capture more leads, and keep follow-up moving."
+        title="Industries we serve."
+        subtitle="For gyms, clinics, med spas, and appointment-based teams that need every inquiry answered fast."
         stats={[
           { value: "Gyms", label: "and studios" },
           { value: "Clinics", label: "and med spas" },
-          { value: "All channels", label: "handled" },
+          { value: "All", label: "channels handled" },
         ]}
       />
 
@@ -1017,11 +1017,11 @@ function ContactPage() {
     <>
       <PageHero
         eyebrow="Contact"
-        title="Book a 20-minute discovery call."
-        subtitle="Tell us how leads reach you today. We will map the current flow, identify the missed opportunities, and recommend the clearest next step."
+        title="Book a discovery call."
+        subtitle="In 20 minutes, we will review your lead flow and recommend the clearest next step."
         stats={[
           { value: "20", label: "minutes" },
-          { value: "Clear", label: "recommendation" },
+          { value: "Clear", label: "next step" },
           { value: "No", label: "pressure" },
         ]}
       />
