@@ -10,6 +10,7 @@ import {
   Dumbbell,
   HeartPulse,
   Instagram,
+  LockKeyhole,
   Mail,
   Menu,
   MessageSquareText,
@@ -82,6 +83,12 @@ const PAGE_META = {
     description:
       "Compare Corner Systems AI receptionist, lead capture, missed-call recovery, booking, and CRM automation packages for gyms, clinics, and med spas.",
     canonical: "https://cornersystems.vercel.app/pricing",
+  },
+  "/crm": {
+    title: "CRM Login | Corner Systems",
+    description:
+      "Internal Corner Systems CRM login for team access to leads, conversations, support tickets, callbacks, and follow-up tasks.",
+    canonical: "https://cornersystems.vercel.app/crm",
   },
 };
 
@@ -1702,6 +1709,56 @@ function TermsPage() {
   );
 }
 
+// ── /crm page ────────────────────────────────────────────────────────────────
+function CrmLoginPage() {
+  const [status, setStatus] = useState("");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    setStatus("CRM authentication is not connected yet. The next step is wiring this screen to the custom CRM auth backend.");
+  }
+
+  return (
+    <section className="crm-login-page" aria-labelledby="crm-login-title">
+      <div className="crm-login-shell">
+        <div className="crm-login-copy">
+          <span className="eyebrow">Internal CRM</span>
+          <h1 id="crm-login-title">Corner Systems team access</h1>
+          <p>
+            This is the entry point for the custom CRM that will manage leads,
+            businesses, conversations, support tickets, callbacks, and follow-up tasks.
+          </p>
+          <div className="crm-login-checks" aria-label="CRM implementation status">
+            <span><ShieldCheck size={16} aria-hidden="true" /> Custom CRM planned</span>
+            <span><ShieldCheck size={16} aria-hidden="true" /> HubSpot not used</span>
+            <span><ShieldCheck size={16} aria-hidden="true" /> Auth backend pending</span>
+          </div>
+        </div>
+
+        <form className="crm-login-panel" onSubmit={handleSubmit}>
+          <div className="crm-login-icon" aria-hidden="true">
+            <LockKeyhole size={22} />
+          </div>
+          <h2>Sign in</h2>
+          <label>
+            Email
+            <input type="email" name="email" autoComplete="email" placeholder="team@cornersystems.ai" />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" autoComplete="current-password" placeholder="Password" />
+          </label>
+          <button type="submit" className="button primary-button">
+            Continue
+            <ArrowRight size={17} aria-hidden="true" />
+          </button>
+          {status && <p className="crm-login-status" role="status">{status}</p>}
+        </form>
+      </div>
+    </section>
+  );
+}
+
 // ── Root App ──────────────────────────────────────────────────────────────────
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1717,6 +1774,7 @@ function App() {
     pathname === "/contact"    ? "contact"    :
     pathname === "/privacy"    ? "privacy"    :
     pathname === "/terms"      ? "terms"      :
+    pathname === "/crm"        ? "crm"        :
     "home";
 
   return (
@@ -1789,6 +1847,7 @@ function App() {
         {currentPage === "contact"    && <ContactPage />}
         {currentPage === "privacy"    && <PrivacyPage />}
         {currentPage === "terms"      && <TermsPage />}
+        {currentPage === "crm"        && <CrmLoginPage />}
         {currentPage === "home"       && <HomePage />}
       </main>
 

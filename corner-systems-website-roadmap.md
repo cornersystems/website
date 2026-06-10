@@ -273,15 +273,51 @@ Analytics events:
 
 ## Repo And Data Hygiene
 
-- [ ] Migrate durable outbound sales pipeline responsibility out of `website/agent/` and into `/home/michael/cornersystems/agent-network`.
-- [ ] Ensure all lead lists, sales lists, prospect exports, CRM databases, and outbound pipeline data are created/stored in `agent-network`, not `website/`.
+- [x] Migrate durable outbound sales pipeline responsibility out of `website/agent/` and into `/home/michael/cornersystems/agent-network` by copying reusable scripts to `agent-network/outbound/`.
+- [x] Ensure all new lead lists, sales lists, prospect exports, CRM databases, and outbound pipeline data are created/stored in `agent-network`, not `website/`.
 - [ ] Keep only website-specific lead capture and integration code in this repo.
+
+## Custom CRM And Agent Endpoints
+
+- [x] Document that Corner Systems should use a custom CRM for the agent network, not HubSpot.
+- [x] Add `/crm` as the internal login entry point for the future custom CRM.
+- [x] Add a client-side `/crm` login placeholder so there is a clear internal entry point while the real CRM/auth backend is planned.
+- [x] Keep `/crm` out of the public navigation for now.
+- [x] Document in this repo that the website should implement the `cs_*` CRM/tool contracts from `/home/michael/cornersystems/agent-network/config/tool-schemas.json`.
+- [ ] Wire `/crm` to real server-side authentication before showing private CRM records.
+- [ ] Implement authenticated website API endpoints for the `cs_*` ElevenLabs tools defined in `/home/michael/cornersystems/agent-network/config/tool-schemas.json`.
+- [ ] Add or connect a custom CRM data store for leads, businesses, contacts, discovery requests, support tickets, client-success requests, partner inquiries, callbacks, events, and follow-up tasks.
+- [ ] Decide whether the existing SQLite outbound pipeline database in `agent-network/outbound/` is the first CRM backend or only a temporary pipeline store.
+- [ ] Return explicit `configured: false` responses for CRM/calendar endpoints that are not live yet, so the agent does not claim records or bookings were created.
+- [ ] Keep website form handling here, but write reusable lead/contact/pipeline records through the custom CRM layer owned by `agent-network`.
+- [ ] Add a protected CRM dashboard after login for leads, businesses, contacts, conversations, tickets, callbacks, partner inquiries, and follow-up tasks.
+- [ ] Add role-based access for internal users before any private records are exposed.
+- [ ] Add audit logging for CRM record views, edits, exports, and agent-created events.
+- [ ] Add invite/password reset or chosen sign-in recovery flow.
+- [ ] Add a clear logout/session-expiry flow.
+
+Current implementation notes:
+
+- `/crm` exists as a website route and displays an internal CRM login UI.
+- The `/crm` form does not authenticate yet. It only shows a message that the auth backend still needs to be wired.
+- No private CRM records are shown yet.
+- The current approach keeps Corner Systems separate from Automate4U accounts, HubSpot setup, and ElevenLabs agents.
+- Build verification passed after adding the placeholder route, but CRM backend work has not started.
+
+Open questions before building the real CRM:
+
+- Who should have initial CRM access: Michael only, Tom only, both, or a wider team?
+- Preferred login method: email/password, magic link, Google OAuth, or another provider?
+- Where should CRM data live first: the existing SQLite outbound pipeline DB, a new Postgres/Supabase database, Vercel Postgres, or another store?
+- Should `/crm` stay as the internal URL, or should the real app use an admin-only path such as `/admin/crm`?
+- Should the outbound pipeline database be migrated into the CRM, synced into the CRM, or kept as a separate prospecting pipeline?
+- Which CRM view should be built first: lead inbox, business/contact records, conversation logs, follow-up tasks, or support tickets?
 
 ## Integrations To Show Only If Supported Or Planned
 
 - [ ] Google Calendar
 - [ ] Calendly
-- [ ] HubSpot
+- [ ] Custom Corner Systems CRM
 - [ ] Twilio
 - [ ] Mindbody
 - [ ] Jane App

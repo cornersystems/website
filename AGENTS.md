@@ -43,6 +43,11 @@ Run commands from `website/`.
 - `agent/` scripts can send email, make calls, update local CRM data, and sync external systems. Do not run outbound or mutating agent scripts without explicit user approval.
 - All new lead lists, sales lists, prospect exports, CRM databases, outbound pipeline data, and related automation artifacts belong in `/home/michael/cornersystems/agent-network`, not in this website repo.
 - If work touches existing `website/agent/` files, prefer moving the durable workflow/data responsibility to `agent-network` and keep only website-specific integration points here.
+- Corner Systems does not use HubSpot for the agent network. Do not add HubSpot-specific CRM code unless the user explicitly changes that decision.
+- Website API routes may host integration endpoints for the custom Corner Systems CRM, but the source of truth for tool contracts is `/home/michael/cornersystems/agent-network/config/tool-schemas.json`.
+- When implementing ElevenLabs/custom CRM endpoints here, use the `cs_*` contracts from `agent-network`: routing context, lead create/update, discovery lead, discovery availability, discovery booking, support ticket, client-success request, partner intake, internal notification, callback request, and conversation event logging.
+- Endpoints that are not fully live must return an explicit `configured: false` style response instead of pretending a CRM record, ticket, or booking was created.
+- `/crm` is the internal CRM login entry point. Do not treat the current client-side placeholder as production authentication; wire it to real server-side auth before exposing private CRM data.
 - Do not commit `.env`, `.env.local`, `agent/pipeline.db`, Google credential JSON, exported lead files, or generated logs.
 
 ## Verification
