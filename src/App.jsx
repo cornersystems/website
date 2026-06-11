@@ -10,13 +10,16 @@ import {
   Clock3,
   DollarSign,
   Dumbbell,
+  ExternalLink,
   Flame,
+  Globe,
   HeartPulse,
   Inbox,
   Instagram,
   LayoutDashboard,
   LockKeyhole,
   Mail,
+  MapPin,
   Menu,
   MessageSquareText,
   PhoneCall,
@@ -25,6 +28,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  StickyNote,
   Target,
   TrendingUp,
   UserPlus,
@@ -1729,7 +1733,11 @@ function CrmDashboard() {
   const [autoSendDefault, setAutoSendDefault] = useState(false);
   const [draftEdits, setDraftEdits] = useState({});
   const [draftStatus, setDraftStatus] = useState({});
-  const [activityLead, setActivityLead] = useState(null);
+  const [detailLead, setDetailLead] = useState(null);
+  const [detailActivity, setDetailActivity] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailNotes, setDetailNotes] = useState("");
+  const [detailSaving, setDetailSaving] = useState(false);
 
   const authFetch = useCallback(async (url, opts = {}) => {
     const token = await getToken();
@@ -1797,15 +1805,56 @@ function CrmDashboard() {
 
   useEffect(() => {
     if (tab !== "activity") return;
-    const params = new URLSearchParams();
-    if (activityLead) params.set("lead_id", activityLead.id);
-    authFetch(`/api/crm/activity?${params}`).then(r => r.ok ? r.json() : [])
+    authFetch("/api/crm/activity").then(r => r.ok ? r.json() : [])
       .then(d => setActivity(Array.isArray(d) ? d : [])).catch(() => {});
-  }, [tab, activityLead, authFetch]);
+  }, [tab, authFetch]);
 
-  function viewLeadActivity(lead) {
-    setActivityLead({ id: lead.id, business_name: lead.business_name });
-    setTab("activity");
+  function openLeadDetail(lead) {
+    setDetailLead(lead);
+    setDetailNotes(lead.notes || "");
+    setDetailActivity([]);
+    setDetailLoading(true);
+    authFetch(`/api/crm/activity?lead_id=${lead.id}`).then(r => r.ok ? r.json() : [])
+      .then(d => setDetailActivity(Array.isArray(d) ? d : []))
+      .finally(() => setDetailLoading(false));
+  }
+
+  function closeLeadDetail() {
+    setDetailLead(null);
+    setDetailActivity([]);
+  }
+
+  function applyLeadPatch(id, patch) {
+    setLeads(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l));
+    setHotLeads(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l));
+    setFollowups(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l));
+    setDetailLead(d => d && d.id === id ? { ...d, ...patch } : d);
+  }
+
+  async function patchLead(id, patch) {
+    applyLeadPatch(id, patch);
+    const res = await authFetch("/api/crm/leads", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...patch }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      if (updated?.id) applyLeadPatch(id, updated);
+    }
+  }
+
+  async function saveDetailNotes() {
+    if (!detailLead) return;
+    setDetailSaving(true);
+    await patchLead(detailLead.id, { notes: detailNotes });
+    setDetailSaving(false);
+  }
+
+  function emailLead(l) {
+    setCompose({ open: true, to_email: l.email, to_name: l.owner_name || "", subject: "", body: "", lead_id: l.id });
+    setTab("compose");
+    closeLeadDetail();
   }
 
   async function toggleAutoSendDefault() {
@@ -1820,12 +1869,15 @@ function CrmDashboard() {
 
   async function updateLeadAutoSend(id, value) {
     const auto_send_emails = value === "on" ? true : value === "off" ? false : null;
-    setLeads(ls => ls.map(l => l.id === id ? { ...l, auto_send_emails } : l));
-    await authFetch("/api/crm/leads", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, auto_send_emails }),
-    });
+    await patchLead(id, { auto_send_emails });
+  }
+
+  async function updateLeadStage(id, stage) {
+    await patchLead(id, { stage });
+  }
+
+  async function updateLeadTier(id, lead_tier) {
+    await patchLead(id, { lead_tier });
   }
 
   async function draftAction(id, action) {
@@ -2010,7 +2062,7 @@ function CrmDashboard() {
               <tbody>
                 {hotLeads.map(l => (
                   <tr key={l.id}>
-                    <td className="crm-td-business">{l.business_name}</td>
+                    <td className="crm-td-business"><button className="crm-link-business" onClick={() => openLeadDetail(l)}>{l.business_name}</button></td>
                     <td>{l.owner_name || "—"}</td>
                     <td>{l.email ? <a href={`mailto:${l.email}`}>{l.email}</a> : "—"}</td>
                     <td><StageBadge stage={l.stage} /></td>
@@ -2018,12 +2070,7 @@ function CrmDashboard() {
                     <td>{l.pain_signal || "—"}</td>
                     <td>{l.last_touched ? new Date(l.last_touched).toLocaleDateString() : "—"}</td>
                     <td>
-                      {l.email && (
-                        <button className="crm-btn-mini" onClick={() => {
-                          setCompose({ open: true, to_email: l.email, to_name: l.owner_name || "", subject: "", body: "", lead_id: l.id });
-                          setTab("compose");
-                        }}>Email</button>
-                      )}
+                      {l.email && <button className="crm-btn-mini" onClick={() => emailLead(l)}>Email</button>}
                     </td>
                   </tr>
                 ))}
@@ -2047,19 +2094,14 @@ function CrmDashboard() {
                 {followups.map(l => (
                   <tr key={l.id}>
                     <td>{l.followup_type === "d3" ? "Day 3" : "Day 7"}</td>
-                    <td className="crm-td-business">{l.business_name}</td>
+                    <td className="crm-td-business"><button className="crm-link-business" onClick={() => openLeadDetail(l)}>{l.business_name}</button></td>
                     <td>{l.owner_name || "—"}</td>
                     <td>{l.email ? <a href={`mailto:${l.email}`}>{l.email}</a> : "—"}</td>
                     <td><StageBadge stage={l.stage} /></td>
                     <td>{l.lead_score ?? "—"}</td>
                     <td>{l.last_touched ? new Date(l.last_touched).toLocaleDateString() : "—"}</td>
                     <td>
-                      {l.email && (
-                        <button className="crm-btn-mini" onClick={() => {
-                          setCompose({ open: true, to_email: l.email, to_name: l.owner_name || "", subject: "", body: "", lead_id: l.id });
-                          setTab("compose");
-                        }}>Email</button>
-                      )}
+                      {l.email && <button className="crm-btn-mini" onClick={() => emailLead(l)}>Email</button>}
                     </td>
                   </tr>
                 ))}
@@ -2121,12 +2163,6 @@ function CrmDashboard() {
       {/* Activity */}
       {tab === "activity" && (
         <div className="crm-content">
-          {activityLead && (
-            <div className="crm-toolbar-spread">
-              <span>Showing activity for <strong>{activityLead.business_name}</strong></span>
-              <button className="crm-btn-mini" onClick={() => setActivityLead(null)}>Show all</button>
-            </div>
-          )}
           <div className="crm-table-wrap">
             <table className="crm-table">
               <thead><tr>
@@ -2180,7 +2216,7 @@ function CrmDashboard() {
                 <tbody>
                   {leads.map(l => (
                     <tr key={l.id}>
-                      <td className="crm-td-business">{l.business_name}</td>
+                      <td className="crm-td-business"><button className="crm-link-business" onClick={() => openLeadDetail(l)}>{l.business_name}</button></td>
                       <td>{l.owner_name || "—"}</td>
                       <td>{l.email ? <a href={`mailto:${l.email}`}>{l.email}</a> : "—"}</td>
                       <td><StageBadge stage={l.stage} /></td>
@@ -2195,13 +2231,7 @@ function CrmDashboard() {
                         </select>
                       </td>
                       <td>
-                        {l.email && (
-                          <button className="crm-btn-mini" onClick={() => {
-                            setCompose({ open: true, to_email: l.email, to_name: l.owner_name || "", subject: "", body: "", lead_id: l.id });
-                            setTab("compose");
-                          }}>Email</button>
-                        )}
-                        <button className="crm-btn-mini" onClick={() => viewLeadActivity(l)}>Activity</button>
+                        {l.email && <button className="crm-btn-mini" onClick={() => emailLead(l)}>Email</button>}
                       </td>
                     </tr>
                   ))}
@@ -2286,6 +2316,166 @@ function CrmDashboard() {
         </div>
       )}
       </div>
+
+      <LeadDetailDrawer
+        lead={detailLead}
+        activity={detailActivity}
+        loading={detailLoading}
+        notes={detailNotes}
+        onNotesChange={setDetailNotes}
+        onSaveNotes={saveDetailNotes}
+        savingNotes={detailSaving}
+        onClose={closeLeadDetail}
+        onChangeStage={updateLeadStage}
+        onChangeTier={updateLeadTier}
+        onChangeAutoSend={updateLeadAutoSend}
+        onEmail={emailLead}
+        STAGES={STAGES}
+      />
+    </div>
+  );
+}
+
+function LeadDetailDrawer({ lead, activity, loading, notes, onNotesChange, onSaveNotes, savingNotes, onClose, onChangeStage, onChangeTier, onChangeAutoSend, onEmail, STAGES }) {
+  if (!lead) return null;
+  const tools = (lead.detected_tools || "").split(",").map(s => s.trim()).filter(Boolean);
+  const website = lead.website_url || lead.website;
+  const igHandle = lead.instagram?.replace(/^@/, "");
+
+  return (
+    <div className="crm-drawer-overlay" onClick={onClose}>
+      <aside className="crm-drawer" onClick={e => e.stopPropagation()}>
+        <div className="crm-drawer-header">
+          <div>
+            <h2 className="crm-drawer-title">{lead.business_name}</h2>
+            <div className="crm-drawer-badges">
+              <StageBadge stage={lead.stage} />
+              {lead.lead_tier && lead.lead_tier !== "unknown" && (
+                <span className={`crm-tier-badge crm-tier-${lead.lead_tier}`}>{lead.lead_tier}</span>
+              )}
+              {lead.lead_score != null && <span className="crm-score-badge">Score {lead.lead_score}</span>}
+            </div>
+          </div>
+          <button className="crm-drawer-close" onClick={onClose} aria-label="Close"><X size={20} /></button>
+        </div>
+
+        <div className="crm-drawer-body">
+          {lead.email && (
+            <button className="crm-btn-compose" onClick={() => onEmail(lead)}>
+              <Mail size={15} /> Email {lead.owner_name || lead.business_name}
+            </button>
+          )}
+
+          <section className="crm-drawer-section">
+            <h3>Contact</h3>
+            <div className="crm-drawer-grid">
+              <div><span className="crm-drawer-label">Owner</span><span>{lead.owner_name || "—"}</span></div>
+              <div><span className="crm-drawer-label">Email</span><span>{lead.email ? <a href={`mailto:${lead.email}`}>{lead.email}</a> : "—"}</span></div>
+              <div><span className="crm-drawer-label">Phone</span><span>{lead.phone ? <a href={`tel:${lead.phone}`}>{lead.phone}</a> : "—"}</span></div>
+              <div><span className="crm-drawer-label">Location</span><span>{[lead.city, lead.state].filter(Boolean).join(", ") || "—"}</span></div>
+              <div><span className="crm-drawer-label">Niche</span><span>{lead.niche || "—"}</span></div>
+              <div><span className="crm-drawer-label">Source</span><span>{lead.source || "—"}</span></div>
+            </div>
+            {(website || igHandle || lead.google_maps) && (
+              <div className="crm-drawer-links">
+                {website && <a href={website} target="_blank" rel="noreferrer"><Globe size={14} /> Website <ExternalLink size={12} /></a>}
+                {igHandle && <a href={`https://instagram.com/${igHandle}`} target="_blank" rel="noreferrer"><Instagram size={14} /> Instagram <ExternalLink size={12} /></a>}
+                {lead.google_maps && <a href={lead.google_maps} target="_blank" rel="noreferrer"><MapPin size={14} /> Maps <ExternalLink size={12} /></a>}
+              </div>
+            )}
+          </section>
+
+          {lead.pain_signal && (
+            <section className="crm-drawer-section">
+              <h3>Pain signal</h3>
+              <p className="crm-drawer-note">{lead.pain_signal}</p>
+            </section>
+          )}
+
+          {(lead.has_website || lead.has_chatbot || lead.has_voice_agent || lead.has_booking || tools.length > 0 || lead.score_reason) && (
+            <section className="crm-drawer-section">
+              <h3>Capabilities detected</h3>
+              <div className="crm-drawer-chips">
+                {lead.has_website && <span className="crm-chip">Website</span>}
+                {lead.has_chatbot && <span className="crm-chip">Chatbot</span>}
+                {lead.has_voice_agent && <span className="crm-chip">Voice agent</span>}
+                {lead.has_booking && <span className="crm-chip">Online booking</span>}
+                {tools.map(t => <span className="crm-chip" key={t}>{t}</span>)}
+              </div>
+              {lead.score_reason && <p className="crm-drawer-note">{lead.score_reason}</p>}
+            </section>
+          )}
+
+          <section className="crm-drawer-section">
+            <h3>Status</h3>
+            <div className="crm-drawer-grid crm-drawer-grid-controls">
+              <label>
+                <span className="crm-drawer-label">Stage</span>
+                <select className="crm-filter" value={lead.stage} onChange={e => onChangeStage(lead.id, e.target.value)}>
+                  {STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                </select>
+              </label>
+              <label>
+                <span className="crm-drawer-label">Tier</span>
+                <select className="crm-filter" value={lead.lead_tier || "unknown"} onChange={e => onChangeTier(lead.id, e.target.value)}>
+                  <option value="unknown">Unknown</option>
+                  <option value="cold">Cold</option>
+                  <option value="warm">Warm</option>
+                  <option value="hot">Hot</option>
+                </select>
+              </label>
+              <label>
+                <span className="crm-drawer-label">Auto-send</span>
+                <select className="crm-filter" value={lead.auto_send_emails === true ? "on" : lead.auto_send_emails === false ? "off" : "default"}
+                  onChange={e => onChangeAutoSend(lead.id, e.target.value)}>
+                  <option value="default">Default</option>
+                  <option value="on">Auto-send</option>
+                  <option value="off">Review</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="crm-drawer-section">
+            <h3><StickyNote size={15} /> Notes</h3>
+            <textarea className="crm-drawer-notes" rows={4} value={notes}
+              onChange={e => onNotesChange(e.target.value)} placeholder="Internal notes about this contact…" />
+            <button className="crm-btn-mini" disabled={savingNotes} onClick={onSaveNotes}>
+              {savingNotes ? "Saving…" : "Save notes"}
+            </button>
+          </section>
+
+          <section className="crm-drawer-section">
+            <h3><Activity size={15} /> Activity history</h3>
+            {loading ? <p className="crm-loading">Loading…</p> : activity.length === 0 ? (
+              <p className="crm-empty">No activity yet.</p>
+            ) : (
+              <ul className="crm-drawer-timeline">
+                {activity.map(a => (
+                  <li key={a.id}>
+                    <div className="crm-timeline-head">
+                      <TouchStatusBadge status={a.status} />
+                      <span className="crm-timeline-date">{new Date(a.created_at).toLocaleString()}</span>
+                    </div>
+                    <div className="crm-timeline-body">
+                      <strong>{a.type}</strong>{a.channel ? ` · ${a.channel.replace(/_/g, " ")}` : ""}
+                      {a.subject && <div>{a.subject}</div>}
+                      {a.notes && <div className="crm-timeline-notes">{a.notes}</div>}
+                      {(a.opened_at || a.clicked_at || a.bounced_at) && (
+                        <div className="crm-timeline-tracking">
+                          {a.opened_at && <span title={new Date(a.opened_at).toLocaleString()}>👁 Opened</span>}
+                          {a.clicked_at && <span title={new Date(a.clicked_at).toLocaleString()}>🔗 Clicked</span>}
+                          {a.bounced_at && <span style={{ color: "#ef4444" }} title={new Date(a.bounced_at).toLocaleString()}>⚠ Bounced</span>}
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </aside>
     </div>
   );
 }

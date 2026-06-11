@@ -169,12 +169,25 @@ export default async function handler(req, res) {
     return res.json(leads);
   }
 
-  // PATCH /leads — per-lead auto-send override (true/false/null = use global default)
+  // PATCH /leads — per-lead auto-send override, and manual edits to
+  // stage / tier / notes from the lead detail drawer
   if (resource === "leads" && req.method === "PATCH") {
-    const { id, auto_send_emails } = req.body;
+    const { id, auto_send_emails, stage, lead_tier, notes } = req.body;
     if (!id) return res.status(400).json({ error: "id required" });
-    await sql`UPDATE leads SET auto_send_emails = ${auto_send_emails}, updated_at = NOW() WHERE id = ${id}`;
-    return res.json({ ok: true });
+    if (auto_send_emails !== undefined) {
+      await sql`UPDATE leads SET auto_send_emails = ${auto_send_emails}, updated_at = NOW() WHERE id = ${id}`;
+    }
+    if (stage !== undefined) {
+      await sql`UPDATE leads SET stage = ${stage}, last_touched = NOW(), updated_at = NOW() WHERE id = ${id}`;
+    }
+    if (lead_tier !== undefined) {
+      await sql`UPDATE leads SET lead_tier = ${lead_tier}, updated_at = NOW() WHERE id = ${id}`;
+    }
+    if (notes !== undefined) {
+      await sql`UPDATE leads SET notes = ${notes}, updated_at = NOW() WHERE id = ${id}`;
+    }
+    const rows = await sql`SELECT * FROM leads WHERE id = ${id}`;
+    return res.json(rows[0] || { ok: true });
   }
 
   // ── tickets ────────────────────────────────────────────────────────────────
