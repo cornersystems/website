@@ -1684,11 +1684,31 @@ function UrgencyBadge({ urgency }) {
   );
 }
 
+const TOUCH_STATUS_COLORS = {
+  sent: "#16a34a", pending_review: "#f59e0b", rejected: "#6b7280",
+  failed: "#ef4444", received: "#0ea5e9", completed: "#16a34a",
+};
+
+function TouchStatusBadge({ status }) {
+  return (
+    <span style={{
+      background: TOUCH_STATUS_COLORS[status] || "#6b7280",
+      color: "#fff", fontSize: "0.72rem", fontWeight: 700,
+      padding: "2px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.04em",
+    }}>{status?.replace(/_/g, " ")}</span>
+  );
+}
+
 function CrmDashboard() {
   const { getToken } = useAuth();
-  const [tab, setTab]             = useState("pipeline");
+  const [tab, setTab]             = useState("dashboard");
   const [leads, setLeads]         = useState([]);
   const [stats, setStats]         = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [hotLeads, setHotLeads]   = useState([]);
+  const [followups, setFollowups] = useState([]);
+  const [drafts, setDrafts]       = useState([]);
+  const [activity, setActivity]   = useState([]);
   const [tickets, setTickets]     = useState([]);
   const [callbacks, setCallbacks] = useState([]);
   const [search, setSearch]       = useState("");
@@ -1697,6 +1717,10 @@ function CrmDashboard() {
   const [compose, setCompose]     = useState({ open: false, to_email: "", to_name: "", subject: "", body: "", lead_id: null });
   const [sendStatus, setSendStatus] = useState("");
   const [dbInit, setDbInit]         = useState("");
+  const [autoSendDefault, setAutoSendDefault] = useState(false);
+  const [draftEdits, setDraftEdits] = useState({});
+  const [draftStatus, setDraftStatus] = useState({});
+  const [activityLead, setActivityLead] = useState(null);
 
   const authFetch = useCallback(async (url, opts = {}) => {
     const token = await getToken();
@@ -1723,6 +1747,87 @@ function CrmDashboard() {
     if (tab === "callbacks") authFetch("/api/crm/callbacks").then(r => r.ok ? r.json() : [])
       .then(d => setCallbacks(Array.isArray(d) ? d : [])).catch(() => {});
   }, [tab, authFetch]);
+
+  useEffect(() => {
+    if (tab !== "dashboard") return;
+    authFetch("/api/crm/dashboard").then(r => r.ok ? r.json() : null).then(setDashboard).catch(() => {});
+  }, [tab, authFetch]);
+
+  useEffect(() => {
+    if (tab !== "hot") return;
+    authFetch("/api/crm/hot-leads").then(r => r.ok ? r.json() : [])
+      .then(d => setHotLeads(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [tab, authFetch]);
+
+  useEffect(() => {
+    if (tab !== "followups") return;
+    authFetch("/api/crm/followups").then(r => r.ok ? r.json() : [])
+      .then(d => setFollowups(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [tab, authFetch]);
+
+  const refreshDrafts = useCallback(() => {
+    authFetch("/api/crm/drafts").then(r => r.ok ? r.json() : [])
+      .then(d => setDrafts(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [authFetch]);
+
+  useEffect(() => {
+    if (tab !== "drafts") return;
+    refreshDrafts();
+    authFetch("/api/crm/settings").then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setAutoSendDefault(!!d.auto_send_emails_default); }).catch(() => {});
+  }, [tab, authFetch, refreshDrafts]);
+
+  useEffect(() => {
+    if (tab !== "activity") return;
+    const params = new URLSearchParams();
+    if (activityLead) params.set("lead_id", activityLead.id);
+    authFetch(`/api/crm/activity?${params}`).then(r => r.ok ? r.json() : [])
+      .then(d => setActivity(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [tab, activityLead, authFetch]);
+
+  function viewLeadActivity(lead) {
+    setActivityLead({ id: lead.id, business_name: lead.business_name });
+    setTab("activity");
+  }
+
+  async function toggleAutoSendDefault() {
+    const next = !autoSendDefault;
+    setAutoSendDefault(next);
+    await authFetch("/api/crm/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auto_send_emails_default: next }),
+    });
+  }
+
+  async function updateLeadAutoSend(id, value) {
+    const auto_send_emails = value === "on" ? true : value === "off" ? false : null;
+    setLeads(ls => ls.map(l => l.id === id ? { ...l, auto_send_emails } : l));
+    await authFetch("/api/crm/leads", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, auto_send_emails }),
+    });
+  }
+
+  async function draftAction(id, action) {
+    setDraftStatus(s => ({ ...s, [id]: action }));
+    const edit = draftEdits[id] || {};
+    const res = await authFetch("/api/crm/drafts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action, subject: edit.subject, body: edit.body }),
+    });
+    if (res.ok) {
+      if (action === "approve" || action === "reject") {
+        setDrafts(d => d.filter(x => x.id !== id));
+      } else {
+        setDraftStatus(s => ({ ...s, [id]: "saved" }));
+      }
+    } else {
+      setDraftStatus(s => ({ ...s, [id]: "error" }));
+    }
+  }
 
   async function sendEmail(e) {
     e.preventDefault();
@@ -1795,14 +1900,240 @@ function CrmDashboard() {
 
       {/* Tabs */}
       <nav className="crm-tabs">
-        {["pipeline","tickets","callbacks","compose"].map(t => (
+        {[
+          ["dashboard", "Dashboard"],
+          ["hot", "Hot Leads"],
+          ["followups", "Follow-ups"],
+          ["drafts", "Drafts"],
+          ["pipeline", "Pipeline"],
+          ["activity", "Activity"],
+          ["tickets", "Tickets"],
+          ["callbacks", "Callbacks"],
+          ["compose", "Compose"],
+        ].map(([t, label]) => (
           <button key={t} className={`crm-tab${tab === t ? " crm-tab-active" : ""}`} onClick={() => setTab(t)}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {label}
             {t === "tickets"   && stats?.openTickets     > 0 && <span className="crm-tab-badge">{stats.openTickets}</span>}
             {t === "callbacks" && stats?.pendingCallbacks > 0 && <span className="crm-tab-badge">{stats.pendingCallbacks}</span>}
+            {t === "drafts"    && (stats?.pendingDrafts  ?? drafts.length)   > 0 && <span className="crm-tab-badge">{stats?.pendingDrafts ?? drafts.length}</span>}
+            {t === "hot"       && (stats?.hotLeadsCount  ?? hotLeads.length) > 0 && <span className="crm-tab-badge">{stats?.hotLeadsCount ?? hotLeads.length}</span>}
+            {t === "followups" && (stats?.followupsCount ?? followups.length) > 0 && <span className="crm-tab-badge">{stats?.followupsCount ?? followups.length}</span>}
           </button>
         ))}
       </nav>
+
+      {/* Dashboard */}
+      {tab === "dashboard" && (
+        <div className="crm-content">
+          {!dashboard ? <p className="crm-loading">Loading…</p> : (
+            <>
+              <div className="crm-dash-grid">
+                <div className="crm-dash-card">
+                  <h3>Emails sent</h3>
+                  <div className="crm-dash-row"><span>Today</span><strong>{dashboard.emails.today}</strong></div>
+                  <div className="crm-dash-row"><span>Yesterday</span><strong>{dashboard.emails.yesterday}</strong></div>
+                  <div className="crm-dash-row"><span>This week</span><strong>{dashboard.emails.week}</strong></div>
+                  <div className="crm-dash-row"><span>This month</span><strong>{dashboard.emails.month}</strong></div>
+                </div>
+                <div className="crm-dash-card">
+                  <h3>Replies received</h3>
+                  <div className="crm-dash-row"><span>Today</span><strong>{dashboard.replies.today}</strong></div>
+                  <div className="crm-dash-row"><span>Yesterday</span><strong>{dashboard.replies.yesterday}</strong></div>
+                  <div className="crm-dash-row"><span>This week</span><strong>{dashboard.replies.week}</strong></div>
+                  <div className="crm-dash-row"><span>This month</span><strong>{dashboard.replies.month}</strong></div>
+                </div>
+                <div className="crm-dash-card">
+                  <h3>New leads</h3>
+                  <div className="crm-dash-row"><span>Today</span><strong>{dashboard.newLeads.today}</strong></div>
+                  <div className="crm-dash-row"><span>Yesterday</span><strong>{dashboard.newLeads.yesterday}</strong></div>
+                  <div className="crm-dash-row"><span>This week</span><strong>{dashboard.newLeads.week}</strong></div>
+                  <div className="crm-dash-row"><span>This month</span><strong>{dashboard.newLeads.month}</strong></div>
+                </div>
+                <div className="crm-dash-card">
+                  <h3>Business</h3>
+                  <div className="crm-dash-row"><span>Active clients</span><strong>{dashboard.activeClients}</strong></div>
+                  <div className="crm-dash-row"><span>MRR</span><strong>${dashboard.mrr.toLocaleString()}</strong></div>
+                  <div className="crm-dash-row"><span>Drafts awaiting review</span><strong>{dashboard.pendingDrafts}</strong></div>
+                </div>
+              </div>
+
+              <h3 className="crm-section-title">Pipeline funnel</h3>
+              <div className="crm-funnel">
+                {dashboard.stages.map(s => {
+                  const max = Math.max(...dashboard.stages.map(x => x.count), 1);
+                  return (
+                    <div className="crm-funnel-row" key={s.stage}>
+                      <span className="crm-funnel-label"><StageBadge stage={s.stage} /></span>
+                      <div className="crm-funnel-bar-wrap">
+                        <div className="crm-funnel-bar" style={{ width: `${(s.count / max) * 100}%`, background: STAGE_COLORS[s.stage] || "#6b7280" }} />
+                      </div>
+                      <span className="crm-funnel-count">{s.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Hot Leads */}
+      {tab === "hot" && (
+        <div className="crm-content">
+          <div className="crm-table-wrap">
+            <table className="crm-table">
+              <thead><tr>
+                <th>Business</th><th>Owner</th><th>Email</th><th>Stage</th>
+                <th>Score</th><th>Pain signal</th><th>Last touched</th><th></th>
+              </tr></thead>
+              <tbody>
+                {hotLeads.map(l => (
+                  <tr key={l.id}>
+                    <td className="crm-td-business">{l.business_name}</td>
+                    <td>{l.owner_name || "—"}</td>
+                    <td>{l.email ? <a href={`mailto:${l.email}`}>{l.email}</a> : "—"}</td>
+                    <td><StageBadge stage={l.stage} /></td>
+                    <td>{l.lead_score ?? "—"}</td>
+                    <td>{l.pain_signal || "—"}</td>
+                    <td>{l.last_touched ? new Date(l.last_touched).toLocaleDateString() : "—"}</td>
+                    <td>
+                      {l.email && (
+                        <button className="crm-btn-mini" onClick={() => {
+                          setCompose({ open: true, to_email: l.email, to_name: l.owner_name || "", subject: "", body: "", lead_id: l.id });
+                          setTab("compose");
+                        }}>Email</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {hotLeads.length === 0 && <tr><td colSpan={8} className="crm-empty">No hot leads right now.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Follow-ups Due */}
+      {tab === "followups" && (
+        <div className="crm-content">
+          <div className="crm-table-wrap">
+            <table className="crm-table">
+              <thead><tr>
+                <th>Follow-up</th><th>Business</th><th>Owner</th><th>Email</th><th>Stage</th>
+                <th>Score</th><th>Last touched</th><th></th>
+              </tr></thead>
+              <tbody>
+                {followups.map(l => (
+                  <tr key={l.id}>
+                    <td>{l.followup_type === "d3" ? "Day 3" : "Day 7"}</td>
+                    <td className="crm-td-business">{l.business_name}</td>
+                    <td>{l.owner_name || "—"}</td>
+                    <td>{l.email ? <a href={`mailto:${l.email}`}>{l.email}</a> : "—"}</td>
+                    <td><StageBadge stage={l.stage} /></td>
+                    <td>{l.lead_score ?? "—"}</td>
+                    <td>{l.last_touched ? new Date(l.last_touched).toLocaleDateString() : "—"}</td>
+                    <td>
+                      {l.email && (
+                        <button className="crm-btn-mini" onClick={() => {
+                          setCompose({ open: true, to_email: l.email, to_name: l.owner_name || "", subject: "", body: "", lead_id: l.id });
+                          setTab("compose");
+                        }}>Email</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {followups.length === 0 && <tr><td colSpan={8} className="crm-empty">No follow-ups due.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Drafts */}
+      {tab === "drafts" && (
+        <div className="crm-content">
+          <div className="crm-toolbar crm-toolbar-spread">
+            <div>{drafts.length} draft{drafts.length === 1 ? "" : "s"} awaiting review</div>
+            <label className="crm-toggle-label">
+              <input type="checkbox" checked={autoSendDefault} onChange={toggleAutoSendDefault} />
+              Auto-send all future emails (skip review)
+            </label>
+          </div>
+          {drafts.length === 0 && <p className="crm-empty">No drafts awaiting review.</p>}
+          {drafts.map(d => {
+            const edit = draftEdits[d.id] || {};
+            const subject = edit.subject ?? d.subject ?? "";
+            const body    = edit.body ?? d.body ?? "";
+            const status  = draftStatus[d.id];
+            return (
+              <div className="crm-draft-card" key={d.id}>
+                <div className="crm-draft-header">
+                  <div>
+                    <strong>{d.business_name}</strong>{d.owner_name ? ` — ${d.owner_name}` : ""}
+                    {d.lead_email && <> · <a href={`mailto:${d.lead_email}`}>{d.lead_email}</a></>}
+                  </div>
+                  <span className="crm-draft-channel">{d.channel?.replace(/_/g, " ")}</span>
+                </div>
+                <input className="crm-draft-subject" value={subject}
+                  onChange={e => setDraftEdits(s => ({ ...s, [d.id]: { ...s[d.id], subject: e.target.value, body } }))} />
+                <textarea className="crm-draft-body" rows={8} value={body}
+                  onChange={e => setDraftEdits(s => ({ ...s, [d.id]: { ...s[d.id], subject, body: e.target.value } }))} />
+                <div className="crm-draft-footer">
+                  <button className="crm-btn-mini" disabled={status === "edit"} onClick={() => draftAction(d.id, "edit")}>
+                    {status === "edit" ? "Saving…" : "Save edits"}
+                  </button>
+                  <button className="button button-primary" disabled={status === "approve"} onClick={() => draftAction(d.id, "approve")}>
+                    {status === "approve" ? "Sending…" : "Approve & send"}
+                  </button>
+                  <button className="crm-btn-mini crm-btn-danger" disabled={status === "reject"} onClick={() => draftAction(d.id, "reject")}>
+                    {status === "reject" ? "Rejecting…" : "Reject"}
+                  </button>
+                  {status === "saved" && <span className="crm-status-ok">Saved</span>}
+                  {status === "error" && <span className="crm-status-err">Something went wrong — try again.</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Activity */}
+      {tab === "activity" && (
+        <div className="crm-content">
+          {activityLead && (
+            <div className="crm-toolbar-spread">
+              <span>Showing activity for <strong>{activityLead.business_name}</strong></span>
+              <button className="crm-btn-mini" onClick={() => setActivityLead(null)}>Show all</button>
+            </div>
+          )}
+          <div className="crm-table-wrap">
+            <table className="crm-table">
+              <thead><tr>
+                <th>When</th><th>Business</th><th>Type</th><th>Channel</th><th>Status</th><th>Subject</th><th>Tracking</th>
+              </tr></thead>
+              <tbody>
+                {activity.map(a => (
+                  <tr key={a.id}>
+                    <td>{new Date(a.created_at).toLocaleString()}</td>
+                    <td className="crm-td-business">{a.business_name}</td>
+                    <td>{a.type}</td>
+                    <td>{a.channel?.replace(/_/g, " ") || "—"}</td>
+                    <td><TouchStatusBadge status={a.status} /></td>
+                    <td>{a.subject || a.notes || "—"}</td>
+                    <td>
+                      {a.opened_at  && <span title={new Date(a.opened_at).toLocaleString()}>👁 Opened</span>}
+                      {a.clicked_at && <span title={new Date(a.clicked_at).toLocaleString()}> · 🔗 Clicked</span>}
+                      {a.bounced_at && <span title={new Date(a.bounced_at).toLocaleString()} style={{ color: "#ef4444" }}> · ⚠ Bounced</span>}
+                      {!a.opened_at && !a.clicked_at && !a.bounced_at && "—"}
+                    </td>
+                  </tr>
+                ))}
+                {activity.length === 0 && <tr><td colSpan={7} className="crm-empty">No activity yet.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Pipeline */}
       {tab === "pipeline" && (
@@ -1823,7 +2154,7 @@ function CrmDashboard() {
               <table className="crm-table">
                 <thead><tr>
                   <th>Business</th><th>Owner</th><th>Email</th><th>Stage</th>
-                  <th>Score</th><th>Last touched</th><th></th>
+                  <th>Score</th><th>Last touched</th><th>Auto-send</th><th></th>
                 </tr></thead>
                 <tbody>
                   {leads.map(l => (
@@ -1835,16 +2166,25 @@ function CrmDashboard() {
                       <td>{l.lead_score ?? "—"}</td>
                       <td>{l.last_touched ? new Date(l.last_touched).toLocaleDateString() : "—"}</td>
                       <td>
+                        <select className="crm-filter" value={l.auto_send_emails === true ? "on" : l.auto_send_emails === false ? "off" : "default"}
+                          onChange={e => updateLeadAutoSend(l.id, e.target.value)}>
+                          <option value="default">Default</option>
+                          <option value="on">Auto-send</option>
+                          <option value="off">Review</option>
+                        </select>
+                      </td>
+                      <td>
                         {l.email && (
                           <button className="crm-btn-mini" onClick={() => {
                             setCompose({ open: true, to_email: l.email, to_name: l.owner_name || "", subject: "", body: "", lead_id: l.id });
                             setTab("compose");
                           }}>Email</button>
                         )}
+                        <button className="crm-btn-mini" onClick={() => viewLeadActivity(l)}>Activity</button>
                       </td>
                     </tr>
                   ))}
-                  {leads.length === 0 && <tr><td colSpan={7} className="crm-empty">No leads found.</td></tr>}
+                  {leads.length === 0 && <tr><td colSpan={8} className="crm-empty">No leads found.</td></tr>}
                 </tbody>
               </table>
             </div>

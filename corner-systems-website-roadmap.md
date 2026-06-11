@@ -284,34 +284,30 @@ Analytics events:
 - [x] Add a client-side `/crm` login placeholder so there is a clear internal entry point while the real CRM/auth backend is planned.
 - [x] Keep `/crm` out of the public navigation for now.
 - [x] Document in this repo that the website should implement the `cs_*` CRM/tool contracts from `/home/michael/cornersystems/agent-network/config/tool-schemas.json`.
-- [ ] Wire `/crm` to real server-side authentication before showing private CRM records.
+- [x] Wire `/crm` to real server-side authentication before showing private CRM records (Clerk v5 + `@clerk/backend`, `website/api/_auth.js`).
 - [ ] Implement authenticated website API endpoints for the `cs_*` ElevenLabs tools defined in `/home/michael/cornersystems/agent-network/config/tool-schemas.json`.
-- [ ] Add or connect a custom CRM data store for leads, businesses, contacts, discovery requests, support tickets, client-success requests, partner inquiries, callbacks, events, and follow-up tasks.
-- [ ] Decide whether the existing SQLite outbound pipeline database in `agent-network/outbound/` is the first CRM backend or only a temporary pipeline store.
+- [x] Add or connect a custom CRM data store for leads, businesses, contacts, support tickets, callbacks, and follow-up activity (Neon Postgres, `website/api/_db.js` — single system of record shared with `agent-network/outbound/`).
+- [x] Decide whether the existing SQLite outbound pipeline database is the first CRM backend or only a temporary pipeline store — resolved: SQLite removed entirely, Neon Postgres is the system of record for both the CRM and the outbound pipeline (2026-06-11).
 - [ ] Return explicit `configured: false` responses for CRM/calendar endpoints that are not live yet, so the agent does not claim records or bookings were created.
 - [ ] Keep website form handling here, but write reusable lead/contact/pipeline records through the custom CRM layer owned by `agent-network`.
-- [ ] Add a protected CRM dashboard after login for leads, businesses, contacts, conversations, tickets, callbacks, partner inquiries, and follow-up tasks.
-- [ ] Add role-based access for internal users before any private records are exposed.
+- [x] Add a protected CRM dashboard after login: Dashboard (master metrics + pipeline funnel), Hot Leads, Follow-ups Due, Drafts (AI email review/approve/reject + auto-send toggle), Activity (email open/click/reply feed, per-lead filterable), Pipeline, Compose, Tickets, Callbacks (2026-06-11).
+- [ ] Add role-based access for internal users before any private records are exposed (currently any Clerk-authenticated user has full access).
 - [ ] Add audit logging for CRM record views, edits, exports, and agent-created events.
-- [ ] Add invite/password reset or chosen sign-in recovery flow.
-- [ ] Add a clear logout/session-expiry flow.
+- [x] Add invite/password reset or chosen sign-in recovery flow — handled by Clerk's hosted `<SignIn>` component.
+- [x] Add a clear logout/session-expiry flow — handled by Clerk's `<UserButton>` and session management.
 
 Current implementation notes:
 
-- `/crm` exists as a website route and displays an internal CRM login UI.
-- The `/crm` form does not authenticate yet. It only shows a message that the auth backend still needs to be wired.
-- No private CRM records are shown yet.
+- `/crm` is a Clerk-authenticated route (`<SignedIn>`/`<SignedOut>` + `<SignIn routing="hash">`); unauthenticated users see the Clerk sign-in UI.
+- The CRM dashboard reads/writes Neon Postgres directly via `/api/crm/*` endpoints (leads, touches, tickets, callbacks, settings, dashboard, hot-leads, followups, drafts, activity).
+- AI-drafted outreach emails from the outbound pipeline land in the Drafts tab as `pending_review` and are sent via Resend on approval (or auto-sent if `auto_send_emails` is enabled globally or per-lead).
+- Email opens/clicks/bounces are tracked via a Resend webhook (`/api/email/events`) — registering the webhook URL + secret in Resend/Vercel is still a manual step (see `agent-network/agent-network-roadmap.md` Phase 4).
 - The current approach keeps Corner Systems separate from Automate4U accounts, HubSpot setup, and ElevenLabs agents.
-- Build verification passed after adding the placeholder route, but CRM backend work has not started.
 
-Open questions before building the real CRM:
+Open questions before further CRM work:
 
-- Who should have initial CRM access: Michael only, Tom only, both, or a wider team?
-- Preferred login method: email/password, magic link, Google OAuth, or another provider?
-- Where should CRM data live first: the existing SQLite outbound pipeline DB, a new Postgres/Supabase database, Vercel Postgres, or another store?
-- Should `/crm` stay as the internal URL, or should the real app use an admin-only path such as `/admin/crm`?
-- Should the outbound pipeline database be migrated into the CRM, synced into the CRM, or kept as a separate prospecting pipeline?
-- Which CRM view should be built first: lead inbox, business/contact records, conversation logs, follow-up tasks, or support tickets?
+- Should role-based access be added before giving the business partner direct CRM login access, or is shared full access acceptable for now?
+- Which `cs_*` tool endpoints (from `agent-network/config/tool-schemas.json`) should be implemented next for the ElevenLabs agent network?
 
 ## Integrations To Show Only If Supported Or Planned
 

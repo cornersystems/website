@@ -31,10 +31,38 @@ export async function initSchema() {
       lead_tier       TEXT DEFAULT 'unknown',
       conversation_id TEXT,
       last_touched    TIMESTAMPTZ,
+      auto_send_emails BOOLEAN,
+      google_maps     TEXT,
+      has_website     BOOLEAN DEFAULT FALSE,
+      website_url     TEXT,
+      has_chatbot     BOOLEAN DEFAULT FALSE,
+      has_voice_agent BOOLEAN DEFAULT FALSE,
+      has_booking     BOOLEAN DEFAULT FALSE,
+      detected_tools  TEXT,
+      score_reason    TEXT,
+      email_draft     TEXT,
+      email_subject   TEXT,
+      followup_d3_draft TEXT,
+      followup_d7_draft TEXT,
+      last_researched TIMESTAMPTZ,
       created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS auto_send_emails BOOLEAN`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS google_maps TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS has_website BOOLEAN DEFAULT FALSE`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS website_url TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS has_chatbot BOOLEAN DEFAULT FALSE`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS has_voice_agent BOOLEAN DEFAULT FALSE`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS has_booking BOOLEAN DEFAULT FALSE`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS detected_tools TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS score_reason TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS email_draft TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS email_subject TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS followup_d3_draft TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS followup_d7_draft TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS last_researched TIMESTAMPTZ`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS touches (
@@ -46,7 +74,23 @@ export async function initSchema() {
       subject     TEXT,
       body        TEXT,
       notes       TEXT,
+      external_id TEXT,
+      opened_at   TIMESTAMPTZ,
+      clicked_at  TIMESTAMPTZ,
+      bounced_at  TIMESTAMPTZ,
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS external_id TEXT`;
+  await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS opened_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMPTZ`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS settings (
+      key        TEXT PRIMARY KEY,
+      value      TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
 
@@ -165,6 +209,27 @@ export async function initSchema() {
   `;
 }
 
+export async function getSetting(key, fallback = null) {
+  const rows = await sql`SELECT value FROM settings WHERE key = ${key} LIMIT 1`;
+  return rows[0] ? rows[0].value : fallback;
+}
+
+export async function setSetting(key, value) {
+  await sql`
+    INSERT INTO settings (key, value, updated_at) VALUES (${key}, ${value}, NOW())
+    ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = NOW()
+  `;
+}
+
+// Resolve effective auto-send for a lead: per-lead override wins, else global default (off by default).
+export async function shouldAutoSend(lead) {
+  if (lead?.auto_send_emails !== null && lead?.auto_send_emails !== undefined) {
+    return !!lead.auto_send_emails;
+  }
+  const def = await getSetting("auto_send_emails_default", "false");
+  return def === "true";
+}
+
 export async function findLeadByContact({ email, phone, business_name }) {
   if (email) {
     const rows = await sql`SELECT * FROM leads WHERE lower(email) = lower(${email}) LIMIT 1`;
@@ -235,9 +300,11 @@ export async function upsertLead(data) {
 }
 
 export async function logTouch(leadId, type, channel, status, extra = {}) {
-  await sql`
-    INSERT INTO touches (lead_id, type, channel, status, subject, body, notes)
+  const rows = await sql`
+    INSERT INTO touches (lead_id, type, channel, status, subject, body, notes, external_id)
     VALUES (${leadId}, ${type}, ${channel}, ${status},
-      ${extra.subject || null}, ${extra.body || null}, ${extra.notes || null})
+      ${extra.subject || null}, ${extra.body || null}, ${extra.notes || null}, ${extra.external_id || null})
+    RETURNING id
   `;
+  return rows[0].id;
 }
