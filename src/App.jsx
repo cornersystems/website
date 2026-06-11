@@ -1712,6 +1712,7 @@ function CrmDashboard() {
   const [tab, setTab]             = useState("dashboard");
   const [leads, setLeads]         = useState([]);
   const [stats, setStats]         = useState(null);
+  const [statsLoaded, setStatsLoaded] = useState(false);
   const [dashboard, setDashboard] = useState(null);
   const [hotLeads, setHotLeads]   = useState([]);
   const [followups, setFollowups] = useState([]);
@@ -1743,7 +1744,9 @@ function CrmDashboard() {
   }, []);
 
   useEffect(() => {
-    authFetch("/api/crm/stats").then(r => r.ok ? r.json() : null).then(setStats).catch(() => {});
+    authFetch("/api/crm/stats").then(r => r.ok ? r.json() : null)
+      .then(d => { setStats(d); setStatsLoaded(true); })
+      .catch(() => setStatsLoaded(true));
   }, [authFetch]);
 
   useEffect(() => {
@@ -1924,7 +1927,7 @@ function CrmDashboard() {
         </header>
 
         {/* Init DB banner */}
-        {!stats?.total && (
+        {statsLoaded && !stats?.total && (
           <div className="crm-init-banner">
             <span>Database tables not set up yet.</span>
             <button className="crm-btn-compose" disabled={dbInit === "loading"} onClick={async () => {
