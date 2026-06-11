@@ -1728,9 +1728,14 @@ function SortHeader({ label, col, sortBy, sortDir, onSort }) {
   );
 }
 
+const CRM_TAB_STORAGE_KEY = "crm:lastTab";
+
 function CrmDashboard() {
   const { getToken } = useAuth();
-  const [tab, setTab]             = useState("dashboard");
+  const [tab, setTab]             = useState(() => {
+    const saved = localStorage.getItem(CRM_TAB_STORAGE_KEY);
+    return saved && saved !== "profile" ? saved : "dashboard";
+  });
   const [leads, setLeads]         = useState([]);
   const [stats, setStats]         = useState(null);
   const [statsLoaded, setStatsLoaded] = useState(false);
@@ -1769,6 +1774,12 @@ function CrmDashboard() {
     document.querySelector('meta[name="description"]')?.setAttribute("content", m.description);
     document.querySelector('link[rel="canonical"]')?.setAttribute("href", m.canonical);
   }, []);
+
+  // Remember the active section so a page refresh stays put. The "profile"
+  // tab depends on transient detailLead state, so it isn't persisted.
+  useEffect(() => {
+    if (tab !== "profile") localStorage.setItem(CRM_TAB_STORAGE_KEY, tab);
+  }, [tab]);
 
   useEffect(() => {
     authFetch("/api/crm/stats").then(r => r.ok ? r.json() : null)
@@ -2617,6 +2628,16 @@ function LeadDetailDrawer({ lead, activity, loading, notes, onNotesChange, onSav
 }
 
 function CrmPage() {
+  // The 11Labs voice widget is mounted globally in index.html for the public
+  // site; hide it while inside the CRM so it doesn't float over the UI.
+  useEffect(() => {
+    const widget = document.querySelector("elevenlabs-convai");
+    if (!widget) return;
+    const prevDisplay = widget.style.display;
+    widget.style.display = "none";
+    return () => { widget.style.display = prevDisplay; };
+  }, []);
+
   return (
     <>
       <SignedIn><CrmDashboard /></SignedIn>
