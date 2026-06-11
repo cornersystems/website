@@ -10,6 +10,7 @@ import {
   Dumbbell,
   HeartPulse,
   Instagram,
+  LockKeyhole,
   Mail,
   Menu,
   MessageSquareText,
@@ -82,6 +83,12 @@ const PAGE_META = {
     description:
       "Compare Corner Systems AI receptionist, lead capture, missed-call recovery, booking, and CRM automation packages for gyms, clinics, and med spas.",
     canonical: "https://cornersystems.vercel.app/pricing",
+  },
+  "/crm": {
+    title: "CRM Login | Corner Systems",
+    description:
+      "Internal Corner Systems CRM login for team access to leads, conversations, support tickets, callbacks, and follow-up tasks.",
+    canonical: "https://cornersystems.vercel.app/crm",
   },
 };
 
@@ -169,7 +176,7 @@ const proofPoints = [
 ];
 
 const process = [
-  { step: "01", title: "Review", text: "Where do leads come from, who handles them, and what slips?" },
+  { step: "01", title: "Review", text: "Where do leads come from, who handles them, and what gets missed?" },
   { step: "02", title: "Map",    text: "Define intake, routing, booking, follow-up, alerts, and ownership." },
   { step: "03", title: "Build",  text: "Set up the front office flow and test realistic customer scenarios." },
   { step: "04", title: "Improve",text: "Tighten weak points as the business learns what converts." },
@@ -178,7 +185,7 @@ const process = [
 const snapshots = [
   { value: "24/7",  label: "coverage" },
   { value: "All",   label: "channels" },
-  { value: "Zero",  label: "leads dropped" },
+  { value: "Zero",  label: "missed leads" },
 ];
 
 const deliverables = [
@@ -193,8 +200,8 @@ const deliverables = [
 ];
 
 const billingOptions = [
-  { id: "monthly", label: "Monthly" },
   { id: "annual",  label: "Annual" },
+  { id: "monthly", label: "Monthly" },
 ];
 
 const pricingPlans = [
@@ -202,8 +209,8 @@ const pricingPlans = [
     id: "starter",
     name: "Starter",
     prices: {
-      monthly: { amount: "$149", period: "/ month" },
-      annual: { amount: "$134", period: "/ month" },
+      monthly: { amount: "$199", period: "/ month" },
+      annual: { amount: "$179", period: "/ month" },
     },
     setup: "$497",
     note: "For basic lead capture and fast website response.",
@@ -217,7 +224,7 @@ const pricingPlans = [
     name: "Growth",
     prices: {
       monthly: { amount: "$299", period: "/ month" },
-      annual: { amount: "$269", period: "/ month" },
+      annual: { amount: "$249", period: "/ month" },
     },
     setup: "$997",
     note: "For operators who want qualification, CRM handoff, and stronger follow-up.",
@@ -257,8 +264,8 @@ const pricingPlans = [
 ];
 
 const pricingRows = [
-  { label: "Monthly price", values: ["$149", "$299", "$499", "Custom"], strong: true, billing: "monthly" },
-  { label: "Annual monthly price", values: ["$134", "$269", "$449", "Custom"], strong: true, billing: "annual" },
+  { label: "Monthly price", values: ["$199", "$299", "$499", "Custom"], strong: true, billing: "monthly" },
+  { label: "Annual monthly price", values: ["$179", "$249", "$449", "Custom"], strong: true, billing: "annual" },
   { label: "Setup fee",     values: ["$497", "$997", "$1,497", "Scoped"], strong: true },
   { label: "AI chatbot",    values: [true, true, true, true] },
   { label: "Lead capture",  values: [true, true, true, true] },
@@ -290,7 +297,7 @@ const faqs = [
   },
   {
     question: "How does pricing work?",
-    answer: "Fixed monthly packages start at $149/mo, with 10% off the monthly rate when billed annually and Enterprise custom pricing for more complex builds. Pick the plan closest to your coverage needs — we scope the exact build around your tools and volume from there. No hourly rates, no surprise add-ons.",
+    answer: "Fixed packages start at $179/mo when billed annually, or $199 month-to-month, with Enterprise custom pricing for more complex builds. Pick the plan closest to your coverage needs — we scope the exact build around your tools and volume from there. No hourly rates, no surprise add-ons.",
   },
   {
     question: "What happens after we reach out?",
@@ -490,7 +497,7 @@ function PageHero({ eyebrow, title, subtitle, stats = [] }) {
 
 // ── Pricing (shared between homepage teaser and /pricing page) ────────────────
 function PricingSection({ page = false }) {
-  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [billingCycle, setBillingCycle] = useState("annual");
   const visiblePricingRows = pricingRows.filter((row) => !row.billing || row.billing === billingCycle);
 
   return (
@@ -498,7 +505,7 @@ function PricingSection({ page = false }) {
       <div className="pricing-heading">
         <div>
           <p className="eyebrow">Pricing</p>
-          <h2 id="pricing-title">Clear packages. No mystery software bill.</h2>
+          <h2 id="pricing-title">Clear plans for front-office coverage.</h2>
           <p className="section-copy">
             Start with chat and lead capture, add qualification and CRM handoff, or move into full AI receptionist coverage with voice and missed-call recovery.
           </p>
@@ -594,26 +601,22 @@ function PricingSection({ page = false }) {
 function PricingPage() {
   return (
     <>
-      <section className="pricing-hero" aria-labelledby="pricing-page-title">
-        <div className="pricing-hero-inner">
-          <p className="eyebrow">Dedicated pricing</p>
-          <h1 id="pricing-page-title">Pick the coverage level that stops the leak.</h1>
-          <p>
-            Transparent monthly packages for AI reception, lead capture, missed-call recovery, and follow-up automation. Every plan is tuned to the tools and workflow already inside your business.
-          </p>
-          <div className="pricing-hero-stats" aria-label="Pricing highlights">
-            <span><strong>24/7</strong> coverage</span>
-            <span><strong>$149+</strong> monthly</span>
-            <span><strong>CRM</strong> ready</span>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Pricing"
+        title="AI front-office pricing."
+        subtitle="Annual plans start at $179/month. Choose the package that fits your lead volume and coverage needs."
+        stats={[
+          { value: "$179+", label: "billed annually" },
+          { value: "$199", label: "month-to-month" },
+          { value: "Setup", label: "quoted upfront" },
+        ]}
+      />
       <PricingSection page />
       <section className="cta-band pricing-final-cta" aria-label="Pricing call to action">
         <div className="cta-band-inner">
           <div>
-            <h2>Want the cleanest fit?</h2>
-            <p>Send the current intake flow and we will recommend the simplest package before you commit.</p>
+            <h2>Not sure which plan fits?</h2>
+            <p>Book a discovery call and we will recommend the simplest package for your current lead flow.</p>
           </div>
           <a className="button button-primary" href="/contact">
             Book Discovery
@@ -637,13 +640,13 @@ function ServicesPage() {
   return (
     <>
       <PageHero
-        eyebrow="What we build"
-        title="AI systems that handle the front office."
-        subtitle="From first inquiry to confirmed booking — we design, build, and maintain every piece of the intake and follow-up stack for your business."
+        eyebrow="Services"
+        title="AI front-office services."
+        subtitle="Capture, qualify, and book leads across calls, texts, email, forms, and DMs."
         stats={[
           { value: "24/7", label: "coverage" },
-          { value: "All channels", label: "covered" },
-          { value: "Zero", label: "leads dropped" },
+          { value: "All", label: "channels handled" },
+          { value: "CRM", label: "handoff ready" },
         ]}
       />
 
@@ -651,7 +654,7 @@ function ServicesPage() {
       <section className="section services-section" aria-labelledby="services-title">
         <div className="section-heading">
           <p className="eyebrow">Core services</p>
-          <h2 id="services-title">Simple pieces that make the whole business sharper.</h2>
+          <h2 id="services-title">Keep leads moving.</h2>
           <p className="section-copy">
             The goal is not more software. The goal is a business that answers well, books cleanly, follows up consistently, and knows where every lead stands.
           </p>
@@ -673,7 +676,7 @@ function ServicesPage() {
       <section className="section deliverables-section" aria-label="What you get">
         <div className="section-heading">
           <p className="eyebrow">What you get</p>
-          <h2>Everything needed to stop leakage at the front door.</h2>
+          <h2>Everything needed to stop missed leads at the front door.</h2>
           <p className="section-copy">
             We focus on the moment someone reaches out, how they are handled, where the lead goes, who owns it, and what happens next.
           </p>
@@ -801,13 +804,13 @@ function IndustriesPage() {
   return (
     <>
       <PageHero
-        eyebrow="Industries we serve"
-        title="Built for businesses where every inquiry counts."
-        subtitle="If your business depends on people reaching out — and a missed one costs you real money — Corner Systems keeps the front door covered."
+        eyebrow="Industries"
+        title="Industries we serve."
+        subtitle="For gyms, clinics, med spas, and appointment-based teams that need every inquiry answered fast."
         stats={[
-          { value: "3+", label: "industries" },
-          { value: "10+", label: "business types" },
-          { value: "All channels", label: "covered" },
+          { value: "Gyms", label: "and studios" },
+          { value: "Clinics", label: "and med spas" },
+          { value: "All", label: "channels handled" },
         ]}
       />
 
@@ -1020,9 +1023,14 @@ function ContactPage() {
   return (
     <>
       <PageHero
-        eyebrow="Start clean"
-        title="Book your discovery call."
-        subtitle="Tell us where inquiries come from and what feels inconsistent. We'll use that context to map the cleanest next step on the call."
+        eyebrow="Contact"
+        title="Book a discovery call."
+        subtitle="In 20 minutes, we will review your lead flow and recommend the clearest next step."
+        stats={[
+          { value: "20", label: "minutes" },
+          { value: "Clear", label: "next step" },
+          { value: "No", label: "pressure" },
+        ]}
       />
 
       <section className="section contact-section" id="contact">
@@ -1030,7 +1038,7 @@ function ContactPage() {
           <p className="eyebrow">Get in touch</p>
           <h2>Let's map your front office.</h2>
           <p className="section-copy">
-            A 20-minute call. No pitch deck. We look at where leads come from, who handles them, and what slips — then recommend the cleanest fix.
+            A focused call to review where leads come from, who handles them, and what is being missed. You leave with a clear recommendation.
           </p>
           <div className="trust-row" aria-label="Trust points">
             <span><ShieldCheck aria-hidden="true" size={18} /> Owner-first workflows</span>
@@ -1205,12 +1213,6 @@ function HomePage() {
         <div className="hero-content">
           <div className="hero-copy">
 
-            {/* Brand badge — top of hero */}
-            <div className="hero-brand-badge">
-              <span className="hero-brand-dot" aria-hidden="true" />
-              Corner Systems AI
-            </div>
-
             {/* Typing headline */}
             <h1 id="hero-title" aria-label="Your front office, never misses a call.">
               <span className="h1-static">Your front office,</span>
@@ -1219,6 +1221,14 @@ function HomePage() {
                 <span className="type-cursor" />
               </span>
             </h1>
+
+            <div className="hero-channels" aria-label="Every communication channel captured">
+              <span className="hero-channel"><PhoneCall size={15} aria-hidden="true" /> Calls</span>
+              <span className="hero-channel"><MessageSquareText size={15} aria-hidden="true" /> SMS</span>
+              <span className="hero-channel"><Mail size={15} aria-hidden="true" /> Email</span>
+              <span className="hero-channel"><Instagram size={15} aria-hidden="true" /> DMs</span>
+              <span className="hero-channel"><Bot size={15} aria-hidden="true" /> AI Chat</span>
+            </div>
 
             <p className="hero-lede">
               For gyms, clinics, and med spas where every inquiry is real money. Every call, DM, text, and form — captured, qualified, and booked 24/7.
@@ -1236,14 +1246,6 @@ function HomePage() {
                 See Services
                 <ChevronRight aria-hidden="true" size={20} />
               </a>
-            </div>
-
-            <div className="hero-channels" aria-label="Every communication channel captured">
-              <span className="hero-channel"><PhoneCall size={15} aria-hidden="true" /> Calls</span>
-              <span className="hero-channel"><MessageSquareText size={15} aria-hidden="true" /> SMS</span>
-              <span className="hero-channel"><Mail size={15} aria-hidden="true" /> Email</span>
-              <span className="hero-channel"><Instagram size={15} aria-hidden="true" /> DMs</span>
-              <span className="hero-channel"><Bot size={15} aria-hidden="true" /> AI Chat</span>
             </div>
           </div>
 
@@ -1319,7 +1321,7 @@ function HomePage() {
         <div className="snapshot-inner">
           <SnapshotCounter value="24" suffix="/7" label="coverage" />
           <SnapshotCounter value="100" suffix="%" label="channels covered" />
-          <SnapshotCounter value="0" suffix="" label="leads dropped" />
+          <SnapshotCounter value="0" suffix="" label="missed leads" />
         </div>
       </section>
 
@@ -1553,7 +1555,7 @@ function HomePage() {
         <div className="pricing-teaser">
           <div>
             <p className="eyebrow">Pricing</p>
-            <h2>Packages from $149/month, scoped around your real front office.</h2>
+            <h2>Plans starting from $179/month when billed annually.</h2>
             <p className="section-copy">
               Compare the full chat, CRM, voice, and missed-call recovery packages on the dedicated pricing page.
             </p>
@@ -1707,6 +1709,56 @@ function TermsPage() {
   );
 }
 
+// ── /crm page ────────────────────────────────────────────────────────────────
+function CrmLoginPage() {
+  const [status, setStatus] = useState("");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    setStatus("CRM authentication is not connected yet. The next step is wiring this screen to the custom CRM auth backend.");
+  }
+
+  return (
+    <section className="crm-login-page" aria-labelledby="crm-login-title">
+      <div className="crm-login-shell">
+        <div className="crm-login-copy">
+          <span className="eyebrow">Internal CRM</span>
+          <h1 id="crm-login-title">Corner Systems team access</h1>
+          <p>
+            This is the entry point for the custom CRM that will manage leads,
+            businesses, conversations, support tickets, callbacks, and follow-up tasks.
+          </p>
+          <div className="crm-login-checks" aria-label="CRM implementation status">
+            <span><ShieldCheck size={16} aria-hidden="true" /> Custom CRM planned</span>
+            <span><ShieldCheck size={16} aria-hidden="true" /> HubSpot not used</span>
+            <span><ShieldCheck size={16} aria-hidden="true" /> Auth backend pending</span>
+          </div>
+        </div>
+
+        <form className="crm-login-panel" onSubmit={handleSubmit}>
+          <div className="crm-login-icon" aria-hidden="true">
+            <LockKeyhole size={22} />
+          </div>
+          <h2>Sign in</h2>
+          <label>
+            Email
+            <input type="email" name="email" autoComplete="email" placeholder="team@cornersystems.ai" />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" autoComplete="current-password" placeholder="Password" />
+          </label>
+          <button type="submit" className="button primary-button">
+            Continue
+            <ArrowRight size={17} aria-hidden="true" />
+          </button>
+          {status && <p className="crm-login-status" role="status">{status}</p>}
+        </form>
+      </div>
+    </section>
+  );
+}
+
 // ── Root App ──────────────────────────────────────────────────────────────────
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1722,6 +1774,7 @@ function App() {
     pathname === "/contact"    ? "contact"    :
     pathname === "/privacy"    ? "privacy"    :
     pathname === "/terms"      ? "terms"      :
+    pathname === "/crm"        ? "crm"        :
     "home";
 
   return (
@@ -1794,6 +1847,7 @@ function App() {
         {currentPage === "contact"    && <ContactPage />}
         {currentPage === "privacy"    && <PrivacyPage />}
         {currentPage === "terms"      && <TermsPage />}
+        {currentPage === "crm"        && <CrmLoginPage />}
         {currentPage === "home"       && <HomePage />}
       </main>
 

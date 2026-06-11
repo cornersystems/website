@@ -14,7 +14,7 @@ const get    = (flag) => { const i = args.indexOf(flag); return i !== -1 ? args[
 
 const leadId = parseInt(get("--lead-id"), 10);
 const plan   = get("--plan") || "Starter";
-const mrr    = parseFloat(get("--mrr") || "149");
+const mrr    = parseFloat(get("--mrr") || "199");
 
 if (!leadId) { console.error("Usage: node agent/mark-client.js --lead-id 42 --plan Growth --mrr 299"); process.exit(1); }
 
