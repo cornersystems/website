@@ -5,13 +5,22 @@
 
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
+import os from "os";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Database lives in AppData (NOT OneDrive) — SQLite + OneDrive = corruption
+// Database lives in AppData (NOT OneDrive) — SQLite + OneDrive = corruption.
+// Resolve robustly: explicit override → LOCALAPPDATA → derive from home dir.
+// (Scheduled-task contexts may not have LOCALAPPDATA set, which previously
+//  fell back to a nonexistent folder and crashed the whole run.)
+const LOCAL_APPDATA = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
 const DB_PATH = process.env.CS_DB_PATH ||
-  path.join(process.env.LOCALAPPDATA || path.join(path.dirname(__dirname), ".."), "CornerSystems", "pipeline.db");
+  path.join(LOCAL_APPDATA, "CornerSystems", "pipeline.db");
+
+// Ensure the directory exists so opening never crashes on a missing folder.
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");

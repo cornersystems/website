@@ -22,6 +22,7 @@ import "dotenv/config";
 import { researchNewLeads } from "./research-daily.js";
 import {
   syncToSheets,
+  archiveYesterdayTop10,
   syncTop10Daily,
   syncFollowUpQueue,
   syncHotLeads,
@@ -161,7 +162,8 @@ async function run() {
   if (hasSheets) {
     try {
       await syncToSheets();       // Leads tab (with Mark Dead + Notes columns)
-      await syncTop10Daily();     // Top 10 Today
+      await archiveYesterdayTop10(); // copy current Top 10 → "Top 10 — Yesterday" first
+      await syncTop10Daily();     // Top 10 Today (regenerates after archiving)
       await syncFollowUpQueue();  // 📬 Follow-ups
       await syncHotLeads();       // 🔥 Hot Leads
       await syncDashboard();      // 📊 Dashboard

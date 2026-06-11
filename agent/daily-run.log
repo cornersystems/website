@@ -1,0 +1,206 @@
+===== Corner Systems Daily Run - 2026-06-07 18:58:02.82 ===== 
+
+╔══════════════════════════════════════════════════════╗
+║       Corner Systems — Daily Research Run            ║
+║       Sunday, June 7, 2026                          ║
+╚══════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Reading back sheet changes from yesterday...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   (No sent marks — continuing)
+   ⚠️  Could not read Inbound tab (may not exist yet): Unable to parse range: 🌐 Inbound!A1:H100
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Finding new leads, hunting emails, checking AI presence...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔══════════════════════════════════════════════════╗
+║  Lead Research — Day 1                          ║
+║  Phase: Toronto Core                             ║
+║  Area:  North York ON                            ║
+╚══════════════════════════════════════════════════╝
+
+🔍 Discovering leads in North York ON — niches: MMA gym, boxing gym, Muay Thai gym
+  Research failed: Claude CLI error: spawnSync cmd.exe ETIMEDOUT
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Updating Google Sheets...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+✅ Synced 75 leads → "Leads" tab
+✅ Synced 10 leads → "Top 10 Today" tab
+✅ Synced follow-up queue → "📬 Follow-ups" tab (0 D3, 0 D7)
+✅ Synced 0 hot lead(s) → "🔥 Hot Leads" tab
+✅ Dashboard synced → "📊 Dashboard" tab
+
+╔══════════════════════════════════════════════════════╗
+║                      Summary                         ║
+╠══════════════════════════════════════════════════════╣
+║  New leads today:   0                                ║
+║  Total in CRM:      75                               ║
+║  Active clients:    0                                ║
+║  MRR:               $0                               ║
+╠══════════════════════════════════════════════════════╣
+║  found: 75                                           ║
+╠══════════════════════════════════════════════════════╣
+║  Run time: 308.4s                                      ║
+╚══════════════════════════════════════════════════════╝
+
+📋 Your sheet tabs:
+   → 📊 Dashboard     — pipeline health at a glance
+   → Top 10 Today     — send these, mark yes when done
+   → 🔥 Hot Leads     — replied / inbound — needs your reply
+   → 📬 Follow-ups    — D3/D7 nudges due today
+   → Leads            — full CRM (edit Notes, Mark Dead here)
+
+===== Done - 2026-06-07 19:03:12.63 ===== 
+===== Corner Systems Daily Run - 2026-06-07 19:15:36.40 ===== 
+C:\Users\thoma\Projects\website\node_modules\better-sqlite3\lib\database.js:65
+		throw new TypeError('Cannot open database because the directory does not exist');
+		      ^
+
+TypeError: Cannot open database because the directory does not exist
+    at new Database (C:\Users\thoma\Projects\website\node_modules\better-sqlite3\lib\database.js:65:9)
+    at file:///C:/Users/thoma/Projects/website/agent/db.js:16:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:633:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.16.0
+===== Done - 2026-06-07 19:15:36.73 ===== 
+===== Corner Systems Daily Run - 2026-06-08 16:14:19.19 ===== 
+C:\Users\thoma\Projects\website\node_modules\better-sqlite3\lib\database.js:65
+		throw new TypeError('Cannot open database because the directory does not exist');
+		      ^
+
+TypeError: Cannot open database because the directory does not exist
+    at new Database (C:\Users\thoma\Projects\website\node_modules\better-sqlite3\lib\database.js:65:9)
+    at file:///C:/Users/thoma/Projects/website/agent/db.js:16:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:633:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.16.0
+===== Done - 2026-06-08 16:14:31.58 ===== 
+===== Corner Systems Daily Run - 2026-06-08 20:14:32.16 ===== 
+
+╔══════════════════════════════════════════════════════╗
+║       Corner Systems — Daily Research Run            ║
+║       Monday, June 8, 2026                          ║
+╚══════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Reading back sheet changes from yesterday...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   (No sent marks — continuing)
+   ⚠️  Could not read Inbound tab (may not exist yet): Unable to parse range: 🌐 Inbound!A1:H100
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Finding new leads, hunting emails, checking AI presence...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔══════════════════════════════════════════════════╗
+║  Lead Research — Day 2                          ║
+║  Phase: Toronto Core                             ║
+║  Area:  Scarborough ON                           ║
+╚══════════════════════════════════════════════════╝
+
+🔍 Discovering leads in Scarborough ON — niches: chiropractic clinic, physiotherapy clinic, rehab clinic
+   Found 20 businesses
+
+   📥 20 new leads added to CRM
+
+🔬 Deep-researching 15 leads for emails, AI presence & drafts...
+   Corrective Healthcare & Rehabilitation... ✅ correctivehealthcaregroup@gmail.com (score 9 → 7) [Jane App]
+   Courtyard Chiropractic Health Centre... ✅ info@courtyardchiro.com (score 9 → 10)
+   West Hill Chiropractic... ⚠️  no email (score 9 → 10)
+   Theramax Rehab Centre... ✅ theramaxcentre@gmail.com (score 8 → 6) [Jane App]
+   The Rehab Nest... ✅ info@therehabnest.com (score 8 → 6) [Jane App]
+   Atlas Spine Clinic... ✅ info@atlasspineclinic.ca (score 8 → 10)
+   Body and Sole Physiotherapy and Rehab Clinic... ✅ bodyandsolephysiotherapy@gmail.com (score 8 → 10)
+   Healthy Life Physio & Wellness... ✅ info@healthylifephysio.ca (score 8 → 6) [Jane App]
+   Muscle & Movement Rehab... ✅ admin@muscleandmovement.com (score 8 → 10)
+   Scarborough Injury Rehab Centre... ✅ info@sc-injuryrehab.com (score 7 → 10)
+   Milner Chiropractic & Sports Injury Clinic... ✅ milnerchiropractic@gmail.com (score 7 → 5) [Jane App]
+   Physio Cottage... ✅ info@physiocottage.ca (score 7 → 10)
+   Scarborough Rehabilitation Clinic... ✅ admin@scarboroughrehab.com (score 7 → 10)
+   Progressive Rehab Clinic... ✅ intake@progressivegroupclinics.ca (score 7 → 10)
+   Preferred Rehab Physiotherapy... ✅ scarborough@preferredrehab.ca (score 7 → 10)
+
+   📧 14/15 emails found
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Updating Google Sheets...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+✅ Synced 20 leads → "Leads" tab
+✅ Synced 10 leads → "Top 10 Today" tab
+✅ Synced follow-up queue → "📬 Follow-ups" tab (0 D3, 0 D7)
+✅ Synced 0 hot lead(s) → "🔥 Hot Leads" tab
+✅ Dashboard synced → "📊 Dashboard" tab
+
+╔══════════════════════════════════════════════════════╗
+║                      Summary                         ║
+╠══════════════════════════════════════════════════════╣
+║  New leads today:   20                               ║
+║  Total in CRM:      20                               ║
+║  Active clients:    0                                ║
+║  MRR:               $0                               ║
+╠══════════════════════════════════════════════════════╣
+║  found: 20                                           ║
+╠══════════════════════════════════════════════════════╣
+║  Run time: 842.3s                                      ║
+╚══════════════════════════════════════════════════════╝
+
+📋 Your sheet tabs:
+   → 📊 Dashboard     — pipeline health at a glance
+   → Top 10 Today     — send these, mark yes when done
+   → 🔥 Hot Leads     — replied / inbound — needs your reply
+   → 📬 Follow-ups    — D3/D7 nudges due today
+   → Leads            — full CRM (edit Notes, Mark Dead here)
+
+===== Corner Systems Daily Run - 2026-06-09 22:19:45.46 ===== 
+===== Corner Systems Daily Run - 2026-06-10 16:18:53.88 ===== 
+
+╔══════════════════════════════════════════════════════╗
+║       Corner Systems — Daily Research Run            ║
+║       Wednesday, June 10, 2026                      ║
+╚══════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Reading back sheet changes from yesterday...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   (No sent marks — continuing)
+   ⚠️  Could not read Inbound tab (may not exist yet): Unable to parse range: 🌐 Inbound!A1:H100
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Finding new leads, hunting emails, checking AI presence...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔══════════════════════════════════════════════════╗
+║  Lead Research — Day 4                          ║
+║  Phase: Central Toronto — Toronto ON (day 5 of 12)║
+║  Area:  Toronto ON                               ║
+╚══════════════════════════════════════════════════╝
+
+🔍 Discovering leads in Toronto ON — niches: BJJ academy, martial arts school, personal training studio
+  Research failed: Claude CLI error: spawnSync cmd.exe ETIMEDOUT
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Updating Google Sheets...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Sheets sync failed: database disk image is malformed
+Daily run error: SqliteError: database disk image is malformed
+    at getStats (file:///C:/Users/thoma/Projects/website/agent/db.js:454:90)
+    at run (file:///C:/Users/thoma/Projects/website/agent/daily-run.js:178:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  code: 'SQLITE_CORRUPT'
+}
+===== Done - 2026-06-10 16:24:50.19 ===== 

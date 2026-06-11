@@ -25,36 +25,37 @@ import { detectTools } from "./detect-tools.js";
 // ── Geographic expansion schedule ─────────────────────────────────────────────
 const START_DATE = new Date("2026-06-06T00:00:00-05:00");
 
-const GEO_PHASES = [
-  {
-    phase: 1, startDay: 0, label: "Toronto Core",
-    areas: ["Toronto ON", "North York ON", "Scarborough ON", "Etobicoke ON", "Downtown Toronto ON"],
-  },
-  {
-    phase: 2, startDay: 30, label: "Greater Toronto Area",
-    areas: ["Mississauga ON", "Brampton ON", "Markham ON", "Vaughan ON", "Oakville ON",
-            "Richmond Hill ON", "Pickering ON", "Ajax ON", "Whitby ON"],
-  },
-  {
-    phase: 3, startDay: 60, label: "Golden Horseshoe",
-    areas: ["Hamilton ON", "Burlington ON", "Waterloo ON", "Kitchener ON",
-            "Cambridge ON", "Barrie ON", "Oshawa ON", "Guelph ON"],
-  },
-  {
-    phase: 4, startDay: 90, label: "Southern Ontario",
-    areas: ["London ON", "Windsor ON", "Kingston ON", "Ottawa ON",
-            "St Catharines ON", "Niagara Falls ON", "Brantford ON", "Peterborough ON"],
-  },
-  {
-    phase: 5, startDay: 150, label: "Ontario Wide",
-    areas: ["Thunder Bay ON", "Sudbury ON", "Sault Ste Marie ON",
-            "North Bay ON", "Timmins ON", "Cornwall ON"],
-  },
-  {
-    phase: 6, startDay: 210, label: "Western Canada",
-    areas: ["Vancouver BC", "Surrey BC", "Burnaby BC", "Calgary AB",
-            "Edmonton AB", "Winnipeg MB", "Saskatoon SK", "Regina SK"],
-  },
+// SLOW outward expansion. We stay in ONE area for DAYS_PER_AREA days (rotating
+// niches daily) before advancing to the next. Central Toronto is fully worked
+// before we touch the districts, then the inner GTA, then the wider region.
+// The ONLY knob for pace is DAYS_PER_AREA — raise it to expand even slower.
+const DAYS_PER_AREA = 12;
+
+const AREA_SCHEDULE = [
+  // ── Central Toronto first (~5 × DAYS_PER_AREA days before leaving the core) ──
+  { area: "Toronto ON",          band: "Central Toronto" },
+  { area: "Downtown Toronto ON", band: "Central Toronto" },
+  { area: "Midtown Toronto ON",  band: "Central Toronto" },
+  { area: "East Toronto ON",     band: "Central Toronto" },
+  { area: "West Toronto ON",     band: "Central Toronto" },
+  // ── Toronto districts (only once the core is worked) ──
+  { area: "North York ON",       band: "Toronto Districts" },
+  { area: "Scarborough ON",      band: "Toronto Districts" },
+  { area: "Etobicoke ON",        band: "Toronto Districts" },
+  { area: "East York ON",        band: "Toronto Districts" },
+  // ── Inner GTA ──
+  { area: "Mississauga ON",      band: "Inner GTA" },
+  { area: "Markham ON",          band: "Inner GTA" },
+  { area: "Vaughan ON",          band: "Inner GTA" },
+  { area: "Richmond Hill ON",    band: "Inner GTA" },
+  { area: "Brampton ON",         band: "Inner GTA" },
+  // ── Golden Horseshoe (far future) ──
+  { area: "Oakville ON",         band: "Golden Horseshoe" },
+  { area: "Burlington ON",       band: "Golden Horseshoe" },
+  { area: "Hamilton ON",         band: "Golden Horseshoe" },
+  { area: "Pickering ON",        band: "Golden Horseshoe" },
+  { area: "Ajax ON",             band: "Golden Horseshoe" },
+  { area: "Oshawa ON",           band: "Golden Horseshoe" },
 ];
 
 // Niches rotated by day of week so we never spam one vertical
@@ -124,24 +125,23 @@ export function rescoreAfterResearch(originalScore, niche, research) {
   return { score: final, reason: `${parts.join(", ")} = ${final}` };
 }
 
-// ── Phase selection ───────────────────────────────────────────────────────────
-function getCurrentPhase() {
-  const daysElapsed = Math.floor((Date.now() - START_DATE.getTime()) / 86_400_000);
-  let phase = GEO_PHASES[0];
-  for (const p of GEO_PHASES) {
-    if (daysElapsed >= p.startDay) phase = p;
-    else break;
-  }
-  return { phase, daysElapsed };
-}
-
+// ── Target selection — slow outward expansion ─────────────────────────────────
 function getDailyTargets() {
-  const { phase, daysElapsed } = getCurrentPhase();
+  const daysElapsed = Math.max(0, Math.floor((Date.now() - START_DATE.getTime()) / 86_400_000));
   const dayOfWeek = new Date().getDay();
   const niches = NICHE_ROTATION[dayOfWeek];
-  const areaIndex = daysElapsed % phase.areas.length;
-  const area = phase.areas[areaIndex];
-  return { area, niches, phaseLabel: phase.label, daysElapsed };
+
+  // Advance one area every DAYS_PER_AREA days; clamp so we never run past the end.
+  const areaIndex = Math.min(Math.floor(daysElapsed / DAYS_PER_AREA), AREA_SCHEDULE.length - 1);
+  const { area, band } = AREA_SCHEDULE[areaIndex];
+  const dayInArea = (daysElapsed % DAYS_PER_AREA) + 1;
+
+  return {
+    area,
+    niches,
+    phaseLabel: `${band} — ${area} (day ${dayInArea} of ${DAYS_PER_AREA})`,
+    daysElapsed,
+  };
 }
 
 // ── Claude CLI helper ─────────────────────────────────────────────────────────

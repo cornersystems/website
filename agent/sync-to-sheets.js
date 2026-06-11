@@ -31,6 +31,7 @@ const SHEET_ID      = process.env.GOOGLE_SHEET_ID;
 const KEY_PATH      = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "./agent/google-key.json";
 const LEADS_TAB     = process.env.GOOGLE_SHEET_TAB || "Leads";
 const TOP10_TAB     = "Top 10 Today";
+const TOP10_YDAY_TAB = "Top 10 — Yesterday";  // archive of the previous day's Top 10
 const FOLLOWUP_TAB  = "📬 Follow-ups";
 const REPLIES_TAB   = "📩 Replies";    // written by Apps Script, read by this agent
 const HOT_TAB       = "🔥 Hot Leads"; // replied, booked, clients
@@ -137,6 +138,34 @@ function boolLabel(val) {
   return "—";
 }
 
+// ── Archive the previous day's Top 10 ─────────────────────────────────────────
+// Call this BEFORE syncTop10Daily() regenerates "Top 10 Today". It copies the
+// current Top 10 (i.e. yesterday's) into the "Top 10 — Yesterday" tab so the
+// list you reviewed yesterday is never lost when today's is written.
+export async function archiveYesterdayTop10() {
+  const sheets = await getSheets();
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const existingTabs = meta.data.sheets.map((s) => s.properties.title);
+
+  if (!existingTabs.includes(TOP10_TAB)) return;  // nothing to archive yet
+
+  const cur = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID, range: `${TOP10_TAB}!A:Z`,
+  });
+  const rows = cur.data.values || [];
+  if (rows.length < 2) return;  // only a header / empty — skip
+
+  await ensureTab(sheets, TOP10_YDAY_TAB, existingTabs);
+  await sheets.spreadsheets.values.clear({ spreadsheetId: SHEET_ID, range: `${TOP10_YDAY_TAB}!A:Z` });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${TOP10_YDAY_TAB}!A1`,
+    valueInputOption: "RAW",
+    requestBody: { values: rows },
+  });
+  console.log(`   📦 Archived previous Top 10 → "${TOP10_YDAY_TAB}"`);
+}
+
 // ── Tab 1: Full Leads list ────────────────────────────────────────────────────
 export async function syncToSheets() {
   const sheets = await getSheets();
@@ -159,6 +188,27 @@ export async function syncToSheets() {
       }),
     ]),
   ];
+
+  // ── SAFETY GUARD ────────────────────────────────────────────────────────────
+  // Never overwrite a fuller sheet with a depleted DB. (On 2026-06-08 a reset DB
+  // cleared 75 real leads down to 20.) If the Leads tab already holds many more
+  // leads than the DB is about to write, ABORT instead of clearing. Override only
+  // with CS_FORCE_SYNC=1 for a deliberate reset.
+  let existingRows = 0;
+  try {
+    const existing = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID, range: `${LEADS_TAB}!A:A`,
+    });
+    existingRows = Math.max(0, (existing.data.values?.length || 0) - 1); // minus header
+  } catch { existingRows = 0; }
+
+  if (existingRows >= 10 && leads.length < Math.floor(existingRows * 0.7) && process.env.CS_FORCE_SYNC !== "1") {
+    throw new Error(
+      `🛑 SYNC ABORTED (safety guard): the DB has only ${leads.length} leads but the ` +
+      `"${LEADS_TAB}" tab already holds ${existingRows}. Refusing to clear it — that would ` +
+      `destroy data. Investigate the DB. To force a deliberate reset, set CS_FORCE_SYNC=1.`
+    );
+  }
 
   await sheets.spreadsheets.values.clear({ spreadsheetId: SHEET_ID, range: `${LEADS_TAB}!A:Z` });
   await sheets.spreadsheets.values.update({
