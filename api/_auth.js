@@ -1,6 +1,4 @@
-import { createClerkClient } from "@clerk/backend";
-
-const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+import { verifyToken } from "@clerk/backend";
 
 // Guard for ElevenLabs webhook endpoints — shared API key in X-API-Key header.
 // If CS_ELEVENLABS_API_KEY is not set, the check is skipped (dev convenience).
@@ -20,7 +18,7 @@ export async function requireClerkAuth(req, res) {
   try {
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (!token) throw new Error("No token");
-    const payload = await clerk.verifyToken(token);
+    const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
     return payload;
   } catch (err) {
     console.error("Clerk auth failed:", err?.message || err);
