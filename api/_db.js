@@ -2,6 +2,13 @@ import { neon } from "@neondatabase/serverless";
 
 export const sql = neon(process.env.DATABASE_URL);
 
+let schemaReady = false;
+export async function ensureSchema() {
+  if (schemaReady) return;
+  await initSchema();
+  schemaReady = true;
+}
+
 export async function initSchema() {
   await sql`
     CREATE TABLE IF NOT EXISTS leads (

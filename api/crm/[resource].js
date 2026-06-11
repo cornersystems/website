@@ -1,5 +1,5 @@
 import { requireClerkAuth } from "../_auth.js";
-import { sql, findLeadByContact, logTouch, initSchema } from "../_db.js";
+import { sql, findLeadByContact, logTouch, initSchema, ensureSchema } from "../_db.js";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -9,6 +9,7 @@ export default async function handler(req, res) {
   const session = await requireClerkAuth(req, res);
   if (!session) return;
 
+  await ensureSchema();
   const resource = req.query.resource;
 
   // ── init-db ────────────────────────────────────────────────────────────────

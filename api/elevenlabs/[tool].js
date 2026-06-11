@@ -1,5 +1,5 @@
 import { requireApiKey } from "../_auth.js";
-import { sql, findLeadByContact, upsertLead, logTouch } from "../_db.js";
+import { sql, findLeadByContact, upsertLead, logTouch, ensureSchema } from "../_db.js";
 import { notifyTeam, notifyHtml, leadRow } from "../_notify.js";
 
 export default async function handler(req, res) {
@@ -8,6 +8,8 @@ export default async function handler(req, res) {
   const d    = req.body;
 
   // Discovery availability and book-discovery are open — no auth needed, just return configured:false
+  await ensureSchema();
+
   if (tool === "discovery-availability" || tool === "book-discovery") {
     return res.json({
       configured: false,
