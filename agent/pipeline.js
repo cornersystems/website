@@ -17,7 +17,6 @@
 import "dotenv/config";
 import { getLeadsByStage, getLeadsSince, getCheckinsdue, updateCheckin, getStats } from "./db.js";
 import { sendSequenceEmail } from "./email-outreach.js";
-import { callLead } from "./call-leads.js";
 
 const DELAY_MS = 1200; // 1.2s between sends — avoid rate limits
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,7 +27,7 @@ async function run() {
   console.log(`║      ${new Date().toLocaleString().padEnd(44)}║`);
   console.log("╚══════════════════════════════════════════════════╝\n");
 
-  let sent = 0, called = 0, checkins = 0, skipped = 0;
+  let sent = 0, checkins = 0, skipped = 0;
 
   // ── Step 1: Cold emails → new leads ───────────────────────────────────────
   const freshLeads = getLeadsByStage("found");
@@ -63,18 +62,7 @@ async function run() {
     }
   }
 
-  // ── Step 4: Outbound calls — after email sequence with no reply ────────────
-  const callLeads = getLeadsSince("emailed_d7", 3);
-  if (callLeads.length) {
-    console.log(`\n📞 Outbound calls — ${callLeads.length} lead(s)\n`);
-    for (const lead of callLeads) {
-      const ok = await callLead(lead);
-      ok ? called++ : skipped++;
-      await sleep(3000); // 3s between calls
-    }
-  }
-
-  // ── Step 5: Client 30-day check-ins ───────────────────────────────────────
+  // ── Step 4: Client 30-day check-ins ───────────────────────────────────────
   const dueCheckins = getCheckinsdue();
   if (dueCheckins.length) {
     console.log(`\n💬 Client check-ins — ${dueCheckins.length} due\n`);
@@ -93,7 +81,6 @@ async function run() {
   console.log("║                  Run Summary                     ║");
   console.log("╠══════════════════════════════════════════════════╣");
   console.log(`║  Emails sent:      ${String(sent).padEnd(30)}║`);
-  console.log(`║  Calls triggered:  ${String(called).padEnd(30)}║`);
   console.log(`║  Check-ins sent:   ${String(checkins).padEnd(30)}║`);
   console.log(`║  Skipped:          ${String(skipped).padEnd(30)}║`);
   console.log("╠══════════════════════════════════════════════════╣");
