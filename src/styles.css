@@ -4617,6 +4617,15 @@ body::selection {
 .crm-table tr:last-child td { border-bottom: none; }
 .crm-table tr:hover td { background: var(--bg-soft); }
 
+.crm-th-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.crm-th-sortable:hover { color: var(--text); }
+
+.crm-sort-arrow { color: var(--blue); }
+
 .crm-td-business { font-weight: 600; }
 
 .crm-link-business {

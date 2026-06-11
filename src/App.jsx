@@ -32,10 +32,11 @@ import {
   Target,
   TrendingUp,
   UserPlus,
+  Users,
   X,
   Zap,
 } from "lucide-react";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { SignedIn, SignedOut, SignIn, useAuth, UserButton } from "@clerk/clerk-react";
 
 const contactEmail = "cornersystemsai@gmail.com";
@@ -1686,6 +1687,11 @@ function StageBadge({ stage }) {
   );
 }
 
+function TierBadge({ tier }) {
+  const t = tier || "unknown";
+  return <span className={`crm-tier-badge crm-tier-${t}`}>{t}</span>;
+}
+
 function UrgencyBadge({ urgency }) {
   return (
     <span style={{
@@ -1711,6 +1717,15 @@ function TouchStatusBadge({ status }) {
   );
 }
 
+function SortHeader({ label, col, sortBy, sortDir, onSort }) {
+  const active = sortBy === col;
+  return (
+    <th className="crm-th-sortable" onClick={() => onSort(col)}>
+      {label}{active && <span className="crm-sort-arrow">{sortDir === "asc" ? " ▲" : " ▼"}</span>}
+    </th>
+  );
+}
+
 function CrmDashboard() {
   const { getToken } = useAuth();
   const [tab, setTab]             = useState("dashboard");
@@ -1726,6 +1741,8 @@ function CrmDashboard() {
   const [callbacks, setCallbacks] = useState([]);
   const [search, setSearch]       = useState("");
   const [stageFilter, setStageFilter] = useState("");
+  const [sortBy, setSortBy]       = useState(null);
+  const [sortDir, setSortDir]     = useState("asc");
   const [loading, setLoading]     = useState(false);
   const [compose, setCompose]     = useState({ open: false, to_email: "", to_name: "", subject: "", body: "", lead_id: null });
   const [sendStatus, setSendStatus] = useState("");
@@ -1823,6 +1840,32 @@ function CrmDashboard() {
     setDetailLead(null);
     setDetailActivity([]);
   }
+
+  function toggleSort(col) {
+    if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortDir("asc"); }
+  }
+
+  const sortedLeads = useMemo(() => {
+    if (!sortBy) return leads;
+    const arr = [...leads];
+    arr.sort((a, b) => {
+      let av = a[sortBy], bv = b[sortBy];
+      if (sortBy === "lead_score") {
+        av = av ?? -1; bv = bv ?? -1;
+      } else if (sortBy === "last_touched") {
+        av = av ? new Date(av).getTime() : 0;
+        bv = bv ? new Date(bv).getTime() : 0;
+      } else {
+        av = (av ?? "").toString().toLowerCase();
+        bv = (bv ?? "").toString().toLowerCase();
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [leads, sortBy, sortDir]);
 
   function applyLeadPatch(id, patch) {
     setLeads(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l));
@@ -1933,7 +1976,7 @@ function CrmDashboard() {
     ["hot", "Hot Leads", Flame],
     ["followups", "Follow-ups", Clock3],
     ["drafts", "Drafts", Inbox],
-    ["pipeline", "Pipeline", Target],
+    ["pipeline", "Contacts", Users],
     ["activity", "Activity", Activity],
     ["tickets", "Tickets", MessageSquareText],
     ["callbacks", "Callbacks", PhoneCall],
@@ -2210,16 +2253,23 @@ function CrmDashboard() {
             <div className="crm-table-wrap">
               <table className="crm-table">
                 <thead><tr>
-                  <th>Business</th><th>Owner</th><th>Email</th><th>Stage</th>
-                  <th>Score</th><th>Last touched</th><th>Auto-send</th><th></th>
+                  <SortHeader label="Business" col="business_name" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                  <SortHeader label="Owner" col="owner_name" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                  <th>Email</th>
+                  <SortHeader label="Stage" col="stage" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                  <SortHeader label="Tier" col="lead_tier" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                  <SortHeader label="Score" col="lead_score" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                  <SortHeader label="Last touched" col="last_touched" sortBy={sortBy} sortDir={sortDir} onSort={toggleSort} />
+                  <th>Auto-send</th><th></th>
                 </tr></thead>
                 <tbody>
-                  {leads.map(l => (
+                  {sortedLeads.map(l => (
                     <tr key={l.id}>
                       <td className="crm-td-business"><button className="crm-link-business" onClick={() => openLeadDetail(l)}>{l.business_name}</button></td>
                       <td>{l.owner_name || "—"}</td>
                       <td>{l.email ? <a href={`mailto:${l.email}`}>{l.email}</a> : "—"}</td>
                       <td><StageBadge stage={l.stage} /></td>
+                      <td><TierBadge tier={l.lead_tier} /></td>
                       <td>{l.lead_score ?? "—"}</td>
                       <td>{l.last_touched ? new Date(l.last_touched).toLocaleDateString() : "—"}</td>
                       <td>
@@ -2235,7 +2285,7 @@ function CrmDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {leads.length === 0 && <tr><td colSpan={8} className="crm-empty">No leads found.</td></tr>}
+                  {sortedLeads.length === 0 && <tr><td colSpan={9} className="crm-empty">No leads found.</td></tr>}
                 </tbody>
               </table>
             </div>
