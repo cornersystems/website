@@ -1696,6 +1696,7 @@ function CrmDashboard() {
   const [loading, setLoading]     = useState(false);
   const [compose, setCompose]     = useState({ open: false, to_email: "", to_name: "", subject: "", body: "", lead_id: null });
   const [sendStatus, setSendStatus] = useState("");
+  const [dbInit, setDbInit]         = useState("");
 
   const authFetch = useCallback(async (url, opts = {}) => {
     const token = await getToken();
@@ -1770,6 +1771,22 @@ function CrmDashboard() {
           <div className="crm-stat"><span className="crm-stat-value">${stats.mrr?.toLocaleString()}</span><span className="crm-stat-label">MRR</span></div>
           <div className="crm-stat crm-stat-alert"><span className="crm-stat-value">{stats.openTickets}</span><span className="crm-stat-label">Open tickets</span></div>
           <div className="crm-stat crm-stat-alert"><span className="crm-stat-value">{stats.pendingCallbacks}</span><span className="crm-stat-label">Callbacks pending</span></div>
+        </div>
+      )}
+
+      {/* Init DB banner */}
+      {!stats?.total && (
+        <div className="crm-init-banner">
+          <span>Database tables not set up yet.</span>
+          <button className="crm-btn-compose" disabled={dbInit === "loading"} onClick={async () => {
+            setDbInit("loading");
+            const res = await authFetch("/api/crm/init-db", { method: "POST" });
+            setDbInit(res.ok ? "done" : "error");
+            if (res.ok) authFetch("/api/crm/stats").then(r => r.json()).then(setStats).catch(() => {});
+          }}>
+            {dbInit === "loading" ? "Setting up…" : dbInit === "done" ? "✓ Done" : "Set up database"}
+          </button>
+          {dbInit === "error" && <span style={{color:"#ef4444"}}>Failed — check DATABASE_URL in Vercel.</span>}
         </div>
       )}
 
