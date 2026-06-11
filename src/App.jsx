@@ -1,4 +1,5 @@
 import {
+  Activity,
   ArrowRight,
   BarChart3,
   Bot,
@@ -7,19 +8,26 @@ import {
   ChevronDown,
   ChevronRight,
   Clock3,
+  DollarSign,
   Dumbbell,
+  Flame,
   HeartPulse,
+  Inbox,
   Instagram,
+  LayoutDashboard,
   LockKeyhole,
   Mail,
   Menu,
   MessageSquareText,
   PhoneCall,
   Quote,
+  Send,
   ShieldCheck,
   Sparkles,
   Star,
   Target,
+  TrendingUp,
+  UserPlus,
   X,
   Zap,
 } from "lucide-react";
@@ -1728,6 +1736,13 @@ function CrmDashboard() {
   }, [getToken]);
 
   useEffect(() => {
+    const m = PAGE_META["/crm"];
+    document.title = m.title;
+    document.querySelector('meta[name="description"]')?.setAttribute("content", m.description);
+    document.querySelector('link[rel="canonical"]')?.setAttribute("href", m.canonical);
+  }, []);
+
+  useEffect(() => {
     authFetch("/api/crm/stats").then(r => r.ok ? r.json() : null).then(setStats).catch(() => {});
   }, [authFetch]);
 
@@ -1858,69 +1873,71 @@ function CrmDashboard() {
 
   const STAGES = ["found","researched","emailed_d0","emailed_d3","emailed_d7","called","replied","discovery_booked","client","churned","dead"];
 
+  const NAV_TABS = [
+    ["dashboard", "Dashboard", LayoutDashboard],
+    ["hot", "Hot Leads", Flame],
+    ["followups", "Follow-ups", Clock3],
+    ["drafts", "Drafts", Inbox],
+    ["pipeline", "Pipeline", Target],
+    ["activity", "Activity", Activity],
+    ["tickets", "Tickets", MessageSquareText],
+    ["callbacks", "Callbacks", PhoneCall],
+    ["compose", "Compose", Send],
+  ];
+
+  function navBadge(t) {
+    if (t === "tickets")   return stats?.openTickets     > 0 ? stats.openTickets : null;
+    if (t === "callbacks") return stats?.pendingCallbacks > 0 ? stats.pendingCallbacks : null;
+    if (t === "drafts")    { const n = stats?.pendingDrafts  ?? drafts.length;    return n > 0 ? n : null; }
+    if (t === "hot")       { const n = stats?.hotLeadsCount  ?? hotLeads.length;  return n > 0 ? n : null; }
+    if (t === "followups") { const n = stats?.followupsCount ?? followups.length; return n > 0 ? n : null; }
+    return null;
+  }
+
   return (
     <div className="crm-shell">
-      {/* Header */}
-      <header className="crm-header">
-        <div className="crm-header-left">
-          <span className="crm-wordmark">Corner Systems CRM</span>
-        </div>
-        <div className="crm-header-right">
+      {/* Sidebar */}
+      <aside className="crm-sidebar">
+        <a className="crm-sidebar-brand" href="/" aria-label="Corner Systems home">
+          <img className="crm-sidebar-logo" src="/assets/cs-logo-3d.png" alt="" width="32" height="32" />
+          <span>Corner Systems</span>
+        </a>
+        <nav className="crm-nav" aria-label="CRM sections">
+          {NAV_TABS.map(([t, label, Icon]) => {
+            const badge = navBadge(t);
+            return (
+              <button key={t} className={`crm-nav-item${tab === t ? " crm-nav-item-active" : ""}`} onClick={() => setTab(t)}>
+                <Icon size={18} aria-hidden="true" />
+                <span className="crm-nav-label">{label}</span>
+                {badge != null && <span className="crm-tab-badge">{badge}</span>}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Main */}
+      <div className="crm-main">
+        <header className="crm-topbar">
+          <h1 className="crm-page-title">{NAV_TABS.find(([t]) => t === tab)?.[1]}</h1>
           <UserButton afterSignOutUrl="/crm" />
-        </div>
-      </header>
+        </header>
 
-      {/* Stats bar */}
-      {stats && (
-        <div className="crm-stats-bar">
-          <div className="crm-stat"><span className="crm-stat-value">{stats.total}</span><span className="crm-stat-label">Total leads</span></div>
-          <div className="crm-stat"><span className="crm-stat-value">{stats.newThisWeek}</span><span className="crm-stat-label">New this week</span></div>
-          <div className="crm-stat"><span className="crm-stat-value">{stats.activeClients}</span><span className="crm-stat-label">Active clients</span></div>
-          <div className="crm-stat"><span className="crm-stat-value">${stats.mrr?.toLocaleString()}</span><span className="crm-stat-label">MRR</span></div>
-          <div className="crm-stat crm-stat-alert"><span className="crm-stat-value">{stats.openTickets}</span><span className="crm-stat-label">Open tickets</span></div>
-          <div className="crm-stat crm-stat-alert"><span className="crm-stat-value">{stats.pendingCallbacks}</span><span className="crm-stat-label">Callbacks pending</span></div>
-        </div>
-      )}
-
-      {/* Init DB banner */}
-      {!stats?.total && (
-        <div className="crm-init-banner">
-          <span>Database tables not set up yet.</span>
-          <button className="crm-btn-compose" disabled={dbInit === "loading"} onClick={async () => {
-            setDbInit("loading");
-            const res = await authFetch("/api/crm/init-db", { method: "POST" });
-            setDbInit(res.ok ? "done" : "error");
-            if (res.ok) authFetch("/api/crm/stats").then(r => r.json()).then(setStats).catch(() => {});
-          }}>
-            {dbInit === "loading" ? "Setting up…" : dbInit === "done" ? "✓ Done" : "Set up database"}
-          </button>
-          {dbInit === "error" && <span style={{color:"#ef4444"}}>Failed — check DATABASE_URL in Vercel.</span>}
-        </div>
-      )}
-
-      {/* Tabs */}
-      <nav className="crm-tabs">
-        {[
-          ["dashboard", "Dashboard"],
-          ["hot", "Hot Leads"],
-          ["followups", "Follow-ups"],
-          ["drafts", "Drafts"],
-          ["pipeline", "Pipeline"],
-          ["activity", "Activity"],
-          ["tickets", "Tickets"],
-          ["callbacks", "Callbacks"],
-          ["compose", "Compose"],
-        ].map(([t, label]) => (
-          <button key={t} className={`crm-tab${tab === t ? " crm-tab-active" : ""}`} onClick={() => setTab(t)}>
-            {label}
-            {t === "tickets"   && stats?.openTickets     > 0 && <span className="crm-tab-badge">{stats.openTickets}</span>}
-            {t === "callbacks" && stats?.pendingCallbacks > 0 && <span className="crm-tab-badge">{stats.pendingCallbacks}</span>}
-            {t === "drafts"    && (stats?.pendingDrafts  ?? drafts.length)   > 0 && <span className="crm-tab-badge">{stats?.pendingDrafts ?? drafts.length}</span>}
-            {t === "hot"       && (stats?.hotLeadsCount  ?? hotLeads.length) > 0 && <span className="crm-tab-badge">{stats?.hotLeadsCount ?? hotLeads.length}</span>}
-            {t === "followups" && (stats?.followupsCount ?? followups.length) > 0 && <span className="crm-tab-badge">{stats?.followupsCount ?? followups.length}</span>}
-          </button>
-        ))}
-      </nav>
+        {/* Init DB banner */}
+        {!stats?.total && (
+          <div className="crm-init-banner">
+            <span>Database tables not set up yet.</span>
+            <button className="crm-btn-compose" disabled={dbInit === "loading"} onClick={async () => {
+              setDbInit("loading");
+              const res = await authFetch("/api/crm/init-db", { method: "POST" });
+              setDbInit(res.ok ? "done" : "error");
+              if (res.ok) authFetch("/api/crm/stats").then(r => r.json()).then(setStats).catch(() => {});
+            }}>
+              {dbInit === "loading" ? "Setting up…" : dbInit === "done" ? "✓ Done" : "Set up database"}
+            </button>
+            {dbInit === "error" && <span style={{color:"#ef4444"}}>Failed — check DATABASE_URL in Vercel.</span>}
+          </div>
+        )}
 
       {/* Dashboard */}
       {tab === "dashboard" && (
@@ -1928,36 +1945,37 @@ function CrmDashboard() {
           {!dashboard ? <p className="crm-loading">Loading…</p> : (
             <>
               <div className="crm-dash-grid">
-                <div className="crm-dash-card">
-                  <h3>Emails sent</h3>
+                <div className="crm-dash-card crm-dash-accent-blue">
+                  <h3><Mail size={15} /> Emails sent</h3>
                   <div className="crm-dash-row"><span>Today</span><strong>{dashboard.emails.today}</strong></div>
                   <div className="crm-dash-row"><span>Yesterday</span><strong>{dashboard.emails.yesterday}</strong></div>
                   <div className="crm-dash-row"><span>This week</span><strong>{dashboard.emails.week}</strong></div>
                   <div className="crm-dash-row"><span>This month</span><strong>{dashboard.emails.month}</strong></div>
                 </div>
-                <div className="crm-dash-card">
-                  <h3>Replies received</h3>
+                <div className="crm-dash-card crm-dash-accent-teal">
+                  <h3><MessageSquareText size={15} /> Replies received</h3>
                   <div className="crm-dash-row"><span>Today</span><strong>{dashboard.replies.today}</strong></div>
                   <div className="crm-dash-row"><span>Yesterday</span><strong>{dashboard.replies.yesterday}</strong></div>
                   <div className="crm-dash-row"><span>This week</span><strong>{dashboard.replies.week}</strong></div>
                   <div className="crm-dash-row"><span>This month</span><strong>{dashboard.replies.month}</strong></div>
                 </div>
-                <div className="crm-dash-card">
-                  <h3>New leads</h3>
+                <div className="crm-dash-card crm-dash-accent-amber">
+                  <h3><UserPlus size={15} /> New leads</h3>
                   <div className="crm-dash-row"><span>Today</span><strong>{dashboard.newLeads.today}</strong></div>
                   <div className="crm-dash-row"><span>Yesterday</span><strong>{dashboard.newLeads.yesterday}</strong></div>
                   <div className="crm-dash-row"><span>This week</span><strong>{dashboard.newLeads.week}</strong></div>
                   <div className="crm-dash-row"><span>This month</span><strong>{dashboard.newLeads.month}</strong></div>
                 </div>
-                <div className="crm-dash-card">
-                  <h3>Business</h3>
+                <div className="crm-dash-card crm-dash-accent-green">
+                  <h3><DollarSign size={15} /> Business</h3>
+                  <div className="crm-dash-row"><span>Total leads</span><strong>{dashboard.stages.reduce((sum, s) => sum + Number(s.count), 0)}</strong></div>
                   <div className="crm-dash-row"><span>Active clients</span><strong>{dashboard.activeClients}</strong></div>
                   <div className="crm-dash-row"><span>MRR</span><strong>${dashboard.mrr.toLocaleString()}</strong></div>
                   <div className="crm-dash-row"><span>Drafts awaiting review</span><strong>{dashboard.pendingDrafts}</strong></div>
                 </div>
               </div>
 
-              <h3 className="crm-section-title">Pipeline funnel</h3>
+              <h3 className="crm-section-title"><TrendingUp size={16} /> Pipeline funnel</h3>
               <div className="crm-funnel">
                 {dashboard.stages.map(s => {
                   const max = Math.max(...dashboard.stages.map(x => x.count), 1);
@@ -2264,17 +2282,8 @@ function CrmDashboard() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function CrmLoginPage() {
-  return (
-    <SignedOut>
-      <div className="crm-signin-wrap">
-        <SignIn routing="hash" forceRedirectUrl="/crm" />
       </div>
-    </SignedOut>
+    </div>
   );
 }
 
@@ -2308,6 +2317,10 @@ function App() {
     pathname === "/terms"      ? "terms"      :
     pathname === "/crm"        ? "crm"        :
     "home";
+
+  if (currentPage === "crm") {
+    return <CrmPage />;
+  }
 
   return (
     <div className="site-shell">
@@ -2379,7 +2392,6 @@ function App() {
         {currentPage === "contact"    && <ContactPage />}
         {currentPage === "privacy"    && <PrivacyPage />}
         {currentPage === "terms"      && <TermsPage />}
-        {currentPage === "crm"        && <CrmPage />}
         {currentPage === "home"       && <HomePage />}
       </main>
 
