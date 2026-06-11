@@ -1,5 +1,6 @@
 import {
   Activity,
+  ArrowLeft,
   ArrowRight,
   BarChart3,
   Bot,
@@ -19,6 +20,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   Mail,
+  Maximize2,
   MapPin,
   Menu,
   MessageSquareText,
@@ -1971,17 +1973,44 @@ function CrmDashboard() {
 
   const STAGES = ["found","researched","emailed_d0","emailed_d3","emailed_d7","called","replied","discovery_booked","client","churned","dead"];
 
-  const NAV_TABS = [
-    ["dashboard", "Dashboard", LayoutDashboard],
-    ["hot", "Hot Leads", Flame],
-    ["followups", "Follow-ups", Clock3],
-    ["drafts", "Drafts", Inbox],
-    ["pipeline", "Contacts", Users],
-    ["activity", "Activity", Activity],
-    ["tickets", "Tickets", MessageSquareText],
-    ["callbacks", "Callbacks", PhoneCall],
-    ["compose", "Compose", Send],
+  const NAV_GROUPS = [
+    {
+      label: "Overview",
+      items: [
+        ["dashboard", "Dashboard", LayoutDashboard],
+      ],
+    },
+    {
+      label: "Leads & Outreach",
+      items: [
+        ["hot", "Hot Leads", Flame],
+        ["followups", "Follow-ups", Clock3],
+        ["drafts", "Drafts", Inbox],
+        ["activity", "Activity", Activity],
+      ],
+    },
+    {
+      label: "Directory",
+      items: [
+        ["pipeline", "Contacts", Users],
+      ],
+    },
+    {
+      label: "Support",
+      items: [
+        ["tickets", "Tickets", MessageSquareText],
+        ["callbacks", "Callbacks", PhoneCall],
+      ],
+    },
+    {
+      label: "Tools",
+      items: [
+        ["compose", "Compose", Send],
+      ],
+    },
   ];
+
+  const NAV_TABS = NAV_GROUPS.flatMap(g => g.items);
 
   function navBadge(t) {
     if (t === "tickets")   return stats?.openTickets     > 0 ? stats.openTickets : null;
@@ -2001,23 +2030,30 @@ function CrmDashboard() {
           <span>Corner Systems</span>
         </a>
         <nav className="crm-nav" aria-label="CRM sections">
-          {NAV_TABS.map(([t, label, Icon]) => {
-            const badge = navBadge(t);
-            return (
-              <button key={t} className={`crm-nav-item${tab === t ? " crm-nav-item-active" : ""}`} onClick={() => setTab(t)}>
-                <Icon size={18} aria-hidden="true" />
-                <span className="crm-nav-label">{label}</span>
-                {badge != null && <span className="crm-tab-badge">{badge}</span>}
-              </button>
-            );
-          })}
+          {NAV_GROUPS.map(group => (
+            <div className="crm-nav-group" key={group.label}>
+              <div className="crm-nav-group-label">{group.label}</div>
+              {group.items.map(([t, label, Icon]) => {
+                const badge = navBadge(t);
+                return (
+                  <button key={t} className={`crm-nav-item${tab === t ? " crm-nav-item-active" : ""}`} onClick={() => setTab(t)}>
+                    <Icon size={18} aria-hidden="true" />
+                    <span className="crm-nav-label">{label}</span>
+                    {badge != null && <span className="crm-tab-badge">{badge}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
       </aside>
 
       {/* Main */}
       <div className="crm-main">
         <header className="crm-topbar">
-          <h1 className="crm-page-title">{NAV_TABS.find(([t]) => t === tab)?.[1]}</h1>
+          <h1 className="crm-page-title">
+            {tab === "profile" && detailLead ? detailLead.business_name : NAV_TABS.find(([t]) => t === tab)?.[1]}
+          </h1>
           <UserButton afterSignOutUrl="/crm" />
         </header>
 
@@ -2343,6 +2379,36 @@ function CrmDashboard() {
         </div>
       )}
 
+      {/* Contact / company profile (full page) */}
+      {tab === "profile" && detailLead && (
+        <div className="crm-content">
+          <button className="crm-btn-mini crm-back-btn" onClick={() => { setTab("pipeline"); closeLeadDetail(); }}>
+            <ArrowLeft size={14} /> Back to Contacts
+          </button>
+          <div className="crm-profile-page">
+            <div className="crm-drawer-badges">
+              <StageBadge stage={detailLead.stage} />
+              <TierBadge tier={detailLead.lead_tier} />
+              {detailLead.lead_score != null && <span className="crm-score-badge">Score {detailLead.lead_score}</span>}
+            </div>
+            <LeadDetailContent
+              lead={detailLead}
+              activity={detailActivity}
+              loading={detailLoading}
+              notes={detailNotes}
+              onNotesChange={setDetailNotes}
+              onSaveNotes={saveDetailNotes}
+              savingNotes={detailSaving}
+              onChangeStage={updateLeadStage}
+              onChangeTier={updateLeadTier}
+              onChangeAutoSend={updateLeadAutoSend}
+              onEmail={emailLead}
+              STAGES={STAGES}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Compose */}
       {tab === "compose" && (
         <div className="crm-content">
@@ -2367,30 +2433,155 @@ function CrmDashboard() {
       )}
       </div>
 
-      <LeadDetailDrawer
-        lead={detailLead}
-        activity={detailActivity}
-        loading={detailLoading}
-        notes={detailNotes}
-        onNotesChange={setDetailNotes}
-        onSaveNotes={saveDetailNotes}
-        savingNotes={detailSaving}
-        onClose={closeLeadDetail}
-        onChangeStage={updateLeadStage}
-        onChangeTier={updateLeadTier}
-        onChangeAutoSend={updateLeadAutoSend}
-        onEmail={emailLead}
-        STAGES={STAGES}
-      />
+      {detailLead && tab !== "profile" && (
+        <LeadDetailDrawer
+          lead={detailLead}
+          activity={detailActivity}
+          loading={detailLoading}
+          notes={detailNotes}
+          onNotesChange={setDetailNotes}
+          onSaveNotes={saveDetailNotes}
+          savingNotes={detailSaving}
+          onClose={closeLeadDetail}
+          onViewFull={() => setTab("profile")}
+          onChangeStage={updateLeadStage}
+          onChangeTier={updateLeadTier}
+          onChangeAutoSend={updateLeadAutoSend}
+          onEmail={emailLead}
+          STAGES={STAGES}
+        />
+      )}
     </div>
   );
 }
 
-function LeadDetailDrawer({ lead, activity, loading, notes, onNotesChange, onSaveNotes, savingNotes, onClose, onChangeStage, onChangeTier, onChangeAutoSend, onEmail, STAGES }) {
-  if (!lead) return null;
+function LeadDetailContent({ lead, activity, loading, notes, onNotesChange, onSaveNotes, savingNotes, onChangeStage, onChangeTier, onChangeAutoSend, onEmail, STAGES }) {
   const tools = (lead.detected_tools || "").split(",").map(s => s.trim()).filter(Boolean);
   const website = lead.website_url || lead.website;
   const igHandle = lead.instagram?.replace(/^@/, "");
+
+  return (
+    <>
+      {lead.email && (
+        <button className="crm-btn-compose" onClick={() => onEmail(lead)}>
+          <Mail size={15} /> Email {lead.owner_name || lead.business_name}
+        </button>
+      )}
+
+      <section className="crm-drawer-section">
+        <h3>Contact</h3>
+        <div className="crm-drawer-grid">
+          <div><span className="crm-drawer-label">Owner</span><span>{lead.owner_name || "—"}</span></div>
+          <div><span className="crm-drawer-label">Email</span><span>{lead.email ? <a href={`mailto:${lead.email}`}>{lead.email}</a> : "—"}</span></div>
+          <div><span className="crm-drawer-label">Phone</span><span>{lead.phone ? <a href={`tel:${lead.phone}`}>{lead.phone}</a> : "—"}</span></div>
+          <div><span className="crm-drawer-label">Location</span><span>{[lead.city, lead.state].filter(Boolean).join(", ") || "—"}</span></div>
+          <div><span className="crm-drawer-label">Niche</span><span>{lead.niche || "—"}</span></div>
+          <div><span className="crm-drawer-label">Source</span><span>{lead.source || "—"}</span></div>
+        </div>
+        {(website || igHandle || lead.google_maps) && (
+          <div className="crm-drawer-links">
+            {website && <a href={website} target="_blank" rel="noreferrer"><Globe size={14} /> Website <ExternalLink size={12} /></a>}
+            {igHandle && <a href={`https://instagram.com/${igHandle}`} target="_blank" rel="noreferrer"><Instagram size={14} /> Instagram <ExternalLink size={12} /></a>}
+            {lead.google_maps && <a href={lead.google_maps} target="_blank" rel="noreferrer"><MapPin size={14} /> Maps <ExternalLink size={12} /></a>}
+          </div>
+        )}
+      </section>
+
+      {lead.pain_signal && (
+        <section className="crm-drawer-section">
+          <h3>Pain signal</h3>
+          <p className="crm-drawer-note">{lead.pain_signal}</p>
+        </section>
+      )}
+
+      {(lead.has_website || lead.has_chatbot || lead.has_voice_agent || lead.has_booking || tools.length > 0 || lead.score_reason) && (
+        <section className="crm-drawer-section">
+          <h3>Capabilities detected</h3>
+          <div className="crm-drawer-chips">
+            {lead.has_website && <span className="crm-chip">Website</span>}
+            {lead.has_chatbot && <span className="crm-chip">Chatbot</span>}
+            {lead.has_voice_agent && <span className="crm-chip">Voice agent</span>}
+            {lead.has_booking && <span className="crm-chip">Online booking</span>}
+            {tools.map(t => <span className="crm-chip" key={t}>{t}</span>)}
+          </div>
+          {lead.score_reason && <p className="crm-drawer-note">{lead.score_reason}</p>}
+        </section>
+      )}
+
+      <section className="crm-drawer-section">
+        <h3>Status</h3>
+        <div className="crm-drawer-grid crm-drawer-grid-controls">
+          <label>
+            <span className="crm-drawer-label">Stage</span>
+            <select className="crm-filter" value={lead.stage} onChange={e => onChangeStage(lead.id, e.target.value)}>
+              {STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+            </select>
+          </label>
+          <label>
+            <span className="crm-drawer-label">Tier</span>
+            <select className="crm-filter" value={lead.lead_tier || "unknown"} onChange={e => onChangeTier(lead.id, e.target.value)}>
+              <option value="unknown">Unknown</option>
+              <option value="cold">Cold</option>
+              <option value="warm">Warm</option>
+              <option value="hot">Hot</option>
+            </select>
+          </label>
+          <label>
+            <span className="crm-drawer-label">Auto-send</span>
+            <select className="crm-filter" value={lead.auto_send_emails === true ? "on" : lead.auto_send_emails === false ? "off" : "default"}
+              onChange={e => onChangeAutoSend(lead.id, e.target.value)}>
+              <option value="default">Default</option>
+              <option value="on">Auto-send</option>
+              <option value="off">Review</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className="crm-drawer-section">
+        <h3><StickyNote size={15} /> Notes</h3>
+        <textarea className="crm-drawer-notes" rows={4} value={notes}
+          onChange={e => onNotesChange(e.target.value)} placeholder="Internal notes about this contact…" />
+        <button className="crm-btn-mini" disabled={savingNotes} onClick={onSaveNotes}>
+          {savingNotes ? "Saving…" : "Save notes"}
+        </button>
+      </section>
+
+      <section className="crm-drawer-section">
+        <h3><Activity size={15} /> Activity history</h3>
+        {loading ? <p className="crm-loading">Loading…</p> : activity.length === 0 ? (
+          <p className="crm-empty">No activity yet.</p>
+        ) : (
+          <ul className="crm-drawer-timeline">
+            {activity.map(a => (
+              <li key={a.id}>
+                <div className="crm-timeline-head">
+                  <TouchStatusBadge status={a.status} />
+                  <span className="crm-timeline-date">{new Date(a.created_at).toLocaleString()}</span>
+                </div>
+                <div className="crm-timeline-body">
+                  <strong>{a.type}</strong>{a.channel ? ` · ${a.channel.replace(/_/g, " ")}` : ""}
+                  {a.subject && <div>{a.subject}</div>}
+                  {a.notes && <div className="crm-timeline-notes">{a.notes}</div>}
+                  {(a.opened_at || a.clicked_at || a.bounced_at) && (
+                    <div className="crm-timeline-tracking">
+                      {a.opened_at && <span title={new Date(a.opened_at).toLocaleString()}>👁 Opened</span>}
+                      {a.clicked_at && <span title={new Date(a.clicked_at).toLocaleString()}>🔗 Clicked</span>}
+                      {a.bounced_at && <span style={{ color: "#ef4444" }} title={new Date(a.bounced_at).toLocaleString()}>⚠ Bounced</span>}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  );
+}
+
+function LeadDetailDrawer({ lead, activity, loading, notes, onNotesChange, onSaveNotes, savingNotes, onClose, onViewFull, onChangeStage, onChangeTier, onChangeAutoSend, onEmail, STAGES }) {
+  if (!lead) return null;
 
   return (
     <div className="crm-drawer-overlay" onClick={onClose}>
@@ -2406,124 +2597,19 @@ function LeadDetailDrawer({ lead, activity, loading, notes, onNotesChange, onSav
               {lead.lead_score != null && <span className="crm-score-badge">Score {lead.lead_score}</span>}
             </div>
           </div>
-          <button className="crm-drawer-close" onClick={onClose} aria-label="Close"><X size={20} /></button>
+          <div className="crm-drawer-header-actions">
+            <button className="crm-drawer-close" onClick={onViewFull} aria-label="Open full profile" title="Open full profile"><Maximize2 size={18} /></button>
+            <button className="crm-drawer-close" onClick={onClose} aria-label="Close"><X size={20} /></button>
+          </div>
         </div>
 
         <div className="crm-drawer-body">
-          {lead.email && (
-            <button className="crm-btn-compose" onClick={() => onEmail(lead)}>
-              <Mail size={15} /> Email {lead.owner_name || lead.business_name}
-            </button>
-          )}
-
-          <section className="crm-drawer-section">
-            <h3>Contact</h3>
-            <div className="crm-drawer-grid">
-              <div><span className="crm-drawer-label">Owner</span><span>{lead.owner_name || "—"}</span></div>
-              <div><span className="crm-drawer-label">Email</span><span>{lead.email ? <a href={`mailto:${lead.email}`}>{lead.email}</a> : "—"}</span></div>
-              <div><span className="crm-drawer-label">Phone</span><span>{lead.phone ? <a href={`tel:${lead.phone}`}>{lead.phone}</a> : "—"}</span></div>
-              <div><span className="crm-drawer-label">Location</span><span>{[lead.city, lead.state].filter(Boolean).join(", ") || "—"}</span></div>
-              <div><span className="crm-drawer-label">Niche</span><span>{lead.niche || "—"}</span></div>
-              <div><span className="crm-drawer-label">Source</span><span>{lead.source || "—"}</span></div>
-            </div>
-            {(website || igHandle || lead.google_maps) && (
-              <div className="crm-drawer-links">
-                {website && <a href={website} target="_blank" rel="noreferrer"><Globe size={14} /> Website <ExternalLink size={12} /></a>}
-                {igHandle && <a href={`https://instagram.com/${igHandle}`} target="_blank" rel="noreferrer"><Instagram size={14} /> Instagram <ExternalLink size={12} /></a>}
-                {lead.google_maps && <a href={lead.google_maps} target="_blank" rel="noreferrer"><MapPin size={14} /> Maps <ExternalLink size={12} /></a>}
-              </div>
-            )}
-          </section>
-
-          {lead.pain_signal && (
-            <section className="crm-drawer-section">
-              <h3>Pain signal</h3>
-              <p className="crm-drawer-note">{lead.pain_signal}</p>
-            </section>
-          )}
-
-          {(lead.has_website || lead.has_chatbot || lead.has_voice_agent || lead.has_booking || tools.length > 0 || lead.score_reason) && (
-            <section className="crm-drawer-section">
-              <h3>Capabilities detected</h3>
-              <div className="crm-drawer-chips">
-                {lead.has_website && <span className="crm-chip">Website</span>}
-                {lead.has_chatbot && <span className="crm-chip">Chatbot</span>}
-                {lead.has_voice_agent && <span className="crm-chip">Voice agent</span>}
-                {lead.has_booking && <span className="crm-chip">Online booking</span>}
-                {tools.map(t => <span className="crm-chip" key={t}>{t}</span>)}
-              </div>
-              {lead.score_reason && <p className="crm-drawer-note">{lead.score_reason}</p>}
-            </section>
-          )}
-
-          <section className="crm-drawer-section">
-            <h3>Status</h3>
-            <div className="crm-drawer-grid crm-drawer-grid-controls">
-              <label>
-                <span className="crm-drawer-label">Stage</span>
-                <select className="crm-filter" value={lead.stage} onChange={e => onChangeStage(lead.id, e.target.value)}>
-                  {STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                </select>
-              </label>
-              <label>
-                <span className="crm-drawer-label">Tier</span>
-                <select className="crm-filter" value={lead.lead_tier || "unknown"} onChange={e => onChangeTier(lead.id, e.target.value)}>
-                  <option value="unknown">Unknown</option>
-                  <option value="cold">Cold</option>
-                  <option value="warm">Warm</option>
-                  <option value="hot">Hot</option>
-                </select>
-              </label>
-              <label>
-                <span className="crm-drawer-label">Auto-send</span>
-                <select className="crm-filter" value={lead.auto_send_emails === true ? "on" : lead.auto_send_emails === false ? "off" : "default"}
-                  onChange={e => onChangeAutoSend(lead.id, e.target.value)}>
-                  <option value="default">Default</option>
-                  <option value="on">Auto-send</option>
-                  <option value="off">Review</option>
-                </select>
-              </label>
-            </div>
-          </section>
-
-          <section className="crm-drawer-section">
-            <h3><StickyNote size={15} /> Notes</h3>
-            <textarea className="crm-drawer-notes" rows={4} value={notes}
-              onChange={e => onNotesChange(e.target.value)} placeholder="Internal notes about this contact…" />
-            <button className="crm-btn-mini" disabled={savingNotes} onClick={onSaveNotes}>
-              {savingNotes ? "Saving…" : "Save notes"}
-            </button>
-          </section>
-
-          <section className="crm-drawer-section">
-            <h3><Activity size={15} /> Activity history</h3>
-            {loading ? <p className="crm-loading">Loading…</p> : activity.length === 0 ? (
-              <p className="crm-empty">No activity yet.</p>
-            ) : (
-              <ul className="crm-drawer-timeline">
-                {activity.map(a => (
-                  <li key={a.id}>
-                    <div className="crm-timeline-head">
-                      <TouchStatusBadge status={a.status} />
-                      <span className="crm-timeline-date">{new Date(a.created_at).toLocaleString()}</span>
-                    </div>
-                    <div className="crm-timeline-body">
-                      <strong>{a.type}</strong>{a.channel ? ` · ${a.channel.replace(/_/g, " ")}` : ""}
-                      {a.subject && <div>{a.subject}</div>}
-                      {a.notes && <div className="crm-timeline-notes">{a.notes}</div>}
-                      {(a.opened_at || a.clicked_at || a.bounced_at) && (
-                        <div className="crm-timeline-tracking">
-                          {a.opened_at && <span title={new Date(a.opened_at).toLocaleString()}>👁 Opened</span>}
-                          {a.clicked_at && <span title={new Date(a.clicked_at).toLocaleString()}>🔗 Clicked</span>}
-                          {a.bounced_at && <span style={{ color: "#ef4444" }} title={new Date(a.bounced_at).toLocaleString()}>⚠ Bounced</span>}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <LeadDetailContent
+            lead={lead} activity={activity} loading={loading} notes={notes}
+            onNotesChange={onNotesChange} onSaveNotes={onSaveNotes} savingNotes={savingNotes}
+            onChangeStage={onChangeStage} onChangeTier={onChangeTier} onChangeAutoSend={onChangeAutoSend}
+            onEmail={onEmail} STAGES={STAGES}
+          />
         </div>
       </aside>
     </div>
