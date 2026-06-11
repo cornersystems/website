@@ -22,7 +22,8 @@ export async function requireClerkAuth(req, res) {
     if (!token) throw new Error("No token");
     const payload = await clerk.verifyToken(token);
     return payload;
-  } catch {
+  } catch (err) {
+    console.error("Clerk auth failed:", err?.message || err);
     res.status(401).json({ error: "Unauthorized" });
     return null;
   }
