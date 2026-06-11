@@ -6,6 +6,7 @@
     { "source": "/team",       "destination": "/" },
     { "source": "/contact",    "destination": "/" },
     { "source": "/privacy",    "destination": "/" },
-    { "source": "/terms",      "destination": "/" }
+    { "source": "/terms",      "destination": "/" },
+    { "source": "/crm",        "destination": "/" }
   ]
 }

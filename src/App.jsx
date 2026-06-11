@@ -23,7 +23,8 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { SignedIn, SignedOut, SignIn, useAuth, UserButton } from "@clerk/clerk-react";
 
 const contactEmail = "cornersystemsai@gmail.com";
 
@@ -1654,52 +1655,279 @@ function TermsPage() {
 }
 
 // ── /crm page ────────────────────────────────────────────────────────────────
-function CrmLoginPage() {
-  const [status, setStatus] = useState("");
+const STAGE_COLORS = {
+  found: "#6b7280", researched: "#8b5cf6", emailed_d0: "#3b82f6",
+  emailed_d3: "#0ea5e9", emailed_d7: "#06b6d4", called: "#f59e0b",
+  replied: "#10b981", discovery_booked: "#22c55e", client: "#16a34a",
+  churned: "#ef4444", dead: "#374151",
+};
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    setStatus("CRM authentication is not connected yet. The next step is wiring this screen to the custom CRM auth backend.");
+const URGENCY_COLORS = { urgent: "#ef4444", high: "#f59e0b", normal: "#6b7280", low: "#9ca3af", unknown: "#9ca3af" };
+
+function StageBadge({ stage }) {
+  return (
+    <span style={{
+      background: STAGE_COLORS[stage] || "#6b7280",
+      color: "#fff", fontSize: "0.72rem", fontWeight: 700,
+      padding: "2px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.04em",
+    }}>{stage?.replace(/_/g, " ")}</span>
+  );
+}
+
+function UrgencyBadge({ urgency }) {
+  return (
+    <span style={{
+      background: URGENCY_COLORS[urgency] || "#6b7280",
+      color: "#fff", fontSize: "0.72rem", fontWeight: 700,
+      padding: "2px 8px", borderRadius: 4, textTransform: "uppercase",
+    }}>{urgency}</span>
+  );
+}
+
+function CrmDashboard() {
+  const { getToken } = useAuth();
+  const [tab, setTab]             = useState("pipeline");
+  const [leads, setLeads]         = useState([]);
+  const [stats, setStats]         = useState(null);
+  const [tickets, setTickets]     = useState([]);
+  const [callbacks, setCallbacks] = useState([]);
+  const [search, setSearch]       = useState("");
+  const [stageFilter, setStageFilter] = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [compose, setCompose]     = useState({ open: false, to_email: "", to_name: "", subject: "", body: "", lead_id: null });
+  const [sendStatus, setSendStatus] = useState("");
+
+  const authFetch = useCallback(async (url, opts = {}) => {
+    const token = await getToken();
+    return fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` } });
+  }, [getToken]);
+
+  useEffect(() => {
+    authFetch("/api/crm/stats").then(r => r.json()).then(setStats).catch(() => {});
+  }, [authFetch]);
+
+  useEffect(() => {
+    if (tab !== "pipeline") return;
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (stageFilter) params.set("stage", stageFilter);
+    authFetch(`/api/crm/leads?${params}`).then(r => r.json()).then(d => { setLeads(d); setLoading(false); }).catch(() => setLoading(false));
+  }, [tab, search, stageFilter, authFetch]);
+
+  useEffect(() => {
+    if (tab === "tickets")   authFetch("/api/crm/tickets").then(r => r.json()).then(setTickets).catch(() => {});
+    if (tab === "callbacks") authFetch("/api/crm/callbacks").then(r => r.json()).then(setCallbacks).catch(() => {});
+  }, [tab, authFetch]);
+
+  async function sendEmail(e) {
+    e.preventDefault();
+    setSendStatus("sending");
+    const token = await getToken();
+    const res = await fetch("/api/crm/email-send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(compose),
+    });
+    if (res.ok) {
+      setSendStatus("sent");
+      setCompose(c => ({ ...c, subject: "", body: "" }));
+    } else {
+      setSendStatus("error");
+    }
   }
 
+  async function resolveTicket(id) {
+    await authFetch("/api/crm/tickets", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status: "resolved" }) });
+    setTickets(t => t.map(x => x.id === id ? { ...x, status: "resolved" } : x));
+  }
+
+  async function resolveCallback(id) {
+    await authFetch("/api/crm/callbacks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status: "done" }) });
+    setCallbacks(c => c.map(x => x.id === id ? { ...x, status: "done" } : x));
+  }
+
+  const STAGES = ["found","researched","emailed_d0","emailed_d3","emailed_d7","called","replied","discovery_booked","client","churned","dead"];
+
   return (
-    <section className="crm-login-page" aria-labelledby="crm-login-title">
-      <div className="crm-login-shell">
-        <div className="crm-login-copy">
-          <span className="eyebrow">Internal CRM</span>
-          <h1 id="crm-login-title">Corner Systems team access</h1>
-          <p>
-            This is the entry point for the custom CRM that will manage leads,
-            businesses, conversations, support tickets, callbacks, and follow-up tasks.
-          </p>
-          <div className="crm-login-checks" aria-label="CRM implementation status">
-            <span><ShieldCheck size={16} aria-hidden="true" /> Custom CRM planned</span>
-            <span><ShieldCheck size={16} aria-hidden="true" /> HubSpot not used</span>
-            <span><ShieldCheck size={16} aria-hidden="true" /> Auth backend pending</span>
+    <div className="crm-shell">
+      {/* Header */}
+      <header className="crm-header">
+        <div className="crm-header-left">
+          <span className="crm-wordmark">Corner Systems CRM</span>
+        </div>
+        <div className="crm-header-right">
+          <UserButton afterSignOutUrl="/crm" />
+        </div>
+      </header>
+
+      {/* Stats bar */}
+      {stats && (
+        <div className="crm-stats-bar">
+          <div className="crm-stat"><span className="crm-stat-value">{stats.total}</span><span className="crm-stat-label">Total leads</span></div>
+          <div className="crm-stat"><span className="crm-stat-value">{stats.newThisWeek}</span><span className="crm-stat-label">New this week</span></div>
+          <div className="crm-stat"><span className="crm-stat-value">{stats.activeClients}</span><span className="crm-stat-label">Active clients</span></div>
+          <div className="crm-stat"><span className="crm-stat-value">${stats.mrr?.toLocaleString()}</span><span className="crm-stat-label">MRR</span></div>
+          <div className="crm-stat crm-stat-alert"><span className="crm-stat-value">{stats.openTickets}</span><span className="crm-stat-label">Open tickets</span></div>
+          <div className="crm-stat crm-stat-alert"><span className="crm-stat-value">{stats.pendingCallbacks}</span><span className="crm-stat-label">Callbacks pending</span></div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <nav className="crm-tabs">
+        {["pipeline","tickets","callbacks","compose"].map(t => (
+          <button key={t} className={`crm-tab${tab === t ? " crm-tab-active" : ""}`} onClick={() => setTab(t)}>
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t === "tickets"   && stats?.openTickets     > 0 && <span className="crm-tab-badge">{stats.openTickets}</span>}
+            {t === "callbacks" && stats?.pendingCallbacks > 0 && <span className="crm-tab-badge">{stats.pendingCallbacks}</span>}
+          </button>
+        ))}
+      </nav>
+
+      {/* Pipeline */}
+      {tab === "pipeline" && (
+        <div className="crm-content">
+          <div className="crm-toolbar">
+            <input className="crm-search" placeholder="Search business, name, email…" value={search}
+              onChange={e => setSearch(e.target.value)} />
+            <select className="crm-filter" value={stageFilter} onChange={e => setStageFilter(e.target.value)}>
+              <option value="">All stages</option>
+              {STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+            </select>
+            <button className="crm-btn-compose" onClick={() => setTab("compose")}>
+              <Mail size={15} /> Compose
+            </button>
+          </div>
+          {loading ? <p className="crm-loading">Loading…</p> : (
+            <div className="crm-table-wrap">
+              <table className="crm-table">
+                <thead><tr>
+                  <th>Business</th><th>Owner</th><th>Email</th><th>Stage</th>
+                  <th>Score</th><th>Last touched</th><th></th>
+                </tr></thead>
+                <tbody>
+                  {leads.map(l => (
+                    <tr key={l.id}>
+                      <td className="crm-td-business">{l.business_name}</td>
+                      <td>{l.owner_name || "—"}</td>
+                      <td>{l.email ? <a href={`mailto:${l.email}`}>{l.email}</a> : "—"}</td>
+                      <td><StageBadge stage={l.stage} /></td>
+                      <td>{l.lead_score ?? "—"}</td>
+                      <td>{l.last_touched ? new Date(l.last_touched).toLocaleDateString() : "—"}</td>
+                      <td>
+                        {l.email && (
+                          <button className="crm-btn-mini" onClick={() => {
+                            setCompose({ open: true, to_email: l.email, to_name: l.owner_name || "", subject: "", body: "", lead_id: l.id });
+                            setTab("compose");
+                          }}>Email</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {leads.length === 0 && <tr><td colSpan={7} className="crm-empty">No leads found.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tickets */}
+      {tab === "tickets" && (
+        <div className="crm-content">
+          <div className="crm-table-wrap">
+            <table className="crm-table">
+              <thead><tr><th>Business</th><th>Issue</th><th>Category</th><th>Urgency</th><th>Status</th><th>Created</th><th></th></tr></thead>
+              <tbody>
+                {tickets.map(t => (
+                  <tr key={t.id} style={{ opacity: t.status === "resolved" ? 0.5 : 1 }}>
+                    <td className="crm-td-business">{t.business_name}</td>
+                    <td>{t.issue_summary}</td>
+                    <td>{t.issue_category || "—"}</td>
+                    <td><UrgencyBadge urgency={t.urgency} /></td>
+                    <td>{t.status}</td>
+                    <td>{new Date(t.created_at).toLocaleDateString()}</td>
+                    <td>{t.status === "open" && <button className="crm-btn-mini" onClick={() => resolveTicket(t.id)}>Resolve</button>}</td>
+                  </tr>
+                ))}
+                {tickets.length === 0 && <tr><td colSpan={7} className="crm-empty">No tickets.</td></tr>}
+              </tbody>
+            </table>
           </div>
         </div>
+      )}
 
-        <form className="crm-login-panel" onSubmit={handleSubmit}>
-          <div className="crm-login-icon" aria-hidden="true">
-            <LockKeyhole size={22} />
+      {/* Callbacks */}
+      {tab === "callbacks" && (
+        <div className="crm-content">
+          <div className="crm-table-wrap">
+            <table className="crm-table">
+              <thead><tr><th>Name</th><th>Business</th><th>Phone</th><th>Window</th><th>Summary</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {callbacks.map(c => (
+                  <tr key={c.id} style={{ opacity: c.status === "done" ? 0.5 : 1 }}>
+                    <td>{c.name || "—"}</td>
+                    <td className="crm-td-business">{c.business_name || "—"}</td>
+                    <td>{c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : "—"}</td>
+                    <td>{c.preferred_callback_window || "—"}</td>
+                    <td>{c.summary}</td>
+                    <td>{c.status}</td>
+                    <td>{c.status === "pending" && <button className="crm-btn-mini" onClick={() => resolveCallback(c.id)}>Done</button>}</td>
+                  </tr>
+                ))}
+                {callbacks.length === 0 && <tr><td colSpan={7} className="crm-empty">No callbacks.</td></tr>}
+              </tbody>
+            </table>
           </div>
-          <h2>Sign in</h2>
-          <label>
-            Email
-            <input type="email" name="email" autoComplete="email" placeholder="team@cornersystems.ai" />
-          </label>
-          <label>
-            Password
-            <input type="password" name="password" autoComplete="current-password" placeholder="Password" />
-          </label>
-          <button type="submit" className="button primary-button">
-            Continue
-            <ArrowRight size={17} aria-hidden="true" />
-          </button>
-          {status && <p className="crm-login-status" role="status">{status}</p>}
-        </form>
+        </div>
+      )}
+
+      {/* Compose */}
+      {tab === "compose" && (
+        <div className="crm-content">
+          <div className="crm-compose-panel">
+            <h2 className="crm-compose-title">Compose email</h2>
+            <form className="crm-compose-form" onSubmit={sendEmail}>
+              <label>To email<input required value={compose.to_email} onChange={e => setCompose(c => ({ ...c, to_email: e.target.value }))} placeholder="owner@business.com" /></label>
+              <label>To name<input value={compose.to_name} onChange={e => setCompose(c => ({ ...c, to_name: e.target.value }))} placeholder="Jane Smith" /></label>
+              <label>Subject<input required value={compose.subject} onChange={e => setCompose(c => ({ ...c, subject: e.target.value }))} placeholder="Quick question for…" /></label>
+              <label>Body<textarea required rows={10} value={compose.body} onChange={e => setCompose(c => ({ ...c, body: e.target.value }))} placeholder="Write your email here…" /></label>
+              <div className="crm-compose-footer">
+                <span className="crm-compose-from">From: tmorris@cornersystems.co</span>
+                <button className="button button-primary" type="submit" disabled={sendStatus === "sending"}>
+                  {sendStatus === "sending" ? "Sending…" : <><Mail size={16} /> Send</>}
+                </button>
+              </div>
+              {sendStatus === "sent"  && <p className="crm-compose-status crm-status-ok">Sent.</p>}
+              {sendStatus === "error" && <p className="crm-compose-status crm-status-err">Failed to send. Check Resend config.</p>}
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CrmLoginPage() {
+  return (
+    <SignedOut>
+      <div className="crm-signin-wrap">
+        <SignIn routing="hash" afterSignInUrl="/crm" />
       </div>
-    </section>
+    </SignedOut>
+  );
+}
+
+function CrmPage() {
+  return (
+    <>
+      <SignedIn><CrmDashboard /></SignedIn>
+      <SignedOut>
+        <div className="crm-signin-wrap">
+          <SignIn routing="hash" afterSignInUrl="/crm" />
+        </div>
+      </SignedOut>
+    </>
   );
 }
 
@@ -1791,7 +2019,7 @@ function App() {
         {currentPage === "contact"    && <ContactPage />}
         {currentPage === "privacy"    && <PrivacyPage />}
         {currentPage === "terms"      && <TermsPage />}
-        {currentPage === "crm"        && <CrmLoginPage />}
+        {currentPage === "crm"        && <CrmPage />}
         {currentPage === "home"       && <HomePage />}
       </main>
 

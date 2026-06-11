@@ -9,6 +9,9 @@
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
+    "@clerk/backend": "^3.6.1",
+    "@clerk/clerk-react": "^5.61.8",
+    "@neondatabase/serverless": "^1.1.0",
     "better-sqlite3": "^12.10.0",
     "dotenv": "^17.4.2",
     "googleapis": "^173.0.0",
