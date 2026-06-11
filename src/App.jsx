@@ -1704,7 +1704,7 @@ function CrmDashboard() {
   }, [getToken]);
 
   useEffect(() => {
-    authFetch("/api/crm/stats").then(r => r.json()).then(setStats).catch(() => {});
+    authFetch("/api/crm/stats").then(r => r.ok ? r.json() : null).then(setStats).catch(() => {});
   }, [authFetch]);
 
   useEffect(() => {
@@ -1713,12 +1713,15 @@ function CrmDashboard() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (stageFilter) params.set("stage", stageFilter);
-    authFetch(`/api/crm/leads?${params}`).then(r => r.json()).then(d => { setLeads(d); setLoading(false); }).catch(() => setLoading(false));
+    authFetch(`/api/crm/leads?${params}`).then(r => r.ok ? r.json() : [])
+      .then(d => { setLeads(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => setLoading(false));
   }, [tab, search, stageFilter, authFetch]);
 
   useEffect(() => {
-    if (tab === "tickets")   authFetch("/api/crm/tickets").then(r => r.json()).then(setTickets).catch(() => {});
-    if (tab === "callbacks") authFetch("/api/crm/callbacks").then(r => r.json()).then(setCallbacks).catch(() => {});
+    if (tab === "tickets")   authFetch("/api/crm/tickets").then(r => r.ok ? r.json() : [])
+      .then(d => setTickets(Array.isArray(d) ? d : [])).catch(() => {});
+    if (tab === "callbacks") authFetch("/api/crm/callbacks").then(r => r.ok ? r.json() : [])
+      .then(d => setCallbacks(Array.isArray(d) ? d : [])).catch(() => {});
   }, [tab, authFetch]);
 
   async function sendEmail(e) {
