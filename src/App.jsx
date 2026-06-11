@@ -1929,7 +1929,7 @@ function CrmLoginPage() {
   return (
     <SignedOut>
       <div className="crm-signin-wrap">
-        <SignIn routing="hash" afterSignInUrl="/crm" />
+        <SignIn routing="hash" forceRedirectUrl="/crm" />
       </div>
     </SignedOut>
   );
@@ -1941,7 +1941,7 @@ function CrmPage() {
       <SignedIn><CrmDashboard /></SignedIn>
       <SignedOut>
         <div className="crm-signin-wrap">
-          <SignIn routing="hash" afterSignInUrl="/crm" />
+          <SignIn routing="hash" forceRedirectUrl="/crm" />
         </div>
       </SignedOut>
     </>
