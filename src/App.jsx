@@ -988,37 +988,12 @@ function TeamPage() {
 
 // ── /contact page ─────────────────────────────────────────────────────────────
 function ContactPage() {
-  const [formData, setFormData] = useState(initialForm);
-  const [formStatus, setFormStatus] = useState("idle");
-
   useEffect(() => {
     const m = PAGE_META["/contact"];
     document.title = m.title;
     document.querySelector('meta[name="description"]')?.setAttribute("content", m.description);
     document.querySelector('link[rel="canonical"]')?.setAttribute("href", m.canonical);
   }, []);
-
-  function updateField(e) {
-    const { name, value } = e.target;
-    setFormData((cur) => ({ ...cur, [name]: value }));
-  }
-
-  async function submitLead(e) {
-    e.preventDefault();
-    setFormStatus("sending");
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (!res.ok) throw new Error("Request failed");
-      setFormStatus("sent");
-      setFormData(initialForm);
-    } catch {
-      setFormStatus("error");
-    }
-  }
 
   return (
     <>
@@ -1047,47 +1022,16 @@ function ContactPage() {
           </div>
         </div>
 
-        <form className="contact-form" onSubmit={submitLead}>
-          <label>
-            Name
-            <input name="name" autoComplete="name" value={formData.name} onChange={updateField} required />
-          </label>
-          <label>
-            Business
-            <input name="business" autoComplete="organization" value={formData.business} onChange={updateField} required />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" autoComplete="email" value={formData.email} onChange={updateField} required />
-          </label>
-          <label>
-            Biggest bottleneck
-            <textarea name="bottleneck" rows="4" value={formData.bottleneck} onChange={updateField} required />
-          </label>
-          <label>
-            Best follow-up time
-            <input name="preferredTime" value={formData.preferredTime} onChange={updateField} placeholder="Example: weekday mornings" />
-          </label>
-          {formStatus !== "sent" && (
-            <button className="button button-primary" type="submit" disabled={formStatus === "sending"}>
-              {formStatus === "sending" ? "Sending…" : "Book Discovery"}
-              {formStatus !== "sending" && <Mail aria-hidden="true" size={19} />}
-            </button>
-          )}
-          {formStatus === "error" && (
-            <p className="form-note form-note-error">
-              Something went wrong. Email us directly at <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
-            </p>
-          )}
-          {formStatus === "sent" && (
-            <div className="form-success-card">
-              <div className="form-success-icon" aria-hidden="true">✓</div>
-              <h3>You're in.</h3>
-              <p>We received your submission and will be in touch within one business day. Tom or Mike will reach out personally — check your inbox (and spam just in case).</p>
-              <p className="form-success-meta">Sent to <strong>{formData.email}</strong></p>
-            </div>
-          )}
-        </form>
+        <div className="calendly-card">
+          <iframe
+            src="https://calendly.com/cornersystemsai/30min?hide_landing_page_details=1&hide_gdpr_banner=1&primary_color=0ea5e9"
+            title="Book a discovery call"
+            className="calendly-frame"
+            frameBorder="0"
+            loading="lazy"
+            allow="fullscreen"
+          />
+        </div>
       </section>
 
       {/* FAQ */}
