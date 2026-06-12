@@ -10,8 +10,8 @@ import { logTouch, updateStage } from "./db.js";
 
 const resend  = new Resend(process.env.RESEND_API_KEY);
 const claude  = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const FROM    = "Thomas at Corner Systems <cornersystemsai@gmail.com>";
-const REPLY_TO = "cornersystemsai@gmail.com";
+const FROM    = "Thomas at Corner Systems <tmorris@cornersystems.co>";
+const REPLY_TO = "hello@cornersystems.co";
 
 // ── Email templates (Claude personalises the body) ────────────────────────────
 

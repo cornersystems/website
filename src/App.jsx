@@ -41,7 +41,7 @@ import {
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { SignedIn, SignedOut, SignIn, useAuth, UserButton } from "@clerk/clerk-react";
 
-const contactEmail = "cornersystemsai@gmail.com";
+const contactEmail = "hello@cornersystems.co";
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const navItems = [

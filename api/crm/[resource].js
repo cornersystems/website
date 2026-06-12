@@ -15,7 +15,7 @@ function emailHtml(body) {
 ${body.replace(/\n/g, "<br>")}
   </div>
   <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#999">
-    Corner Systems · cornersystemsai@gmail.com · <a href="https://cornersystems.vercel.app" style="color:#999">cornersystems.vercel.app</a>
+    Corner Systems · hello@cornersystems.co · <a href="https://cornersystems.vercel.app" style="color:#999">cornersystems.vercel.app</a>
   </div>
 </div>`;
 }
@@ -289,7 +289,7 @@ async function route(req, res) {
 
         const result = await resend.emails.send({
           from: FROM,
-          replyTo: "cornersystemsai@gmail.com",
+          replyTo: "hello@cornersystems.co",
           to: draft.lead_email,
           subject: finalSubject,
           html: emailHtml(finalBody),
