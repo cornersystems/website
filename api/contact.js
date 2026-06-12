@@ -1,6 +1,5 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { upsertLead, logTouch, ensureSchema } from "./_db.js";
+import { notifyTeam, notifyHtml, leadRow } from "./_notify.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -14,26 +13,41 @@ export default async function handler(req, res) {
   }
 
   try {
-    await resend.emails.send({
-      from: "Corner Systems <onboarding@resend.dev>",
-      to: "hello@cornersystems.co",
-      replyTo: email,
+    await ensureSchema();
+
+    const leadId = await upsertLead({
+      name,
+      business_name: business,
+      email,
+      pain_signal: bottleneck,
+      source: "website_contact_form",
+      contact_type: "inbound",
+      lead_tier: "warm",
+      lead_score: 60,
+    });
+
+    await logTouch(leadId, "form", "website_contact", "received", {
+      subject: "Discovery call request",
+      body: `Bottleneck: ${bottleneck}\nPreferred time: ${preferredTime || "Not specified"}`,
+    });
+
+    await notifyTeam({
       subject: `New discovery call request — ${business}`,
-      html: `
-        <h2>New discovery call request</h2>
-        <table cellpadding="8" style="border-collapse:collapse;width:100%;max-width:560px">
-          <tr><td><strong>Name</strong></td><td>${name}</td></tr>
-          <tr><td><strong>Business</strong></td><td>${business}</td></tr>
-          <tr><td><strong>Email</strong></td><td><a href="mailto:${email}">${email}</a></td></tr>
-          <tr><td><strong>Biggest bottleneck</strong></td><td>${bottleneck}</td></tr>
-          <tr><td><strong>Best follow-up time</strong></td><td>${preferredTime || "Not specified"}</td></tr>
-        </table>
-      `,
+      html: notifyHtml(
+        "New discovery call request",
+        [
+          leadRow("Name", name),
+          leadRow("Business", business),
+          leadRow("Email", `<a href="mailto:${email}">${email}</a>`),
+          leadRow("Biggest bottleneck", bottleneck),
+          leadRow("Best follow-up time", preferredTime || "Not specified"),
+        ].join(""),
+      ),
     });
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("Resend error:", JSON.stringify(err, null, 2));
-    return res.status(500).json({ error: "Failed to send email", detail: err?.message });
+    console.error("Contact form error:", err);
+    return res.status(500).json({ error: "Failed to process request", detail: err?.message });
   }
 }
