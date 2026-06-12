@@ -281,7 +281,14 @@ export async function initSchema() {
   await sql`CREATE INDEX IF NOT EXISTS appointments_start_at_idx ON appointments (start_at)`;
   await sql`CREATE INDEX IF NOT EXISTS audit_log_lead_id_idx ON audit_log (lead_id)`;
 
-  await dedupeLeadsOnce();
+  // Guarded: the DB is shared with agent-network, which may own tables with
+  // FKs to leads that this repo doesn't know about. A failed merge must not
+  // take down the API — log it and continue; it retries on the next cold start.
+  try {
+    await dedupeLeadsOnce();
+  } catch (err) {
+    console.error("Lead dedup migration failed (non-fatal, will retry):", err);
+  }
 }
 
 // Records who (actor, e.g. 'ai:classifier', 'ai:elevenlabs', 'human:crm') did
