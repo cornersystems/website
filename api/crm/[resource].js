@@ -44,7 +44,7 @@ async function route(req, res) {
 
   // ── stats ──────────────────────────────────────────────────────────────────
   if (resource === "stats" && req.method === "GET") {
-    const [stages, mrr, clients, openTickets, pendingCallbacks, newThisWeek, pendingDrafts, hotLeads, followups] = await Promise.all([
+    const [stages, mrr, clients, openTickets, pendingCallbacks, newThisWeek, pendingDrafts, hotLeads, followups, inboxNew] = await Promise.all([
       sql`SELECT stage, COUNT(*) as count FROM leads GROUP BY stage ORDER BY count DESC`,
       sql`SELECT COALESCE(SUM(mrr),0) as total FROM clients WHERE status='active'`,
       sql`SELECT COUNT(*) as count FROM clients WHERE status='active'`,
@@ -59,6 +59,7 @@ async function route(req, res) {
           (stage = 'emailed_d3' AND last_touched < NOW() - INTERVAL '4 days')
         )
       `,
+      sql`SELECT COUNT(*) as count FROM touches WHERE status = 'received' AND created_at >= NOW() - INTERVAL '7 days'`,
     ]);
     return res.json({
       stages, mrr: Number(mrr[0].total), activeClients: Number(clients[0].count),
@@ -67,6 +68,7 @@ async function route(req, res) {
       pendingDrafts: Number(pendingDrafts[0].count),
       hotLeadsCount: Number(hotLeads[0].count),
       followupsCount: Number(followups[0].count),
+      inboxCount: Number(inboxNew[0].count),
       total: stages.reduce((s, r) => s + Number(r.count), 0),
     });
   }
@@ -310,6 +312,22 @@ async function route(req, res) {
 
       return res.status(400).json({ error: `Unknown action: ${action}` });
     }
+  }
+
+  // ── inbox ─────────────────────────────────────────────────────────────────
+  if (resource === "inbox" && req.method === "GET") {
+    const messages = await sql`
+      SELECT
+        t.id, t.created_at, t.subject, t.body, t.channel, t.type,
+        t.lead_id,
+        l.business_name, l.owner_name, l.email AS lead_email, l.stage, l.lead_tier
+      FROM touches t
+      LEFT JOIN leads l ON l.id = t.lead_id
+      WHERE t.status = 'received'
+      ORDER BY t.created_at DESC
+      LIMIT 200
+    `;
+    return res.json(messages);
   }
 
   // ── settings ───────────────────────────────────────────────────────────────

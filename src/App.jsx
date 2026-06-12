@@ -20,6 +20,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   Mail,
+  MailOpen,
   Maximize2,
   MapPin,
   Menu,
@@ -1746,6 +1747,7 @@ function CrmDashboard() {
   const [activity, setActivity]   = useState([]);
   const [tickets, setTickets]     = useState([]);
   const [callbacks, setCallbacks] = useState([]);
+  const [inbox, setInbox]         = useState([]);
   const [search, setSearch]       = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [sortBy, setSortBy]       = useState(null);
@@ -1837,6 +1839,12 @@ function CrmDashboard() {
     if (tab !== "activity") return;
     authFetch("/api/crm/activity").then(r => r.ok ? r.json() : [])
       .then(d => setActivity(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [tab, authFetch]);
+
+  useEffect(() => {
+    if (tab !== "inbox") return;
+    authFetch("/api/crm/inbox").then(r => r.ok ? r.json() : [])
+      .then(d => setInbox(Array.isArray(d) ? d : [])).catch(() => {});
   }, [tab, authFetch]);
 
   function openLeadDetail(lead) {
@@ -1990,6 +1998,7 @@ function CrmDashboard() {
       label: "Overview",
       items: [
         ["dashboard", "Dashboard", LayoutDashboard],
+        ["inbox", "Inbox", MailOpen],
       ],
     },
     {
@@ -2025,6 +2034,7 @@ function CrmDashboard() {
   const NAV_TABS = NAV_GROUPS.flatMap(g => g.items);
 
   function navBadge(t) {
+    if (t === "inbox")     { const n = stats?.inboxCount ?? 0; return n > 0 ? n : null; }
     if (t === "tickets")   return stats?.openTickets     > 0 ? stats.openTickets : null;
     if (t === "callbacks") return stats?.pendingCallbacks > 0 ? stats.pendingCallbacks : null;
     if (t === "drafts")    { const n = stats?.pendingDrafts  ?? drafts.length;    return n > 0 ? n : null; }
@@ -2417,6 +2427,71 @@ function CrmDashboard() {
               onEmail={emailLead}
               STAGES={STAGES}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Inbox */}
+      {tab === "inbox" && (
+        <div className="crm-content">
+          <p style={{ margin: "0 0 16px", fontSize: 13, color: "#888" }}>
+            hello@cornersystems.co · tmorris@cornersystems.co
+          </p>
+          <div className="crm-table-wrap">
+            <table className="crm-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>From</th>
+                  <th>Subject / Preview</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inbox.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+                      No inbound messages yet.
+                    </td>
+                  </tr>
+                ) : inbox.map(m => (
+                  <tr
+                    key={m.id}
+                    style={{ cursor: m.lead_id ? "pointer" : undefined }}
+                    onClick={() => {
+                      if (!m.lead_id) return;
+                      openLeadDetail({ id: m.lead_id, business_name: m.business_name, owner_name: m.owner_name, email: m.lead_email, stage: m.stage, lead_tier: m.lead_tier, notes: "" });
+                    }}
+                  >
+                    <td>
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
+                        background: m.channel === "website_contact" ? "#e8f4fd" : "#edf7ed",
+                        color: m.channel === "website_contact" ? "#1565c0" : "#2e7d32",
+                      }}>
+                        {m.channel === "website_contact" ? "Contact Form" : "Reply"}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{m.business_name || "—"}</div>
+                      {m.lead_email && <div style={{ fontSize: 12, color: "#666" }}>{m.lead_email}</div>}
+                    </td>
+                    <td>
+                      <div style={{ fontSize: 14 }}>{m.subject || "(no subject)"}</div>
+                      {m.body && (
+                        <div style={{ fontSize: 12, color: "#888", marginTop: 2, maxWidth: 420, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {m.body}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ whiteSpace: "nowrap", color: "#666", fontSize: 13 }}>
+                      {new Date(m.created_at).toLocaleDateString()}{" "}
+                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
