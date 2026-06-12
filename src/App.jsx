@@ -1968,7 +1968,8 @@ function CrmDashboard() {
       setSendStatus("sent");
       setCompose(c => ({ ...c, subject: "", body: "" }));
     } else {
-      setSendStatus("error");
+      const detail = await res.json().catch(() => ({}));
+      setSendStatus(`error: ${detail.error || res.statusText}`);
     }
   }
 
@@ -2436,8 +2437,8 @@ function CrmDashboard() {
                   {sendStatus === "sending" ? "Sending…" : <><Mail size={16} /> Send</>}
                 </button>
               </div>
-              {sendStatus === "sent"  && <p className="crm-compose-status crm-status-ok">Sent.</p>}
-              {sendStatus === "error" && <p className="crm-compose-status crm-status-err">Failed to send. Check Resend config.</p>}
+              {sendStatus === "sent" && <p className="crm-compose-status crm-status-ok">Sent.</p>}
+              {sendStatus.startsWith("error") && <p className="crm-compose-status crm-status-err">Failed to send — {sendStatus.replace("error: ", "")}</p>}
             </form>
           </div>
         </div>

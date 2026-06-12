@@ -21,6 +21,15 @@ ${body.replace(/\n/g, "<br>")}
 }
 
 export default async function handler(req, res) {
+  try {
+    return await route(req, res);
+  } catch (err) {
+    console.error("CRM API error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+async function route(req, res) {
   const session = await requireClerkAuth(req, res);
   if (!session) return;
 

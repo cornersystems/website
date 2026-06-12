@@ -204,3 +204,42 @@ Daily run error: SqliteError: database disk image is malformed
   code: 'SQLITE_CORRUPT'
 }
 ===== Done - 2026-06-10 16:24:50.19 ===== 
+===== Corner Systems Daily Run - 2026-06-11 16:20:09.55 ===== 
+
+╔══════════════════════════════════════════════════════╗
+║       Corner Systems — Daily Research Run            ║
+║       Thursday, June 11, 2026                       ║
+╚══════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Reading back sheet changes from yesterday...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   (No sent marks — continuing)
+   ⚠️  Could not read Inbound tab (may not exist yet): Unable to parse range: 🌐 Inbound!A1:H100
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Finding new leads, hunting emails, checking AI presence...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔══════════════════════════════════════════════════╗
+║  Lead Research — Day 5                          ║
+║  Phase: Central Toronto — Toronto ON (day 6 of 12)║
+║  Area:  Toronto ON                               ║
+╚══════════════════════════════════════════════════╝
+
+🔍 Discovering leads in Toronto ON — niches: sports medicine clinic, massage therapy clinic, osteopathy
+  Research failed: Claude CLI error: spawnSync cmd.exe ETIMEDOUT
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Updating Google Sheets...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Sheets sync failed: database disk image is malformed
+Daily run error: SqliteError: database disk image is malformed
+    at getStats (file:///C:/Users/thoma/Projects/website/agent/db.js:454:90)
+    at run (file:///C:/Users/thoma/Projects/website/agent/daily-run.js:178:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  code: 'SQLITE_CORRUPT'
+}
+===== Done - 2026-06-11 16:26:29.18 ===== 

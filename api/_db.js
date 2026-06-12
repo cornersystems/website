@@ -1,6 +1,21 @@
 import { neon } from "@neondatabase/serverless";
 
-export const sql = neon(process.env.DATABASE_URL);
+// Lazy init — if DATABASE_URL is missing we want a readable error from the
+// handler, not a module-load crash (FUNCTION_INVOCATION_FAILED).
+let _sql = null;
+function getSql() {
+  if (!_sql) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is not set in Vercel environment variables");
+    }
+    _sql = neon(process.env.DATABASE_URL);
+  }
+  return _sql;
+}
+
+export function sql(strings, ...values) {
+  return getSql()(strings, ...values);
+}
 
 let schemaReady = false;
 export async function ensureSchema() {

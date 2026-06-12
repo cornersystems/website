@@ -3,6 +3,15 @@ import { sql, findLeadByContact, upsertLead, logTouch, ensureSchema } from "../_
 import { notifyTeam, notifyHtml, leadRow } from "../_notify.js";
 
 export default async function handler(req, res) {
+  try {
+    return await route(req, res);
+  } catch (err) {
+    console.error("ElevenLabs API error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+async function route(req, res) {
   if (req.method !== "POST") return res.status(405).end();
   const tool = req.query.tool;
   const d    = req.body;

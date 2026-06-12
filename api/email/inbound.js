@@ -1,6 +1,15 @@
 import { findLeadByContact, sql, logTouch } from "../_db.js";
 
 export default async function handler(req, res) {
+  try {
+    return await route(req, res);
+  } catch (err) {
+    console.error("Inbound email error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+async function route(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   // Resend signs inbound webhooks with svix — verify if secret is set
