@@ -2173,7 +2173,16 @@ function CrmDashboard() {
                 {dashboard.stages.map(s => {
                   const max = Math.max(...dashboard.stages.map(x => x.count), 1);
                   return (
-                    <div className="crm-funnel-row" key={s.stage}>
+                    <div
+                      className="crm-funnel-row"
+                      key={s.stage}
+                      role="button"
+                      tabIndex={0}
+                      title={`View ${s.stage.replace(/_/g, " ")} leads`}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => { setStageFilter(s.stage); setSearch(""); setTab("pipeline"); }}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { setStageFilter(s.stage); setSearch(""); setTab("pipeline"); } }}
+                    >
                       <span className="crm-funnel-label"><StageBadge stage={s.stage} /></span>
                       <div className="crm-funnel-bar-wrap">
                         <div className="crm-funnel-bar" style={{ width: `${(s.count / max) * 100}%`, background: STAGE_COLORS[s.stage] || "#6b7280" }} />
