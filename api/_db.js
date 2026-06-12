@@ -90,6 +90,7 @@ export async function initSchema() {
       body        TEXT,
       notes       TEXT,
       external_id TEXT,
+      recipient   TEXT,
       opened_at   TIMESTAMPTZ,
       clicked_at  TIMESTAMPTZ,
       bounced_at  TIMESTAMPTZ,
@@ -97,6 +98,7 @@ export async function initSchema() {
     )
   `;
   await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS external_id TEXT`;
+  await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS recipient TEXT`;
   await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS opened_at TIMESTAMPTZ`;
   await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMPTZ`;
   await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMPTZ`;
@@ -316,9 +318,9 @@ export async function upsertLead(data) {
 
 export async function logTouch(leadId, type, channel, status, extra = {}) {
   const rows = await sql`
-    INSERT INTO touches (lead_id, type, channel, status, subject, body, notes, external_id)
+    INSERT INTO touches (lead_id, type, channel, status, subject, body, notes, external_id, recipient)
     VALUES (${leadId}, ${type}, ${channel}, ${status},
-      ${extra.subject || null}, ${extra.body || null}, ${extra.notes || null}, ${extra.external_id || null})
+      ${extra.subject || null}, ${extra.body || null}, ${extra.notes || null}, ${extra.external_id || null}, ${extra.recipient || null})
     RETURNING id
   `;
   return rows[0].id;

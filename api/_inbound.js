@@ -1,4 +1,4 @@
-import { findLeadByContact, sql, logTouch } from "./_db.js";
+import { ensureSchema, findLeadByContact, sql, logTouch } from "./_db.js";
 
 // Process a Resend `email.received` event's data payload: match or create the
 // lead, fetch the message body, and log a 'received' touch so it appears in
@@ -6,6 +6,8 @@ import { findLeadByContact, sql, logTouch } from "./_db.js";
 export async function processInboundEmail(data) {
   const from = data?.from;
   if (!from) return { matched: false, lead_id: null, error: "No from address" };
+
+  await ensureSchema();
 
   const emailMatch = from.match(/<(.+?)>/) || [null, from];
   const fromEmail  = emailMatch[1]?.toLowerCase().trim();
@@ -63,8 +65,9 @@ export async function processInboundEmail(data) {
 
   await logTouch(lead.id, "email", "reply_received", "received", {
     subject: data.subject || "(no subject)",
-    body: body.slice(0, 1000),
+    body: body.slice(0, 10000),
     external_id: data.email_id || null,
+    recipient: (Array.isArray(data.to) ? data.to[0] : data.to)?.toLowerCase() || null,
   });
 
   return { matched, lead_id: lead.id };

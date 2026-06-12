@@ -319,7 +319,7 @@ async function route(req, res) {
     const messages = await sql`
       SELECT
         t.id, t.created_at, t.subject, t.body, t.channel, t.type,
-        t.lead_id,
+        t.lead_id, t.recipient,
         l.business_name, l.owner_name, l.email AS lead_email, l.stage, l.lead_tier
       FROM touches t
       LEFT JOIN leads l ON l.id = t.lead_id

@@ -1748,6 +1748,8 @@ function CrmDashboard() {
   const [tickets, setTickets]     = useState([]);
   const [callbacks, setCallbacks] = useState([]);
   const [inbox, setInbox]         = useState([]);
+  const [inboxRecipient, setInboxRecipient] = useState("");
+  const [openMsgId, setOpenMsgId] = useState(null);
   const [search, setSearch]       = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [sortBy, setSortBy]       = useState(null);
@@ -1843,8 +1845,12 @@ function CrmDashboard() {
 
   useEffect(() => {
     if (tab !== "inbox") return;
-    authFetch("/api/crm/inbox").then(r => r.ok ? r.json() : [])
-      .then(d => setInbox(Array.isArray(d) ? d : [])).catch(() => {});
+    const load = () =>
+      authFetch("/api/crm/inbox").then(r => r.ok ? r.json() : [])
+        .then(d => setInbox(Array.isArray(d) ? d : [])).catch(() => {});
+    load();
+    const poll = setInterval(load, 15000);
+    return () => clearInterval(poll);
   }, [tab, authFetch]);
 
   function openLeadDetail(lead) {
@@ -2432,36 +2438,47 @@ function CrmDashboard() {
       )}
 
       {/* Inbox */}
-      {tab === "inbox" && (
+      {tab === "inbox" && (() => {
+        const recipients = [...new Set(inbox.map(m => (m.recipient || "").toLowerCase()).filter(Boolean))].sort();
+        const visible = inboxRecipient ? inbox.filter(m => (m.recipient || "").toLowerCase() === inboxRecipient) : inbox;
+        return (
         <div className="crm-content">
-          <p style={{ margin: "0 0 16px", fontSize: 13, color: "#888" }}>
-            hello@cornersystems.co · tmorris@cornersystems.co
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 16px" }}>
+            <select
+              value={inboxRecipient}
+              onChange={e => setInboxRecipient(e.target.value)}
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd", fontSize: 13, color: "#444" }}
+            >
+              <option value="">All recipients</option>
+              {recipients.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <span style={{ fontSize: 13, color: "#888" }}>
+              {visible.length} message{visible.length === 1 ? "" : "s"} · refreshes automatically
+            </span>
+          </div>
           <div className="crm-table-wrap">
             <table className="crm-table">
               <thead>
                 <tr>
                   <th>Type</th>
                   <th>From</th>
+                  <th>To</th>
                   <th>Subject / Preview</th>
                   <th>Date</th>
                 </tr>
               </thead>
               <tbody>
-                {inbox.length === 0 ? (
+                {visible.length === 0 ? (
                   <tr>
-                    <td colSpan={4} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+                    <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
                       No inbound messages yet.
                     </td>
                   </tr>
-                ) : inbox.map(m => (
+                ) : visible.map(m => (
+                  <React.Fragment key={m.id}>
                   <tr
-                    key={m.id}
-                    style={{ cursor: m.lead_id ? "pointer" : undefined }}
-                    onClick={() => {
-                      if (!m.lead_id) return;
-                      openLeadDetail({ id: m.lead_id, business_name: m.business_name, owner_name: m.owner_name, email: m.lead_email, stage: m.stage, lead_tier: m.lead_tier, notes: "" });
-                    }}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setOpenMsgId(openMsgId === m.id ? null : m.id)}
                   >
                     <td>
                       <span style={{
@@ -2476,6 +2493,7 @@ function CrmDashboard() {
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{m.business_name || "—"}</div>
                       {m.lead_email && <div style={{ fontSize: 12, color: "#666" }}>{m.lead_email}</div>}
                     </td>
+                    <td style={{ fontSize: 13, color: "#666" }}>{m.recipient || "—"}</td>
                     <td>
                       <div style={{ fontSize: 14 }}>{m.subject || "(no subject)"}</div>
                       {m.body && (
@@ -2489,12 +2507,39 @@ function CrmDashboard() {
                       {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </td>
                   </tr>
+                  {openMsgId === m.id && (
+                    <tr>
+                      <td colSpan={5} style={{ background: "#fafbfc", padding: "16px 20px" }}>
+                        <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
+                          From: {m.lead_email || m.business_name || "—"} · To: {m.recipient || "—"} ·{" "}
+                          {new Date(m.created_at).toLocaleString()}
+                        </div>
+                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>{m.subject || "(no subject)"}</div>
+                        <div style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.55, color: "#333", maxWidth: 720 }}>
+                          {m.body || "(no content)"}
+                        </div>
+                        {m.lead_id && (
+                          <button
+                            style={{ marginTop: 12, padding: "6px 14px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", fontSize: 13, cursor: "pointer" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openLeadDetail({ id: m.lead_id, business_name: m.business_name, owner_name: m.owner_name, email: m.lead_email, stage: m.stage, lead_tier: m.lead_tier, notes: "" });
+                            }}
+                          >
+                            Open lead
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Compose */}
       {tab === "compose" && (
