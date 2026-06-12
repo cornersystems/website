@@ -2714,6 +2714,14 @@ function CrmPage() {
     return () => { widget.style.display = prevDisplay; };
   }, []);
 
+  if (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY) {
+    return (
+      <div className="crm-signin-wrap">
+        <p>CRM sign-in is not configured. Set VITE_CLERK_PUBLISHABLE_KEY in website/.env.local and restart the dev server.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <SignedIn><CrmDashboard /></SignedIn>

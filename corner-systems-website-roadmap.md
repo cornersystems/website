@@ -299,6 +299,7 @@ Analytics events:
 Current implementation notes:
 
 - `/crm` is a Clerk-authenticated route (`<SignedIn>`/`<SignedOut>` + `<SignIn routing="hash">`); unauthenticated users see the Clerk sign-in UI.
+- A missing `VITE_CLERK_PUBLISHABLE_KEY` no longer blanks the whole site: `main.jsx` skips `ClerkProvider` and `/crm` shows a "not configured" notice instead (2026-06-11). Local dev needs `website/.env.local` with the key for CRM sign-in to work.
 - The CRM dashboard reads/writes Neon Postgres directly via `/api/crm/*` endpoints (leads, touches, tickets, callbacks, settings, dashboard, hot-leads, followups, drafts, activity).
 - AI-drafted outreach emails from the outbound pipeline land in the Drafts tab as `pending_review` and are sent via Resend on approval (or auto-sent if `auto_send_emails` is enabled globally or per-lead).
 - Email opens/clicks/bounces are tracked via a Resend webhook (`/api/email/events`) — registering the webhook URL + secret in Resend/Vercel is still a manual step (see `agent-network/agent-network-roadmap.md` Phase 4).
