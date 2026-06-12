@@ -1,5 +1,6 @@
 import { requireClerkAuth } from "../_auth.js";
 import { sql, findLeadByContact, logTouch, initSchema, ensureSchema, getSetting, setSetting } from "../_db.js";
+import { getSendPolicy, setSendPolicy } from "../_policy.js";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -168,14 +169,15 @@ async function route(req, res) {
   // ── leads ──────────────────────────────────────────────────────────────────
   if (resource === "leads" && req.method === "GET") {
     const { stage, search } = req.query;
+    const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
     let leads;
     if (search) {
       const q = `%${search}%`;
-      leads = await sql`SELECT * FROM leads WHERE business_name ILIKE ${q} OR owner_name ILIKE ${q} OR email ILIKE ${q} ORDER BY updated_at DESC LIMIT 200`;
+      leads = await sql`SELECT * FROM leads WHERE business_name ILIKE ${q} OR owner_name ILIKE ${q} OR email ILIKE ${q} ORDER BY updated_at DESC LIMIT 200 OFFSET ${offset}`;
     } else if (stage) {
-      leads = await sql`SELECT * FROM leads WHERE stage=${stage} ORDER BY updated_at DESC LIMIT 200`;
+      leads = await sql`SELECT * FROM leads WHERE stage=${stage} ORDER BY updated_at DESC LIMIT 200 OFFSET ${offset}`;
     } else {
-      leads = await sql`SELECT * FROM leads ORDER BY updated_at DESC LIMIT 200`;
+      leads = await sql`SELECT * FROM leads ORDER BY updated_at DESC LIMIT 200 OFFSET ${offset}`;
     }
     return res.json(leads);
   }
@@ -225,6 +227,35 @@ async function route(req, res) {
     }
   }
 
+  // ── audit (AI + human action log, read-only) ───────────────────────────────
+  if (resource === "audit" && req.method === "GET") {
+    const entries = await sql`
+      SELECT a.*, l.business_name
+      FROM audit_log a LEFT JOIN leads l ON l.id = a.lead_id
+      ORDER BY a.created_at DESC LIMIT 200`;
+    return res.json(entries);
+  }
+
+  // ── appointments ─────────────────────────────────────────────────────────
+  if (resource === "appointments") {
+    if (req.method === "GET") {
+      const appointments = await sql`
+        SELECT a.*, l.business_name AS lead_business_name, l.stage, l.lead_tier
+        FROM appointments a LEFT JOIN leads l ON l.id = a.lead_id
+        ORDER BY a.start_at DESC LIMIT 200`;
+      return res.json(appointments);
+    }
+    if (req.method === "PATCH") {
+      const { id, status } = req.body;
+      const allowed = ["booked", "completed", "no_show", "cancelled"];
+      if (!id || !allowed.includes(status)) {
+        return res.status(400).json({ error: `id and status (${allowed.join("/")}) required` });
+      }
+      await sql`UPDATE appointments SET status=${status}, updated_at=NOW() WHERE id=${id}`;
+      return res.json({ ok: true });
+    }
+  }
+
   // ── email-send ─────────────────────────────────────────────────────────────
   if (resource === "email-send" && req.method === "POST") {
     const { to_email, to_name, subject, body, lead_id } = req.body;
@@ -236,7 +267,7 @@ async function route(req, res) {
   Corner Systems · <a href="https://cornersystems.vercel.app" style="color:#999">cornersystems.vercel.app</a>
 </div></div>`;
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: FROM, replyTo: "tmorris@cornersystems.co",
       to: to_name ? `${to_name} <${to_email}>` : to_email,
       subject, html,
@@ -334,15 +365,25 @@ async function route(req, res) {
   if (resource === "settings") {
     if (req.method === "GET") {
       const autoSendDefault = await getSetting("auto_send_emails_default", "false");
-      return res.json({ auto_send_emails_default: autoSendDefault === "true" });
+      const policy = await getSendPolicy();
+      return res.json({ auto_send_emails_default: autoSendDefault === "true", ai_send_policy: policy });
     }
     if (req.method === "PATCH") {
-      const { auto_send_emails_default } = req.body;
-      if (typeof auto_send_emails_default !== "boolean") {
-        return res.status(400).json({ error: "auto_send_emails_default (boolean) required" });
+      const { auto_send_emails_default, ai_send_policy } = req.body;
+      if (auto_send_emails_default === undefined && ai_send_policy === undefined) {
+        return res.status(400).json({ error: "auto_send_emails_default or ai_send_policy required" });
       }
-      await setSetting("auto_send_emails_default", auto_send_emails_default ? "true" : "false");
-      return res.json({ ok: true });
+      if (auto_send_emails_default !== undefined) {
+        if (typeof auto_send_emails_default !== "boolean") {
+          return res.status(400).json({ error: "auto_send_emails_default must be boolean" });
+        }
+        await setSetting("auto_send_emails_default", auto_send_emails_default ? "true" : "false");
+      }
+      let policy;
+      if (ai_send_policy !== undefined) {
+        policy = await setSendPolicy(ai_send_policy);
+      }
+      return res.json({ ok: true, ...(policy ? { ai_send_policy: policy } : {}) });
     }
   }
 
