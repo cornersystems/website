@@ -303,6 +303,7 @@ Current implementation notes:
 - The CRM dashboard reads/writes Neon Postgres directly via `/api/crm/*` endpoints (leads, touches, tickets, callbacks, settings, dashboard, hot-leads, followups, drafts, activity).
 - AI-drafted outreach emails from the outbound pipeline land in the Drafts tab as `pending_review` and are sent via Resend on approval (or auto-sent if `auto_send_emails` is enabled globally or per-lead).
 - Email opens/clicks/bounces are tracked via a Resend webhook (`/api/email/events`) — registering the webhook URL + secret in Resend/Vercel is still a manual step (see `agent-network/agent-network-roadmap.md` Phase 4).
+- Inbound email is processed by shared logic in `api/_inbound.js` (lead match/create + body fetch via `GET /emails/receiving/{id}`), reached from both `/api/email/events` (the registered Resend webhook, which already listens for `email.received`) and the standalone `/api/email/inbound` endpoint. Svix signature verification lives in `api/_webhook.js` (2026-06-12). `RESEND_WEBHOOK_SECRET` and `RESEND_API_KEY` must be set in Vercel; DNS MX (`inbound-smtp.us-east-1.amazonaws.com`) is already correct for Resend receiving.
 - The current approach keeps Corner Systems separate from Automate4U accounts, HubSpot setup, and ElevenLabs agents.
 
 Open questions before further CRM work:

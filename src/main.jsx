@@ -15,7 +15,11 @@ if (!PUBLISHABLE_KEY) {
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     {PUBLISHABLE_KEY ? (
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <ClerkProvider
+        publishableKey={PUBLISHABLE_KEY}
+        signInForceRedirectUrl="/crm"
+        signUpForceRedirectUrl="/crm"
+      >
         <App />
       </ClerkProvider>
     ) : (
