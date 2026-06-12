@@ -12,7 +12,6 @@ export default async function handler(req, res) {
 async function route(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
-  // Resend signs inbound webhooks with svix — verify if secret is set
   const secret = process.env.RESEND_INBOUND_SECRET;
   if (secret) {
     const sig = req.headers["svix-signature"];
@@ -21,31 +20,47 @@ async function route(req, res) {
     }
   }
 
-  const { from, subject, text } = req.body;
+  const { from, to, subject, text, html } = req.body;
   if (!from) return res.status(400).json({ error: "No from address" });
 
-  // Extract email address from "Name <email>" format
   const emailMatch = from.match(/<(.+?)>/) || [null, from];
   const fromEmail  = emailMatch[1]?.toLowerCase().trim();
+  const fromName   = from.replace(/<.+?>/, "").trim().replace(/^"|"$/g, "") || null;
 
-  const lead = await findLeadByContact({ email: fromEmail });
+  let lead = await findLeadByContact({ email: fromEmail });
+
   if (!lead) {
-    return res.json({ ok: true, matched: false });
-  }
-
-  // Don't overwrite stages that are already further along
-  const advanceable = ["found", "emailed_d0", "emailed_d3", "emailed_d7"];
-  if (advanceable.includes(lead.stage)) {
-    await sql`
-      UPDATE leads SET stage = 'replied', last_touched = NOW(), updated_at = NOW()
-      WHERE id = ${lead.id}
+    // New contact — create a lead so it shows in the inbox
+    const rows = await sql`
+      INSERT INTO leads (business_name, owner_name, email, stage, source, contact_type, lead_tier, lead_score)
+      VALUES (
+        ${fromName || fromEmail},
+        ${fromName},
+        ${fromEmail},
+        'replied',
+        'inbound_email',
+        'inbound',
+        'warm',
+        50
+      )
+      RETURNING *
     `;
+    lead = rows[0];
+  } else {
+    // Known lead — advance stage if applicable
+    const advanceable = ["found", "emailed_d0", "emailed_d3", "emailed_d7"];
+    if (advanceable.includes(lead.stage)) {
+      await sql`
+        UPDATE leads SET stage = 'replied', last_touched = NOW(), updated_at = NOW()
+        WHERE id = ${lead.id}
+      `;
+    }
   }
 
   await logTouch(lead.id, "email", "reply_received", "received", {
     subject: subject || "(no subject)",
-    body: (text || "").slice(0, 1000),
+    body: (text || html || "").slice(0, 1000),
   });
 
-  return res.json({ ok: true, matched: true, lead_id: lead.id });
+  return res.json({ ok: true, matched: !!lead, lead_id: lead.id });
 }
