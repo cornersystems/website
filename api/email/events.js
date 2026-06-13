@@ -63,6 +63,41 @@ export default async function handler(req, res) {
     case "email.complained":
       await sql`UPDATE touches SET status = 'complained' WHERE external_id = ${messageId}`;
       break;
+    case "email.received": {
+      const { from, to, subject, text, html } = data || {};
+      if (from) {
+        try {
+          const { findLeadByContact, sql: dbSql, logTouch } = await import("../_db.js");
+          const emailMatch = from.match(/<(.+?)>/) || [null, from];
+          const fromEmail  = emailMatch[1]?.toLowerCase().trim();
+          const fromName   = from.replace(/<.+?>/, "").trim().replace(/^"|"$/g, "") || null;
+
+          let lead = await findLeadByContact({ email: fromEmail });
+
+          if (!lead) {
+            const rows = await dbSql`
+              INSERT INTO leads (business_name, owner_name, email, stage, source, contact_type, lead_tier, lead_score)
+              VALUES (${fromName || fromEmail}, ${fromName}, ${fromEmail}, 'replied', 'inbound_email', 'inbound', 'warm', 50)
+              RETURNING *
+            `;
+            lead = rows[0];
+          } else {
+            const advanceable = ["found", "emailed_d0", "emailed_d3", "emailed_d7"];
+            if (advanceable.includes(lead.stage)) {
+              await dbSql`UPDATE leads SET stage = 'replied', last_touched = NOW(), updated_at = NOW() WHERE id = ${lead.id}`;
+            }
+          }
+
+          await logTouch(lead.id, "email", "reply_received", "received", {
+            subject: subject || "(no subject)",
+            body: (text || html || "").slice(0, 1000),
+          });
+        } catch (e) {
+          console.error("Inbound email handling error:", e);
+        }
+      }
+      break;
+    }
     default:
       break;
   }

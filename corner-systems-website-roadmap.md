@@ -310,6 +310,13 @@ Open questions before further CRM work:
 - Should role-based access be added before giving the business partner direct CRM login access, or is shared full access acceptable for now?
 - Which `cs_*` tool endpoints (from `agent-network/config/tool-schemas.json`) should be implemented next for the ElevenLabs agent network?
 
+## Client Onboarding
+
+- [x] Author enterprise-grade onboarding form specs (one per vertical: fitness & studios, clinics & recovery, aesthetics & dental) with package-based conditional logic and CRM mapping — see `marketing/onboarding-forms/` (2026-06-12).
+- [ ] Build the forms in a form tool (or as a `/onboarding` route) from the specs, with section-level save and `PACKAGE` pre-filled from checkout.
+- [ ] Add `/api/crm/onboarding` webhook endpoint to receive form submissions into Neon (mapping defined in `marketing/onboarding-forms/00-OVERVIEW.md`).
+- [ ] Confirm actual package contents for Starter/Growth/AI Receptionist against the assumptions in `00-OVERVIEW.md` and adjust branching rules if they differ.
+
 ## Integrations To Show Only If Supported Or Planned
 
 - [ ] Google Calendar
