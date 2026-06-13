@@ -1748,6 +1748,10 @@ function CrmDashboard() {
   const [tickets, setTickets]     = useState([]);
   const [callbacks, setCallbacks] = useState([]);
   const [inbox, setInbox]         = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+  const [inboxRecipient, setInboxRecipient] = useState("");
+  const [openMsgId, setOpenMsgId] = useState(null);
   const [search, setSearch]       = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [sortBy, setSortBy]       = useState(null);
@@ -1757,6 +1761,7 @@ function CrmDashboard() {
   const [sendStatus, setSendStatus] = useState("");
   const [dbInit, setDbInit]         = useState("");
   const [autoSendDefault, setAutoSendDefault] = useState(false);
+  const [sendPolicy, setSendPolicy] = useState(null);
   const [draftEdits, setDraftEdits] = useState({});
   const [draftStatus, setDraftStatus] = useState({});
   const [detailLead, setDetailLead] = useState(null);
@@ -1832,7 +1837,11 @@ function CrmDashboard() {
     if (tab !== "drafts") return;
     refreshDrafts();
     authFetch("/api/crm/settings").then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setAutoSendDefault(!!d.auto_send_emails_default); }).catch(() => {});
+      .then(d => {
+        if (!d) return;
+        setAutoSendDefault(!!d.auto_send_emails_default);
+        if (d.ai_send_policy) setSendPolicy(d.ai_send_policy);
+      }).catch(() => {});
   }, [tab, authFetch, refreshDrafts]);
 
   useEffect(() => {
@@ -1842,9 +1851,25 @@ function CrmDashboard() {
   }, [tab, authFetch]);
 
   useEffect(() => {
+    if (tab !== "audit") return;
+    authFetch("/api/crm/audit").then(r => r.ok ? r.json() : [])
+      .then(d => setAuditLog(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [tab, authFetch]);
+
+  useEffect(() => {
+    if (tab !== "appointments") return;
+    authFetch("/api/crm/appointments").then(r => r.ok ? r.json() : [])
+      .then(d => setAppointments(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [tab, authFetch]);
+
+  useEffect(() => {
     if (tab !== "inbox") return;
-    authFetch("/api/crm/inbox").then(r => r.ok ? r.json() : [])
-      .then(d => setInbox(Array.isArray(d) ? d : [])).catch(() => {});
+    const load = () =>
+      authFetch("/api/crm/inbox").then(r => r.ok ? r.json() : [])
+        .then(d => setInbox(Array.isArray(d) ? d : [])).catch(() => {});
+    load();
+    const poll = setInterval(load, 15000);
+    return () => clearInterval(poll);
   }, [tab, authFetch]);
 
   function openLeadDetail(lead) {
@@ -1931,6 +1956,16 @@ function CrmDashboard() {
     });
   }
 
+  async function updateSendPolicy(key, value) {
+    const next = { ...(sendPolicy || {}), [key]: value };
+    setSendPolicy(next);
+    await authFetch("/api/crm/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ai_send_policy: { [key]: value } }),
+    });
+  }
+
   async function updateLeadAutoSend(id, value) {
     const auto_send_emails = value === "on" ? true : value === "off" ? false : null;
     await patchLead(id, { auto_send_emails });
@@ -2005,9 +2040,11 @@ function CrmDashboard() {
       label: "Leads & Outreach",
       items: [
         ["hot", "Hot Leads", Flame],
+        ["appointments", "Appointments", Calendar],
         ["followups", "Follow-ups", Clock3],
         ["drafts", "Drafts", Inbox],
         ["activity", "Activity", Activity],
+        ["audit", "AI Log", BarChart3],
       ],
     },
     {
@@ -2136,7 +2173,16 @@ function CrmDashboard() {
                 {dashboard.stages.map(s => {
                   const max = Math.max(...dashboard.stages.map(x => x.count), 1);
                   return (
-                    <div className="crm-funnel-row" key={s.stage}>
+                    <div
+                      className="crm-funnel-row"
+                      key={s.stage}
+                      role="button"
+                      tabIndex={0}
+                      title={`View ${s.stage.replace(/_/g, " ")} leads`}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => { setStageFilter(s.stage); setSearch(""); setTab("pipeline"); }}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { setStageFilter(s.stage); setSearch(""); setTab("pipeline"); } }}
+                    >
                       <span className="crm-funnel-label"><StageBadge stage={s.stage} /></span>
                       <div className="crm-funnel-bar-wrap">
                         <div className="crm-funnel-bar" style={{ width: `${(s.count / max) * 100}%`, background: STAGE_COLORS[s.stage] || "#6b7280" }} />
@@ -2223,6 +2269,36 @@ function CrmDashboard() {
               Auto-send all future emails (skip review)
             </label>
           </div>
+          {sendPolicy && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", padding: "10px 14px", marginBottom: 16, background: "#fafbfc", border: "1px solid #eee", borderRadius: 8, fontSize: 13 }}>
+              <span style={{ fontWeight: 600, color: "#444" }}>AI reply policy:</span>
+              {[
+                ["reply_interested", "Replies to interested leads"],
+                ["reply_question", "Replies to questions"],
+                ["followup_due", "Scheduled follow-ups"],
+              ].map(([key, label]) => (
+                <label key={key} style={{ display: "flex", alignItems: "center", gap: 6, color: "#555" }}>
+                  {label}
+                  <select
+                    value={sendPolicy[key] || "review"}
+                    onChange={e => updateSendPolicy(key, e.target.value)}
+                    style={{ padding: "3px 6px", borderRadius: 6, border: "1px solid #ddd", fontSize: 12 }}
+                  >
+                    <option value="review">Require review</option>
+                    <option value="auto">Auto-send</option>
+                  </select>
+                </label>
+              ))}
+              <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#555" }}>
+                <input
+                  type="checkbox"
+                  checked={sendPolicy.always_review_pricing !== false}
+                  onChange={e => updateSendPolicy("always_review_pricing", e.target.checked)}
+                />
+                Always review pricing mentions
+              </label>
+            </div>
+          )}
           {drafts.length === 0 && <p className="crm-empty">No drafts awaiting review.</p>}
           {drafts.map(d => {
             const edit = draftEdits[d.id] || {};
@@ -2431,37 +2507,167 @@ function CrmDashboard() {
         </div>
       )}
 
-      {/* Inbox */}
-      {tab === "inbox" && (
+      {/* AI Log */}
+      {tab === "audit" && (
         <div className="crm-content">
           <p style={{ margin: "0 0 16px", fontSize: 13, color: "#888" }}>
-            hello@cornersystems.co · tmorris@cornersystems.co
+            Every AI-initiated change to the CRM, with the reason it was made.
           </p>
+          <div className="crm-table-wrap">
+            <table className="crm-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Actor</th>
+                  <th>Action</th>
+                  <th>Lead</th>
+                  <th>Change</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditLog.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+                      No AI actions logged yet.
+                    </td>
+                  </tr>
+                ) : auditLog.map(a => (
+                  <tr key={a.id}>
+                    <td style={{ whiteSpace: "nowrap", fontSize: 13, color: "#666" }}>
+                      {new Date(a.created_at).toLocaleDateString()}{" "}
+                      {new Date(a.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </td>
+                    <td>
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
+                        background: a.actor.startsWith("ai:") ? "#fdf0e8" : "#e8f4fd",
+                        color: a.actor.startsWith("ai:") ? "#b45309" : "#1565c0",
+                      }}>
+                        {a.actor}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: 13 }}>{a.action.replace(/_/g, " ")}</td>
+                    <td style={{ fontSize: 13 }}>{a.business_name || (a.lead_id ? `#${a.lead_id}` : "—")}</td>
+                    <td style={{ fontSize: 12, color: "#666", maxWidth: 280 }}>
+                      {a.before && <div>from: {JSON.stringify(a.before)}</div>}
+                      {a.after && <div>to: {JSON.stringify(a.after)}</div>}
+                    </td>
+                    <td style={{ fontSize: 13, color: "#444", maxWidth: 320 }}>{a.reason || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Appointments */}
+      {tab === "appointments" && (
+        <div className="crm-content">
+          <div className="crm-table-wrap">
+            <table className="crm-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Attendee</th>
+                  <th>Business</th>
+                  <th>Kind</th>
+                  <th>Source</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+                      No appointments yet. Booked discovery calls land here automatically.
+                    </td>
+                  </tr>
+                ) : appointments.map(a => (
+                  <tr key={a.id} style={{ opacity: ["cancelled", "no_show"].includes(a.status) ? 0.55 : 1 }}>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>
+                        {new Date(a.start_at).toLocaleDateString()}{" "}
+                        {new Date(a.start_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                      {a.timezone && <div style={{ fontSize: 12, color: "#888" }}>{a.timezone}</div>}
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{a.attendee_name || "—"}</div>
+                      {a.attendee_email && <div style={{ fontSize: 12, color: "#666" }}>{a.attendee_email}</div>}
+                    </td>
+                    <td>{a.lead_business_name || "—"}</td>
+                    <td style={{ fontSize: 13, color: "#666" }}>{a.kind}</td>
+                    <td style={{ fontSize: 13, color: "#666" }}>{a.source || "—"}</td>
+                    <td>
+                      <select
+                        value={a.status}
+                        style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #ddd", fontSize: 13 }}
+                        onChange={e => {
+                          const status = e.target.value;
+                          authFetch("/api/crm/appointments", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: a.id, status }),
+                          }).then(() => setAppointments(prev => prev.map(x => x.id === a.id ? { ...x, status } : x)));
+                        }}
+                      >
+                        {["booked", "completed", "no_show", "cancelled"].map(s => (
+                          <option key={s} value={s}>{s.replace("_", "-")}</option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Inbox */}
+      {tab === "inbox" && (() => {
+        const recipients = [...new Set(inbox.map(m => (m.recipient || "").toLowerCase()).filter(Boolean))].sort();
+        const visible = inboxRecipient ? inbox.filter(m => (m.recipient || "").toLowerCase() === inboxRecipient) : inbox;
+        return (
+        <div className="crm-content">
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 16px" }}>
+            <select
+              value={inboxRecipient}
+              onChange={e => setInboxRecipient(e.target.value)}
+              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd", fontSize: 13, color: "#444" }}
+            >
+              <option value="">All recipients</option>
+              {recipients.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <span style={{ fontSize: 13, color: "#888" }}>
+              {visible.length} message{visible.length === 1 ? "" : "s"} · refreshes automatically
+            </span>
+          </div>
           <div className="crm-table-wrap">
             <table className="crm-table">
               <thead>
                 <tr>
                   <th>Type</th>
                   <th>From</th>
+                  <th>To</th>
                   <th>Subject / Preview</th>
                   <th>Date</th>
                 </tr>
               </thead>
               <tbody>
-                {inbox.length === 0 ? (
+                {visible.length === 0 ? (
                   <tr>
-                    <td colSpan={4} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+                    <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
                       No inbound messages yet.
                     </td>
                   </tr>
-                ) : inbox.map(m => (
+                ) : visible.map(m => (
+                  <React.Fragment key={m.id}>
                   <tr
-                    key={m.id}
-                    style={{ cursor: m.lead_id ? "pointer" : undefined }}
-                    onClick={() => {
-                      if (!m.lead_id) return;
-                      openLeadDetail({ id: m.lead_id, business_name: m.business_name, owner_name: m.owner_name, email: m.lead_email, stage: m.stage, lead_tier: m.lead_tier, notes: "" });
-                    }}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setOpenMsgId(openMsgId === m.id ? null : m.id)}
                   >
                     <td>
                       <span style={{
@@ -2476,6 +2682,7 @@ function CrmDashboard() {
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{m.business_name || "—"}</div>
                       {m.lead_email && <div style={{ fontSize: 12, color: "#666" }}>{m.lead_email}</div>}
                     </td>
+                    <td style={{ fontSize: 13, color: "#666" }}>{m.recipient || "—"}</td>
                     <td>
                       <div style={{ fontSize: 14 }}>{m.subject || "(no subject)"}</div>
                       {m.body && (
@@ -2489,12 +2696,39 @@ function CrmDashboard() {
                       {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </td>
                   </tr>
+                  {openMsgId === m.id && (
+                    <tr>
+                      <td colSpan={5} style={{ background: "#fafbfc", padding: "16px 20px" }}>
+                        <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
+                          From: {m.lead_email || m.business_name || "—"} · To: {m.recipient || "—"} ·{" "}
+                          {new Date(m.created_at).toLocaleString()}
+                        </div>
+                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>{m.subject || "(no subject)"}</div>
+                        <div style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.55, color: "#333", maxWidth: 720 }}>
+                          {m.body || "(no content)"}
+                        </div>
+                        {m.lead_id && (
+                          <button
+                            style={{ marginTop: 12, padding: "6px 14px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", fontSize: 13, cursor: "pointer" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openLeadDetail({ id: m.lead_id, business_name: m.business_name, owner_name: m.owner_name, email: m.lead_email, stage: m.stage, lead_tier: m.lead_tier, notes: "" });
+                            }}
+                          >
+                            Open lead
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Compose */}
       {tab === "compose" && (

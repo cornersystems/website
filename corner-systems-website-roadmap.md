@@ -303,7 +303,19 @@ Current implementation notes:
 - The CRM dashboard reads/writes Neon Postgres directly via `/api/crm/*` endpoints (leads, touches, tickets, callbacks, settings, dashboard, hot-leads, followups, drafts, activity).
 - AI-drafted outreach emails from the outbound pipeline land in the Drafts tab as `pending_review` and are sent via Resend on approval (or auto-sent if `auto_send_emails` is enabled globally or per-lead).
 - Email opens/clicks/bounces are tracked via a Resend webhook (`/api/email/events`) — registering the webhook URL + secret in Resend/Vercel is still a manual step (see `agent-network/agent-network-roadmap.md` Phase 4).
+- Inbound email is processed by shared logic in `api/_inbound.js` (lead match/create + body fetch via `GET /emails/receiving/{id}`), reached from both `/api/email/events` (the registered Resend webhook, which already listens for `email.received`) and the standalone `/api/email/inbound` endpoint. Svix signature verification lives in `api/_webhook.js` (2026-06-12). `RESEND_WEBHOOK_SECRET` and `RESEND_API_KEY` must be set in Vercel; DNS MX (`inbound-smtp.us-east-1.amazonaws.com`) is already correct for Resend receiving.
 - The current approach keeps Corner Systems separate from Automate4U accounts, HubSpot setup, and ElevenLabs agents.
+
+CRM autonomy build-out (2026-06-12):
+
+- Booking: `appointments` table + Cal.com adapter (`api/_calcom.js`); `cs` tools `discovery-availability` and `book-discovery` are live when `CALCOM_API_KEY` + `CALCOM_EVENT_TYPE_ID` are set in Vercel (otherwise they still return `configured: false`). Booked calls land in the CRM Appointments tab; T-24h reminders go out via the hourly cron.
+- Dedup: emails normalized + unique index on `lower(email)` (one-time merge migration in `initSchema`); `upsertLead` is race-safe (23505 retry-as-update); all lead-creation paths (contact form, inbound email, ElevenLabs) funnel through it. `merge-leads` tool handles residual dupes.
+- Inbound AI triage (`api/_classify.js`, Claude via `ANTHROPIC_API_KEY`, model override `CLAUDE_CLASSIFY_MODEL`): every received email is classified (interested/question/not_now/unsubscribe/other); stage/tier adjusted; reply drafts flow into the existing Drafts pending_review queue or auto-send per policy.
+- AI write-API: `advance-stage`, `schedule-followup`, `merge-leads` tools (API-key auth) with mandatory reasons; every AI mutation is recorded in `audit_log` and visible in the CRM "AI Log" tab.
+- Graduated auto-send policy (`ai_send_policy` setting, editable in the Drafts tab): per action type (reply_interested / reply_question / followup_due) review-vs-auto, pricing mentions always reviewed, per-lead `auto_send_emails` override wins.
+- Hourly Vercel cron `/api/cron/followups` (protect with `CRON_SECRET`): drafts/sends due follow-ups (`leads.next_followup_at`) and appointment reminders.
+- The Google Sheets "Sent?" approval loop in `agent/` is superseded by the Drafts tab + policy flow; `sync-to-sheets` can remain as a read-only export, but approvals should happen in /crm. Outbound pipeline scripts in `agent-network` should write drafts as `pending_review` touches instead of waiting on Sheets marks.
+- Env vars now referenced: `CALCOM_API_KEY`, `CALCOM_EVENT_TYPE_ID`, `ANTHROPIC_API_KEY`, `CLAUDE_CLASSIFY_MODEL` (optional), `CRON_SECRET` (recommended), plus existing `DATABASE_URL`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, Clerk keys.
 
 Open questions before further CRM work:
 

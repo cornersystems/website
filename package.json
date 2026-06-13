@@ -9,6 +9,7 @@
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
     "@clerk/backend": "^3.6.1",
     "@clerk/clerk-react": "^5.61.8",
     "@neondatabase/serverless": "^1.1.0",

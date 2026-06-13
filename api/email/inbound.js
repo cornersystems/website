@@ -1,5 +1,13 @@
-import { findLeadByContact, sql, logTouch } from "../_db.js";
+import { processInboundEmail } from "../_inbound.js";
+import { readRawBody, isValidSvixSignature } from "../_webhook.js";
 
+// Vercel/Next-style config: disable automatic body parsing so we can verify
+// the raw payload against the svix signature before parsing it as JSON.
+export const config = { api: { bodyParser: false } };
+
+// Dedicated Resend `email.received` endpoint. The combined webhook at
+// /api/email/events also handles email.received, so registering either
+// endpoint in Resend works.
 export default async function handler(req, res) {
   try {
     return await route(req, res);
@@ -12,55 +20,25 @@ export default async function handler(req, res) {
 async function route(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
-  const secret = process.env.RESEND_INBOUND_SECRET;
+  const rawBody = await readRawBody(req);
+
+  const secret = process.env.RESEND_INBOUND_SECRET || process.env.RESEND_WEBHOOK_SECRET;
   if (secret) {
-    const sig = req.headers["svix-signature"];
-    if (!sig || !sig.includes(secret)) {
-      return res.status(401).json({ error: "Invalid signature" });
-    }
+    const ok = isValidSvixSignature(
+      secret,
+      req.headers["svix-id"],
+      req.headers["svix-timestamp"],
+      req.headers["svix-signature"],
+      rawBody
+    );
+    if (!ok) return res.status(401).json({ error: "Invalid signature" });
   }
 
-  const { from, to, subject, text, html } = req.body;
-  if (!from) return res.status(400).json({ error: "No from address" });
+  // Resend webhook envelope: { type: "email.received", data: { email_id, from, to, subject, ... } }
+  const { type, data } = rawBody ? JSON.parse(rawBody) : {};
+  if (type !== "email.received") return res.json({ ok: true, ignored: type || null });
 
-  const emailMatch = from.match(/<(.+?)>/) || [null, from];
-  const fromEmail  = emailMatch[1]?.toLowerCase().trim();
-  const fromName   = from.replace(/<.+?>/, "").trim().replace(/^"|"$/g, "") || null;
-
-  let lead = await findLeadByContact({ email: fromEmail });
-
-  if (!lead) {
-    // New contact — create a lead so it shows in the inbox
-    const rows = await sql`
-      INSERT INTO leads (business_name, owner_name, email, stage, source, contact_type, lead_tier, lead_score)
-      VALUES (
-        ${fromName || fromEmail},
-        ${fromName},
-        ${fromEmail},
-        'replied',
-        'inbound_email',
-        'inbound',
-        'warm',
-        50
-      )
-      RETURNING *
-    `;
-    lead = rows[0];
-  } else {
-    // Known lead — advance stage if applicable
-    const advanceable = ["found", "emailed_d0", "emailed_d3", "emailed_d7"];
-    if (advanceable.includes(lead.stage)) {
-      await sql`
-        UPDATE leads SET stage = 'replied', last_touched = NOW(), updated_at = NOW()
-        WHERE id = ${lead.id}
-      `;
-    }
-  }
-
-  await logTouch(lead.id, "email", "reply_received", "received", {
-    subject: subject || "(no subject)",
-    body: (text || html || "").slice(0, 1000),
-  });
-
-  return res.json({ ok: true, matched: !!lead, lead_id: lead.id });
+  const result = await processInboundEmail(data);
+  if (result.error) return res.status(400).json({ error: result.error });
+  return res.json({ ok: true, matched: result.matched, lead_id: result.lead_id });
 }
