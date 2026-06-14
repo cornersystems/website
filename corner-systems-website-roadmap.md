@@ -1,6 +1,6 @@
 # Corner Systems Website Roadmap & Conversion Checklist
 
-Last updated: 2026-06-14
+Last updated: 2026-06-14 (Integrations + /services + /industries reshape)
 
 ## Goal
 
@@ -89,10 +89,11 @@ Recommended homepage order:
 - [ ] Problem section: missed calls, slow replies, after-hours leads, overwhelmed staff.
 - [ ] How it works: answer, qualify, book, follow up, escalate, log.
 - [x] ROI calculator: estimate missed revenue and admin hours. — placed right after the "how it works" journey section.
-- [ ] Vertical cards: gyms, clinics, med spas.
+- [x] Vertical cards: gyms, clinics, med spas. — replaced the old 12-tile "Social grid" with a 3-card "Three industries. One always-on front desk." section (`.environments-grid`/`.environment-card`), one large image per vertical (gym/clinic/med spa) with icon badge, blurb, and real business-type tags from `marketGroups`, 2026-06-14.
 - [ ] Proof: screenshots, sample transcripts, call summaries, testimonials.
+- [x] Follow-up: `/industries`' old 8-tile `.social-grid` wall and `/services`' old `.proof-section`/`.benefit-grid` (both predating the 2026-06-14 homepage redesign) have been replaced — `/industries` now has an interactive "What changes for your business." industry-tabs section (`.industry-tabs`/`.industry-panel`/`.industry-outcomes`, one before/after + 3-outcome panel per vertical, switchable), and `/services` now has a "Your front office, mapped." system-flow diagram (`.system-map`/`.system-hub`/`.system-chip`, channels in → AI hub → outcomes), 2026-06-14.
 - [ ] Implementation process: live in 7-14 days.
-- [ ] Integrations: phone, calendar, CRM, booking tools.
+- [x] Integrations: phone, calendar, CRM, booking tools. — see "Supported Integrations Section" below, 2026-06-14.
 - [ ] FAQ: objections and concerns.
 - [ ] Final CTA: call demo or book consultation.
 
@@ -201,8 +202,8 @@ Typical setup includes:
 - [ ] Add short demo recording.
 - [ ] Add founder/operator note.
 - [x] Add customer testimonial when available. — partial: added an anonymized early-client case study (call-answer rate + hours saved) to the homepage "Early Results" section, 2026-06-14. Client asked to stay unnamed since their customers don't know AI handles their phones/messages. Revisit with a named/quoted testimonial once a client agrees.
-- [ ] Add before/after example.
-- [ ] Add supported integrations.
+- [x] Add before/after example. — replaced the old dark-theme "Proof section" with "The Shift" (`.shift-section`), a before/after comparison of 3 concrete front-desk moments (evening DM, lunch-rush calls, weekend inquiry) plus a restyled `proofPoints` badge row, 2026-06-14. `/services`' own `.proof-section` was later replaced too — see "Supported Integrations Section" below.
+- [x] Add supported integrations. — see "Supported Integrations Section" below, 2026-06-14.
 - [ ] Add security/privacy explanation.
 - [ ] Add human handoff explanation.
 
@@ -337,23 +338,19 @@ Open questions before further CRM work:
 - [ ] Add `/api/crm/onboarding` webhook endpoint to receive form submissions into Neon (mapping defined in `marketing/onboarding-forms/00-OVERVIEW.md`).
 - [ ] Confirm actual package contents for Starter/Growth/AI Receptionist against the assumptions in `00-OVERVIEW.md` and adjust branching rules if they differ.
 
-## Integrations To Show Only If Supported Or Planned
+## Supported Integrations Section
 
-- [ ] Google Calendar
-- [ ] Calendly
-- [ ] Custom Corner Systems CRM
-- [ ] Twilio
-- [ ] Mindbody
-- [ ] Jane App
-- [ ] Fresha
-- [ ] Square Appointments
-- [ ] Zapier
-- [ ] GoHighLevel
-- [ ] Slack
-- [ ] Email notifications
-- [ ] SMS notifications
+Status: implemented as a shared `IntegrationsSection` component (`src/App.jsx`), rendered on `/` (between "Three industries" and "Early results") and on `/services` (between the new system-map section and the closing CTA), 2026-06-14.
 
-Do not show integration logos as live capabilities unless they are actually supported. If planned but not live, label carefully.
+- Four categories (`integrationGroups`), 6 tools each, rendered as icon tiles (`ToolTile`/`.tool-tile`):
+  - **Booking & Scheduling**: Mindbody, GloFox, Zen Planner, Jane App, Cliniko, Google Calendar.
+  - **CRM & Pipeline**: HubSpot, GoHighLevel, Salesforce, Airtable, Google Sheets, Notion.
+  - **Inbox & Messaging**: Gmail, Outlook, Twilio, WhatsApp, Instagram, Facebook.
+  - **Marketing & Payments**: Stripe, Square, QuickBooks, Mailchimp, Yelp, Google Business Profile.
+- Tools with a real Simple Icons logo (`react-icons/si`, via `toolIcons` map) render that logo; the rest (Mindbody, GloFox, Zen Planner, Jane App, Cliniko, GoHighLevel, Outlook, Google Business Profile) render a monogram tile (`toolInitials`) so nothing looks broken or missing.
+- Closing `.integration-callout` banner: "Don't see your tool? ... if it's used by gyms, clinics, or med spas ... and it has an API, webhook, or Zapier / Make / n8n connection, we can very likely build around it" — covers Calendly, Fresha, Square Appointments, Zapier, Slack, custom Corner Systems CRM, and any other tool not explicitly tiled, without claiming a specific unsupported integration is live.
+
+Framing/wording reminder: do not claim a specific tool integration is "live" beyond what's actually wired up in `agent-network`'s tool schemas — the tiles + callout intentionally frame this as "what we connect with" rather than a list of completed client integrations.
 
 ## SEO Improvements
 
