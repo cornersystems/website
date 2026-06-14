@@ -1,6 +1,6 @@
 # Corner Systems Website Roadmap & Conversion Checklist
 
-Last updated: 2026-06-10
+Last updated: 2026-06-14
 
 ## Goal
 
@@ -22,7 +22,7 @@ The strategy is to sell recovered bookings, reduced front-desk overload, faster 
 
 Secondary actions:
 
-- [ ] Use a missed revenue calculator.
+- [x] Use a missed revenue calculator. — `MissedRevenueCalculator` added to homepage (after the "how it works" journey) and `/pricing` (above the plan cards), 2026-06-14.
 - [ ] View vertical-specific use cases.
 - [ ] Read implementation process.
 - [ ] Review FAQs.
@@ -46,31 +46,39 @@ Secondary actions:
 
 Build a mobile-friendly ROI calculator tied to missed calls, bookings, and admin workload.
 
+Status: implemented as `MissedRevenueCalculator` in `src/App.jsx`, styled in `src/styles.css` (`.calculator-*`, `.calc-*`), rendered on `/` and `/pricing` (2026-06-14).
+
 Inputs:
 
-- [ ] Average missed calls per week.
-- [ ] Average customer or booking value.
-- [ ] Estimated booking/conversion rate.
-- [ ] Average admin hours spent on calls per week.
-- [ ] Average hourly staff cost.
+- [x] Average missed calls per week. — combined "missed calls, DMs & messages / week" input.
+- [x] Average customer or booking value.
+- [x] Estimated booking/conversion rate.
+- [x] Average admin hours spent on calls per week.
+- [x] Average hourly staff cost. — defaults to $24/hr, annotated against a $50k/yr full-time hire.
 
 Outputs:
 
-- [ ] Estimated lost revenue per week.
-- [ ] Estimated lost revenue per month.
-- [ ] Estimated lost revenue per year.
-- [ ] Estimated admin hours saved per month.
-- [ ] Estimated staff cost savings per month.
-- [ ] Estimated bookings needed to break even.
-- [ ] CTA below calculator: "See how Corner Systems would recover these bookings."
+- [x] Estimated lost revenue per month and per year. (Weekly omitted — month/year covers the "how much am I losing" framing without crowding the layout; revisit if requested.)
+- [x] Estimated admin hours saved per month.
+- [x] Estimated staff cost savings per month.
+- [x] Estimated bookings needed to break even (against the AI Receptionist plan price).
+- [x] CTA below calculator: "See how we'd recover this" → `/contact`.
+- [x] Full-time front-desk cost comparison ($50k/yr ≈ monthly cost vs. the AI Receptionist plan, 24/7 coverage).
+- [x] Disclaimer line ("Estimates only... actual results depend on your business") to stay consistent with the Terms liability language.
 
-Formula references:
+Formula references (implemented in `MissedRevenueCalculator`):
 
 ```txt
-monthly_lost_revenue = missed_calls_per_week * 4.33 * average_booking_value * conversion_rate
-monthly_admin_cost = admin_hours_per_week * 4.33 * hourly_staff_cost
-bookings_needed_to_break_even = monthly_price / average_booking_value
+monthly_lost_revenue = missed_per_week * 4.33 * average_value * (conversion_rate / 100)
+monthly_admin_hours = admin_hours_per_week * 4.33
+monthly_staff_cost = monthly_admin_hours * hourly_staff_cost
+bookings_to_break_even = ceil(receptionist_plan_monthly / average_value)
 ```
+
+Follow-up ideas (not yet built):
+
+- [ ] Per-vertical default values (gym vs. clinic vs. med spa) once `/gyms`, `/clinics`, `/med-spas` exist.
+- [ ] Analytics events `start_roi_calculator` / `complete_roi_calculator` once site analytics beyond Vercel's built-in page views are added.
 
 ## Priority 3: Homepage Structure
 
@@ -80,7 +88,7 @@ Recommended homepage order:
 - [ ] Live demo: call the AI now.
 - [ ] Problem section: missed calls, slow replies, after-hours leads, overwhelmed staff.
 - [ ] How it works: answer, qualify, book, follow up, escalate, log.
-- [ ] ROI calculator: estimate missed revenue and admin hours.
+- [x] ROI calculator: estimate missed revenue and admin hours. — placed right after the "how it works" journey section.
 - [ ] Vertical cards: gyms, clinics, med spas.
 - [ ] Proof: screenshots, sample transcripts, call summaries, testimonials.
 - [ ] Implementation process: live in 7-14 days.
@@ -192,7 +200,7 @@ Typical setup includes:
 - [ ] Add screenshot of booked appointment.
 - [ ] Add short demo recording.
 - [ ] Add founder/operator note.
-- [ ] Add customer testimonial when available.
+- [x] Add customer testimonial when available. — partial: added an anonymized early-client case study (call-answer rate + hours saved) to the homepage "Early Results" section, 2026-06-14. Client asked to stay unnamed since their customers don't know AI handles their phones/messages. Revisit with a named/quoted testimonial once a client agrees.
 - [ ] Add before/after example.
 - [ ] Add supported integrations.
 - [ ] Add security/privacy explanation.
@@ -241,10 +249,10 @@ The AI follows your escalation rules. It can take a message, send the caller to 
 
 ## Pricing And ROI Positioning
 
-- [ ] Use "Less than the cost of a part-time receptionist" on the homepage.
-- [ ] Use starting price or ranges on the pricing page if approved.
-- [ ] Connect pricing to calculator output so ROI is obvious.
-- [ ] Include CTA: "Book a 15-minute call and we'll estimate how many missed bookings Corner Systems could recover for your business."
+- [x] Use a staff-cost framing on the homepage and pricing page — calculator compares a $50k/yr full-time front-desk hire (~$4,167/mo) against the AI Receptionist plan, 2026-06-14.
+- [x] Use starting price or ranges on the pricing page if approved. — already live ($179+/mo, $199 month-to-month).
+- [x] Connect pricing to calculator output so ROI is obvious. — "bookings needed to break even" is computed against the AI Receptionist plan price.
+- [ ] Include CTA: "Book a 15-minute call and we'll estimate how many missed bookings Corner Systems could recover for your business." (current calculator CTA is "See how we'd recover this" → `/contact`; consider this exact phrasing as an A/B option.)
 
 ## Product And Analytics Requirements
 
@@ -386,7 +394,7 @@ Content ideas:
 - [ ] A first-time visitor understands the offer within 5 seconds.
 - [ ] The homepage clearly explains the business pain.
 - [ ] The visitor can test a live AI demo immediately.
-- [ ] The site shows potential money/time savings.
+- [x] The site shows potential money/time savings. — `MissedRevenueCalculator` on `/` and `/pricing` (2026-06-14).
 - [ ] Each target vertical feels specifically addressed.
 - [ ] The site explains how implementation works.
 - [ ] The site reduces trust concerns and objections.

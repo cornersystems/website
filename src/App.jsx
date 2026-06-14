@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BarChart3,
   Bot,
+  Calculator,
   Calendar,
   CheckCircle2,
   ChevronDown,
@@ -628,6 +629,11 @@ function PricingPage() {
           { value: "Setup", label: "quoted upfront" },
         ]}
       />
+      <MissedRevenueCalculator
+        eyebrow="Before you compare plans"
+        title="See what missed calls and messages are already costing you."
+        subtitle="Every plan below is priced against this number. For most businesses, recovering a single missed booking covers the monthly cost many times over."
+      />
       <PricingSection page />
       <section className="cta-band pricing-final-cta" aria-label="Pricing call to action">
         <div className="cta-band-inner">
@@ -642,6 +648,169 @@ function PricingPage() {
         </div>
       </section>
     </>
+  );
+}
+
+// ── Missed revenue calculator ─────────────────────────────────────────────────
+const WEEKS_PER_MONTH = 4.33;
+const FULL_TIME_FRONT_DESK_ANNUAL = 50000;
+
+function currencyToNumber(value) {
+  return Number(String(value).replace(/[^0-9.]/g, "")) || 0;
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Math.max(0, Math.round(value || 0)));
+}
+
+function MissedRevenueCalculator({ eyebrow = "Free tool", title, subtitle }) {
+  const [missedPerWeek, setMissedPerWeek] = useState(10);
+  const [avgValue, setAvgValue] = useState(150);
+  const [conversionRate, setConversionRate] = useState(25);
+  const [adminHours, setAdminHours] = useState(8);
+  const [hourlyStaffCost, setHourlyStaffCost] = useState(24);
+
+  const monthlyLostRevenue = missedPerWeek * WEEKS_PER_MONTH * avgValue * (conversionRate / 100);
+  const yearlyLostRevenue = monthlyLostRevenue * 12;
+  const monthlyAdminHours = adminHours * WEEKS_PER_MONTH;
+  const monthlyStaffCost = monthlyAdminHours * hourlyStaffCost;
+  const totalMonthlyOpportunity = monthlyLostRevenue + monthlyStaffCost;
+
+  const receptionistPlan = pricingPlans.find((p) => p.id === "receptionist");
+  const receptionistMonthly = currencyToNumber(receptionistPlan.prices.annual.amount);
+  const bookingsToBreakEven = avgValue > 0 ? Math.max(1, Math.ceil(receptionistMonthly / avgValue)) : null;
+
+  const frontDeskMonthly = FULL_TIME_FRONT_DESK_ANNUAL / 12;
+
+  const numberField = (id, label, hint, value, setValue, { prefix, suffix, min = 0, max, step = 1 } = {}) => (
+    <div className="calc-field">
+      <label htmlFor={id}>
+        {label}
+        {hint && <span className="calc-field-hint">{hint}</span>}
+      </label>
+      <div className={`calc-input-wrap${prefix ? " has-prefix" : ""}${suffix ? " has-suffix" : ""}`}>
+        {prefix && <span className="calc-prefix">{prefix}</span>}
+        <input
+          id={id}
+          type="number"
+          inputMode="decimal"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => {
+            const next = e.target.value === "" ? 0 : Number(e.target.value);
+            const clamped = max !== undefined ? Math.min(max, Math.max(min, next)) : Math.max(min, next);
+            setValue(clamped);
+          }}
+        />
+        {suffix && <span className="calc-suffix">{suffix}</span>}
+      </div>
+    </div>
+  );
+
+  return (
+    <section className="calculator-section" id="calculator" aria-labelledby="calculator-title">
+      <div className="calculator-inner">
+      <div className="calculator-header">
+        <p className="eyebrow"><Calculator aria-hidden="true" size={15} /> {eyebrow}</p>
+        <h2 id="calculator-title">{title}</h2>
+        {subtitle && <p className="section-copy">{subtitle}</p>}
+      </div>
+
+      <div className="calculator-grid">
+        <div className="calculator-inputs" aria-label="Your numbers">
+          {numberField(
+            "calc-missed", "Missed calls, DMs & messages / week", "across all channels, combined",
+            missedPerWeek, setMissedPerWeek,
+          )}
+          {numberField(
+            "calc-value", "Average value of a new client", "first visit, package, or membership",
+            avgValue, setAvgValue, { prefix: "$", step: 10 },
+          )}
+          {numberField(
+            "calc-conversion", "Booking rate on answered inquiries", "% that convert to a paying client",
+            conversionRate, setConversionRate, { suffix: "%", max: 100 },
+          )}
+          {numberField(
+            "calc-admin-hours", "Staff hours / week on calls & messages", "answering, scheduling, follow-up",
+            adminHours, setAdminHours,
+          )}
+          {numberField(
+            "calc-staff-cost", "Hourly cost of that staff time", "$50k/yr full-time ≈ $24/hr",
+            hourlyStaffCost, setHourlyStaffCost, { prefix: "$" },
+          )}
+        </div>
+
+        <div className="calculator-results">
+          <div className="calc-result-card calc-result-primary">
+            <span className="calc-result-label">Revenue slipping through the cracks</span>
+            <div className="calc-result-value">
+              {formatCurrency(monthlyLostRevenue)}
+              <span className="calc-result-unit"> / month</span>
+            </div>
+            <p className="calc-result-sub">
+              That's roughly <strong>{formatCurrency(yearlyLostRevenue)}</strong> a year in inquiries that never become clients.
+            </p>
+          </div>
+
+          <div className="calc-result-row">
+            <div className="calc-result-card">
+              <span className="calc-result-label">Staff time freed up</span>
+              <div className="calc-result-value">
+                {Math.round(monthlyAdminHours)}
+                <span className="calc-result-unit"> hrs / month</span>
+              </div>
+              <p className="calc-result-sub">Time back for members, patients, and clients in front of your team.</p>
+            </div>
+            <div className="calc-result-card">
+              <span className="calc-result-label">Staff cost recovered</span>
+              <div className="calc-result-value">
+                {formatCurrency(monthlyStaffCost)}
+                <span className="calc-result-unit"> / month</span>
+              </div>
+              <p className="calc-result-sub">Based on the hourly cost you entered above.</p>
+            </div>
+          </div>
+
+          <div className="calc-staff-compare">
+            <Users aria-hidden="true" size={20} />
+            <p>
+              <strong>Versus hiring a full-time front desk worker:</strong> a {formatCurrency(FULL_TIME_FRONT_DESK_ANNUAL)}/year hire runs about {formatCurrency(frontDeskMonthly)}/month — and still can't cover nights, weekends, or instant replies to DMs and email. The {receptionistPlan.name} plan starts at {receptionistPlan.prices.annual.amount}/month (billed annually) and covers every channel, 24/7/365.
+            </p>
+          </div>
+
+          <div className="calc-result-card calc-result-total">
+            <span className="calc-result-label">Total monthly opportunity</span>
+            <div className="calc-result-value">
+              {formatCurrency(totalMonthlyOpportunity)}
+              <span className="calc-result-unit"> / month</span>
+            </div>
+            <p className="calc-result-sub">
+              {bookingsToBreakEven
+                ? <>Recovering just <strong>{bookingsToBreakEven}</strong> new client{bookingsToBreakEven === 1 ? "" : "s"} a month covers the entire {receptionistPlan.name} plan ({receptionistPlan.prices.annual.amount}/mo).</>
+                : <>Enter an average client value above to see your break-even point.</>}
+            </p>
+          </div>
+
+          <div className="calc-cta">
+            <a className="button button-primary" href="/contact">
+              See how we'd recover this
+              <ArrowRight aria-hidden="true" size={20} />
+            </a>
+          </div>
+
+          <p className="calc-disclaimer">
+            Estimates only, based on the numbers you enter — actual results depend on your business, call volume, and current setup.
+          </p>
+        </div>
+      </div>
+      </div>
+    </section>
   );
 }
 
@@ -1379,6 +1548,13 @@ function HomePage() {
         </RevealSection>
       </section>
 
+      {/* Missed revenue calculator */}
+      <MissedRevenueCalculator
+        eyebrow="Free tool"
+        title="What are missed calls and messages costing you?"
+        subtitle="Plug in your numbers. Most owners are surprised by the total once missed revenue and staff time are combined."
+      />
+
       {/* Coverage brief */}
       <section className="coverage-band" aria-label="Channels covered">
         <RevealSection className="coverage-inner">
@@ -1503,7 +1679,28 @@ function HomePage() {
               </RevealSection>
             ))}
           </div>
-          <RevealSection delay={200}>
+          <RevealSection delay={150}>
+            <div className="early-results-case">
+              <div className="early-results-case-stats">
+                <div>
+                  <strong>~20%</strong>
+                  <span>of calls were getting answered before</span>
+                </div>
+                <div>
+                  <strong>100%</strong>
+                  <span>of calls answered now, every time</span>
+                </div>
+                <div>
+                  <strong>10+ hrs/wk</strong>
+                  <span>given back to the owner and team</span>
+                </div>
+              </div>
+              <p>
+                One early gym client relied on the owner and his wife to answer every call — whenever one of them happened to be free. Calls during classes, after hours, or off-site often just rang with no one to pick up, and new-membership inquiries quietly disappeared. Since going live, every call is answered, the team has 10+ hours a week back, and inquiries that used to fall through the cracks are now captured, qualified, and followed up automatically. <em>(Client details kept anonymous by request — they prefer their members not know their phones are AI-assisted.)</em>
+              </p>
+            </div>
+          </RevealSection>
+          <RevealSection delay={250}>
             <p className="early-results-note">
               If you're the right fit, you'll be part of a small cohort of founding clients who help shape the product — with direct access to Tom and Mike throughout.
             </p>
