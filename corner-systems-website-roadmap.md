@@ -301,7 +301,7 @@ Analytics events:
 - [ ] Keep website form handling here, but write reusable lead/contact/pipeline records through the custom CRM layer owned by `agent-network`.
 - [x] Add a protected CRM dashboard after login: Dashboard (master metrics + pipeline funnel), Hot Leads, Follow-ups Due, Drafts (AI email review/approve/reject + auto-send toggle), Activity (email open/click/reply feed, per-lead filterable), Pipeline, Compose, Tickets, Callbacks (2026-06-11).
 - [ ] Add role-based access for internal users before any private records are exposed (currently any Clerk-authenticated user has full access).
-- [ ] Add audit logging for CRM record views, edits, exports, and agent-created events.
+- [x] Add audit logging for CRM record views, edits, exports, and agent-created events. — `logAudit('human:crm', ...)` now fires on every manual leads PATCH, opportunities PATCH, accounts PATCH, and bulk-leads PATCH (diffFields helper computes before/after only for changed keys). AI mutations were already logged. Audit Log tab renamed from "AI Log", shows actor filter (All / Human / AI), colour-coded actor badges, and a per-field before→after diff list instead of raw JSON (2026-06-16).
 - [x] Add invite/password reset or chosen sign-in recovery flow — handled by Clerk's hosted `<SignIn>` component.
 - [x] Add a clear logout/session-expiry flow — handled by Clerk's `<UserButton>` and session management.
 

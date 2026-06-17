@@ -6271,3 +6271,87 @@ body::selection {
   .crm-kanban { grid-auto-columns: minmax(240px, 82vw); }
   .crm-cadence-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Audit log ──────────────────────────────────────────────────────────── */
+
+.crm-audit-time {
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.crm-audit-actor {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.crm-audit-actor--ai    { background: #fef3c7; color: #92400e; }
+.crm-audit-actor--human { background: #d1fae5; color: #065f46; }
+
+.crm-audit-action {
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.crm-audit-record {
+  font-size: 0.875rem;
+  color: var(--muted-strong);
+}
+
+.crm-audit-changes { max-width: 320px; }
+
+.crm-audit-diff {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.crm-audit-diff li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.crm-audit-field {
+  font-weight: 600;
+  color: var(--muted-strong);
+  min-width: 0;
+}
+
+.crm-audit-old {
+  color: #b91c1c;
+  text-decoration: line-through;
+  font-size: 0.78rem;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-audit-arrow { color: var(--muted); font-size: 0.75rem; }
+
+.crm-audit-new {
+  color: #065f46;
+  font-size: 0.78rem;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-audit-reason {
+  font-size: 0.825rem;
+  color: var(--muted);
+  max-width: 240px;
+}

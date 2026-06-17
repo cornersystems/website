@@ -1,5 +1,17 @@
 import { requireClerkAuth } from "../_auth.js";
-import { sql, findLeadByContact, logTouch, initSchema, ensureSchema, getSetting, setSetting } from "../_db.js";
+import { sql, findLeadByContact, logTouch, logAudit, initSchema, ensureSchema, getSetting, setSetting } from "../_db.js";
+
+// Returns only the fields that actually changed between a DB row and request body.
+function diffFields(before, body, fields) {
+  const b = {}, a = {};
+  for (const key of fields) {
+    if (!(key in body)) continue;
+    const prev = before[key] ?? null;
+    const next = body[key] ?? null;
+    if (String(prev) !== String(next)) { b[key] = prev; a[key] = next; }
+  }
+  return Object.keys(b).length ? { before: b, after: a } : null;
+}
 import { getSendPolicy, setSendPolicy } from "../_policy.js";
 import { Resend } from "resend";
 
@@ -635,6 +647,12 @@ async function route(req, res) {
     if (ai_summary !== undefined) await sql`UPDATE opportunities SET ai_summary = ${ai_summary || null}, updated_at = NOW() WHERE id = ${id}`;
     if (recommended_next_step !== undefined) await sql`UPDATE opportunities SET recommended_next_step = ${recommended_next_step || null}, updated_at = NOW() WHERE id = ${id}`;
     const rows = await sql`SELECT * FROM opportunities WHERE id = ${id}`;
+    const diff = diffFields(before, req.body, [
+      "name", "stage", "deal_value", "forecast_category", "close_probability",
+      "expected_close_date", "assigned_owner", "revenue_service", "next_action",
+      "next_action_at", "lost_reason", "account_name", "contact_name", "contact_email",
+    ]);
+    if (diff) await logAudit("human:crm", "update_opportunity", { before: diff.before, after: diff.after, reason: reason || null });
     return res.json(rows[0]);
   }
 
@@ -727,6 +745,8 @@ async function route(req, res) {
     if (tags !== undefined) await sql`UPDATE accounts SET tags = ${tags || null}, updated_at = NOW() WHERE id = ${account.id}`;
     if (notes !== undefined) await sql`UPDATE accounts SET notes = ${notes || null}, updated_at = NOW() WHERE id = ${account.id}`;
     const rows = await sql`SELECT * FROM accounts WHERE id = ${account.id}`;
+    const diff = diffFields(account, req.body, ["name", "website", "industry", "city", "state", "assigned_owner", "tags", "notes"]);
+    if (diff) await logAudit("human:crm", "update_account", { before: diff.before, after: diff.after });
     return res.json(rows[0]);
   }
 
@@ -1122,6 +1142,13 @@ async function route(req, res) {
     if (ai_summary !== undefined) await sql`UPDATE leads SET ai_summary = ${ai_summary || null}, updated_at = NOW() WHERE id = ${id}`;
     if (recommended_next_step !== undefined) await sql`UPDATE leads SET recommended_next_step = ${recommended_next_step || null}, updated_at = NOW() WHERE id = ${id}`;
     const rows = await sql`SELECT * FROM leads WHERE id = ${id}`;
+    const diff = diffFields(before, req.body, [
+      "stage", "lead_tier", "auto_send_emails", "deal_value", "forecast_category",
+      "close_probability", "expected_close_date", "assigned_owner", "job_title",
+      "current_cadence", "next_action", "next_action_at", "lost_reason",
+      "revenue_service", "tags", "company_size", "revenue_estimate", "notes",
+    ]);
+    if (diff) await logAudit("human:crm", "update_lead", { lead_id: id, before: diff.before, after: diff.after, reason: req.body.reason || null });
     return res.json(rows[0] || { ok: true });
   }
 
@@ -1161,6 +1188,14 @@ async function route(req, res) {
     if (next_action_at !== undefined) await sql`UPDATE leads SET next_action_at = ${next_action_at || null}, next_followup_at = ${next_action_at || null}, updated_at = NOW() WHERE id = ANY(${cleanIds})`;
 
     const updated = await sql`SELECT * FROM leads WHERE id = ANY(${cleanIds})`;
+    const changed = {};
+    if (stage !== undefined) changed.stage = stage;
+    if (lead_tier !== undefined) changed.lead_tier = lead_tier;
+    if (assigned_owner !== undefined) changed.assigned_owner = assigned_owner;
+    if (next_action !== undefined) changed.next_action = next_action;
+    if (Object.keys(changed).length) {
+      await logAudit("human:crm", "bulk_update_leads", { after: { ...changed, lead_ids: cleanIds }, reason: req.body.reason || `Bulk update ${cleanIds.length} lead(s)` });
+    }
     return res.json(updated);
   }
 

@@ -2362,6 +2362,7 @@ function CrmDashboard() {
   const [outbox, setOutbox]       = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
+  const [auditActorFilter, setAuditActorFilter] = useState("all");
   const [inboxRecipient, setInboxRecipient] = useState("");
   const [outboxRecipient, setOutboxRecipient] = useState("");
   const [openMsgId, setOpenMsgId] = useState(null);
@@ -3056,7 +3057,7 @@ function CrmDashboard() {
         ["cadences", "Cadences", Zap],
         ["drafts", "Drafts", Inbox],
         ["activity", "Activity", Activity],
-        ["audit", "AI Log", BarChart3],
+        ["audit", "Audit Log", BarChart3],
       ],
     },
     {
@@ -4223,55 +4224,68 @@ function CrmDashboard() {
         </div>
       )}
 
-      {/* AI Log */}
+      {/* Audit Log */}
       {tab === "audit" && (
         <div className="crm-content">
-          <p style={{ margin: "0 0 16px", fontSize: 13, color: "#888" }}>
-            Every AI-initiated change to the CRM, with the reason it was made.
-          </p>
+          <div className="crm-filter-row" style={{ marginBottom: 14 }}>
+            <select className="crm-filter" value={auditActorFilter} onChange={e => setAuditActorFilter(e.target.value)}>
+              <option value="all">All actors</option>
+              <option value="human">Human (CRM)</option>
+              <option value="ai">AI</option>
+            </select>
+            <span className="crm-muted-line" style={{ fontSize: 13 }}>
+              Every manual edit and AI-initiated change to the CRM, with before/after values.
+            </span>
+          </div>
           <div className="crm-table-wrap">
             <table className="crm-table">
               <thead>
                 <tr>
-                  <th>When</th>
-                  <th>Actor</th>
-                  <th>Action</th>
-                  <th>Lead</th>
-                  <th>Change</th>
-                  <th>Reason</th>
+                  <th>When</th><th>Actor</th><th>Action</th><th>Record</th><th>Changes</th><th>Reason</th>
                 </tr>
               </thead>
               <tbody>
-                {auditLog.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
-                      No AI actions logged yet.
-                    </td>
-                  </tr>
-                ) : auditLog.map(a => (
-                  <tr key={a.id}>
-                    <td style={{ whiteSpace: "nowrap", fontSize: 13, color: "#666" }}>
-                      {new Date(a.created_at).toLocaleDateString()}{" "}
-                      {new Date(a.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </td>
-                    <td>
-                      <span style={{
-                        display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
-                        background: a.actor.startsWith("ai:") ? "#fdf0e8" : "#e8f4fd",
-                        color: a.actor.startsWith("ai:") ? "#b45309" : "#1565c0",
-                      }}>
-                        {a.actor}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: 13 }}>{a.action.replace(/_/g, " ")}</td>
-                    <td style={{ fontSize: 13 }}>{a.business_name || (a.lead_id ? `#${a.lead_id}` : "—")}</td>
-                    <td style={{ fontSize: 12, color: "#666", maxWidth: 280 }}>
-                      {a.before && <div>from: {JSON.stringify(a.before)}</div>}
-                      {a.after && <div>to: {JSON.stringify(a.after)}</div>}
-                    </td>
-                    <td style={{ fontSize: 13, color: "#444", maxWidth: 320 }}>{a.reason || "—"}</td>
-                  </tr>
-                ))}
+                {auditLog
+                  .filter(a => auditActorFilter === "all" || (auditActorFilter === "ai" ? a.actor.startsWith("ai:") : a.actor.startsWith("human:")))
+                  .map(a => {
+                    const isAI = a.actor.startsWith("ai:");
+                    const before = a.before && typeof a.before === "object" ? a.before : null;
+                    const after  = a.after  && typeof a.after  === "object" ? a.after  : null;
+                    const changedKeys = after ? Object.keys(after) : [];
+                    return (
+                      <tr key={a.id}>
+                        <td className="crm-audit-time">
+                          {new Date(a.created_at).toLocaleDateString()}{" "}
+                          {new Date(a.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                        <td>
+                          <span className={`crm-audit-actor ${isAI ? "crm-audit-actor--ai" : "crm-audit-actor--human"}`}>
+                            {isAI ? a.actor.replace("ai:", "") : "rep"}
+                          </span>
+                        </td>
+                        <td className="crm-audit-action">{a.action.replace(/_/g, " ")}</td>
+                        <td className="crm-audit-record">{a.business_name || (a.lead_id ? `lead #${a.lead_id}` : "—")}</td>
+                        <td className="crm-audit-changes">
+                          {changedKeys.length === 0 ? <span className="crm-muted-line">—</span> : (
+                            <ul className="crm-audit-diff">
+                              {changedKeys.filter(k => k !== "lead_ids").map(k => (
+                                <li key={k}>
+                                  <span className="crm-audit-field">{k.replace(/_/g, " ")}</span>
+                                  {before?.[k] != null && <span className="crm-audit-old">{String(before[k])}</span>}
+                                  <span className="crm-audit-arrow">→</span>
+                                  <span className="crm-audit-new">{String(after[k] ?? "")}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                        <td className="crm-audit-reason">{a.reason || "—"}</td>
+                      </tr>
+                    );
+                  })}
+                {auditLog.filter(a => auditActorFilter === "all" || (auditActorFilter === "ai" ? a.actor.startsWith("ai:") : a.actor.startsWith("human:"))).length === 0 && (
+                  <tr><td colSpan={6} className="crm-empty">No audit entries yet.</td></tr>
+                )}
               </tbody>
             </table>
           </div>
