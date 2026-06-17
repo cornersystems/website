@@ -1,0 +1,96 @@
+{
+  "lastUpdated": "2026-06-18",
+  "note": "Managed by Claude. To update: ask Claude to edit this file in agent-network or website sessions.",
+  "items": [
+    {
+      "id": "demo-phone",
+      "title": "Set up live demo phone number",
+      "category": "website",
+      "priority": "critical",
+      "status": "open",
+      "description": "The website hero is built around a live demo call CTA but there's no number yet. This is the single biggest unlock for converting website visitors into booked calls.",
+      "aiPrompt": "Let's set up the Corner Systems live demo phone number. We need an ElevenLabs agent configured with demo scripts for gym, clinic, and med spa scenarios. Sample scripts are in website/content/sample-call-transcript.md. Walk me through the setup step by step."
+    },
+    {
+      "id": "messaging-kb-wire",
+      "title": "Wire messaging KB into the Tom-voice email sweep",
+      "category": "agent-network",
+      "priority": "critical",
+      "status": "open",
+      "description": "The Tom-voice sweep runs on every email draft but only has style rules — no actual proof points, value props, or pain language to draw from. The KB is written, it just needs to be injected as context.",
+      "aiPrompt": "Let's wire the Corner Systems messaging and positioning knowledge base into the Tom-voice email sweep. The KB is at agent-network/knowledge-base/messaging-positioning.md and the sweep runs in agent-network/outbound/email-outreach.js inside the tomVoiceSweep function. Load the KB and inject the most relevant vertical section as additional system context based on the lead's niche."
+    },
+    {
+      "id": "demo-hero",
+      "title": "Add demo phone number to website hero",
+      "category": "website",
+      "priority": "high",
+      "status": "open",
+      "description": "Once the demo number is live, it needs to be visible above the fold in the hero with a click-to-call link and a short instruction. Currently the CTA exists but there's no number to show.",
+      "aiPrompt": "The demo phone number is now set up. Let's add it to the Corner Systems website hero in website/src/App.jsx. It should appear as a large, clickable phone number above the fold with the instruction: 'Ask about pricing, booking, hours, or services.' Also add a disclaimer: 'Demo AI receptionist — no real bookings will be made.' Check the roadmap at website/corner-systems-website-roadmap.md for the exact copy."
+    },
+    {
+      "id": "transcript-ui",
+      "title": "Add sample call transcript to website proof section",
+      "category": "website",
+      "priority": "high",
+      "status": "open",
+      "description": "The transcript content is written and ready at website/content/sample-call-transcript.md. It just needs to be built into the site as a styled chat-log + CRM dashboard card component so prospects can see exactly what the product does.",
+      "aiPrompt": "The sample call transcripts are ready at website/content/sample-call-transcript.md. Let's build a proof section on the Corner Systems homepage in website/src/App.jsx that shows the fight gym transcript as a styled chat-log UI and the call summary as a CRM card. Add a tab switcher for Gym / Med Spa. Place it in the Proof & Trust section after 'The Shift' before-and-after block."
+    },
+    {
+      "id": "subject-review",
+      "title": "Tom: review and approve email subject lines",
+      "category": "sales",
+      "priority": "high",
+      "status": "open",
+      "description": "The outreach email subjects were rewritten but Tom hasn't approved them yet. Current subjects: Cold D0: 'A question about [Business]', Follow D3: 'Following up', Follow D7: 'Last note from me', Onboarding: 'Welcome to Corner Systems', 30-day: 'Checking in on your first month'.",
+      "aiPrompt": "Tom, let's review the outreach email subject lines. Open agent-network/outbound/email-outreach.js and look at the subjectTemplate for each sequence: cold_d0, follow_d3, follow_d7, onboard_w1, checkin_d30. Tell me which ones you'd actually write yourself and which ones feel off — I'll rewrite them to match."
+    },
+    {
+      "id": "proof-points",
+      "title": "Tom: add real proof points and call wins to messaging KB",
+      "category": "sales",
+      "priority": "high",
+      "status": "open",
+      "description": "The messaging KB has placeholder sections for real client wins, best phrases from calls, and specific results. Tom needs to fill these in so the AI has real content to pull from when writing outreach emails.",
+      "aiPrompt": "Tom, let's update the messaging and positioning KB with real proof points from your calls. Open agent-network/knowledge-base/messaging-positioning.md. Tell me: what's the best line you use to explain what Corner Systems does in the first 30 seconds? What's the response from a prospect that tells you they get it? Any real results or wins from calls so far — even small ones?"
+    },
+    {
+      "id": "objection-wire",
+      "title": "Wire objection playbook into the call agent",
+      "category": "agent-network",
+      "priority": "high",
+      "status": "open",
+      "description": "The objection-handling playbook is drafted at agent-network/knowledge-base/objection-playbook.md but the ElevenLabs call agent doesn't know it exists yet. Tom needs this on live calls.",
+      "aiPrompt": "Let's wire the objection-handling playbook into the Corner Systems ElevenLabs call agent. The playbook is at agent-network/knowledge-base/objection-playbook.md. Check agent-network/AGENTS.md, agent-network/config/, and agent-network/CornerSystems_Agent_Workflow_Spec_v2.md to understand the current agent structure, then tell me the best way to inject this as live call context."
+    },
+    {
+      "id": "vertical-pages",
+      "title": "Build vertical landing pages: /gyms, /clinics, /med-spas",
+      "category": "website",
+      "priority": "high",
+      "status": "open",
+      "description": "Each vertical needs its own landing page so prospects feel specifically addressed. All the copy, headlines, use cases, and FAQs are already written in the website roadmap.",
+      "aiPrompt": "Let's build the three vertical landing pages for Corner Systems: /gyms, /clinics, and /med-spas. All the copy blocks, headlines, use cases, FAQs, and CTAs are in website/corner-systems-website-roadmap.md under Priority 4. Start with /gyms since that's the primary vertical. Check website/src/App.jsx for the existing routing pattern."
+    },
+    {
+      "id": "cadence-auto",
+      "title": "Follow-up cadence automation — auto-queue D+3 and D+7 drafts",
+      "category": "agent-network",
+      "priority": "medium",
+      "status": "open",
+      "description": "Currently D+3 and D+7 follow-ups only get queued when daily-run.js runs manually. They should be auto-queued immediately after D0 so no lead slips through if the daily run is missed.",
+      "aiPrompt": "Let's build follow-up cadence automation. After a cold email is drafted for a lead (emailed_d0 stage), the system should automatically schedule D+3 and D+7 follow-up drafts without waiting for the next manual daily-run.js execution. Check agent-network/outbound/email-outreach.js, pipeline.js, and db.js, then check the roadmap at agent-network/agent-network-roadmap.md for the spec."
+    },
+    {
+      "id": "cs-tool-endpoints",
+      "title": "Build authenticated API endpoints for ElevenLabs cs_* tools",
+      "category": "agent-network",
+      "priority": "medium",
+      "status": "open",
+      "description": "The ElevenLabs agent references cs_* tool contracts that aren't live yet. Until these endpoints exist, the agent can't write to the CRM or take real actions during calls.",
+      "aiPrompt": "Let's build the authenticated website API endpoints for the ElevenLabs cs_* tools. The tool contracts are defined in agent-network/config/tool-schemas.json. Check what endpoints already exist in website/api/crm/ and what's still missing, then build the highest-priority ones first. Return configured: false for anything not yet ready so the agent never claims a false action."
+    }
+  ]
+}

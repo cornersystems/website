@@ -150,6 +150,7 @@ export async function initSchema() {
   await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS opened_at TIMESTAMPTZ`;
   await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMPTZ`;
   await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE touches ADD COLUMN IF NOT EXISTS draft_raw TEXT`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS settings (
@@ -653,9 +654,9 @@ export async function upsertLead(data) {
 
 export async function logTouch(leadId, type, channel, status, extra = {}) {
   const rows = await sql`
-    INSERT INTO touches (lead_id, type, channel, status, subject, body, notes, external_id, recipient)
+    INSERT INTO touches (lead_id, type, channel, status, subject, body, notes, external_id, recipient, draft_raw)
     VALUES (${leadId}, ${type}, ${channel}, ${status},
-      ${extra.subject || null}, ${extra.body || null}, ${extra.notes || null}, ${extra.external_id || null}, ${extra.recipient || null})
+      ${extra.subject || null}, ${extra.body || null}, ${extra.notes || null}, ${extra.external_id || null}, ${extra.recipient || null}, ${extra.draft_raw || null})
     RETURNING id
   `;
   return rows[0].id;

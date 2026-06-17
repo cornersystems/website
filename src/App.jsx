@@ -10,7 +10,9 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  ClipboardList,
   Clock3,
+  Copy,
   DollarSign,
   Dumbbell,
   ExternalLink,
@@ -62,6 +64,7 @@ import {
 } from "react-icons/si";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { SignedIn, SignedOut, SignIn, useAuth, UserButton } from "@clerk/clerk-react";
+import TEAM_TODOS from "./data/team-todos.json";
 
 const contactEmail = "hello@cornersystems.co";
 
@@ -2300,6 +2303,84 @@ function SortHeader({ label, col, sortBy, sortDir, onSort }) {
   );
 }
 
+// ── Team Todo Panel ────────────────────────────────────────────────────────────
+
+const TODO_PRIORITY = {
+  critical: { label: "Critical", color: "#ef4444" },
+  high:     { label: "High",     color: "#f59e0b" },
+  medium:   { label: "Medium",   color: "#3b82f6" },
+};
+const TODO_CATEGORY = {
+  "website":       { label: "Website",       color: "#7c3aed" },
+  "agent-network": { label: "Agent Network", color: "#0d9488" },
+  "sales":         { label: "Sales",         color: "#16a34a" },
+};
+
+function TeamTodoPanel() {
+  const [copied, setCopied] = useState(null);
+  const open = TEAM_TODOS.items.filter(t => t.status !== "done");
+
+  function copyPrompt(item) {
+    navigator.clipboard.writeText(item.aiPrompt).catch(() => {});
+    setCopied(item.id);
+    setTimeout(() => setCopied(null), 2200);
+  }
+
+  return (
+    <div className="team-todos-panel">
+      <div className="team-todos-header">
+        <h2 className="crm-section-title" style={{ margin: 0 }}>
+          <ClipboardList size={16} /> Next Steps to Escape the Matrix
+        </h2>
+        <span className="team-todos-meta">
+          Managed by Claude &middot; Updated {TEAM_TODOS.lastUpdated}
+        </span>
+      </div>
+
+      {open.length === 0 ? (
+        <div className="team-todos-empty">
+          <CheckCircle2 size={28} color="#16a34a" />
+          <p><strong>The list is clear.</strong></p>
+          <p>But there should always be something to grind toward — easy wins, system improvements, and goals that move the business forward.</p>
+          <p className="team-todos-empty-prompt">Ask Claude: <em>"What should we add to the Next Steps to Escape the Matrix list? Include easy wins, pipeline improvements, and growth goals."</em></p>
+        </div>
+      ) : (
+        <div className="team-todos-list">
+          {["critical", "high", "medium"].flatMap(priority =>
+            open
+              .filter(t => t.priority === priority)
+              .map(item => {
+                const pc = TODO_PRIORITY[item.priority] || TODO_PRIORITY.medium;
+                const cc = TODO_CATEGORY[item.category] || TODO_CATEGORY.sales;
+                return (
+                  <div key={item.id} className="team-todo-item" style={{ "--todo-accent": pc.color }}>
+                    <div className="team-todo-badges">
+                      <span className="team-todo-badge" style={{ background: pc.color + "22", color: pc.color }}>{pc.label}</span>
+                      <span className="team-todo-badge" style={{ background: cc.color + "22", color: cc.color }}>{cc.label}</span>
+                    </div>
+                    <div className="team-todo-body">
+                      <strong className="team-todo-title">{item.title}</strong>
+                      <p className="team-todo-desc">{item.description}</p>
+                    </div>
+                    <button
+                      className={`team-todo-copy${copied === item.id ? " team-todo-copy-done" : ""}`}
+                      onClick={() => copyPrompt(item)}
+                      title="Copy AI prompt to paste into Claude Code"
+                    >
+                      {copied === item.id
+                        ? <><CheckCircle2 size={13} /> Copied</>
+                        : <><Copy size={13} /> Copy prompt</>}
+                    </button>
+                  </div>
+                );
+              })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const CRM_TAB_STORAGE_KEY = "crm:lastTab";
 
 function CrmDashboard() {
@@ -3135,6 +3216,18 @@ function CrmDashboard() {
           <button className="crm-btn-mini" onClick={() => setCrmDarkMode(v => !v)}>
             {crmDarkMode ? "Light" : "Dark"}
           </button>
+          <button
+            className="crm-todos-notif"
+            onClick={() => setTab("dashboard")}
+            title="Next Steps to Escape the Matrix"
+          >
+            <ClipboardList size={16} />
+            {TEAM_TODOS.items.filter(t => t.status !== "done").length > 0 && (
+              <span className="crm-tab-badge">
+                {TEAM_TODOS.items.filter(t => t.status !== "done").length}
+              </span>
+            )}
+          </button>
           <UserButton afterSignOutUrl="/crm" />
         </header>
 
@@ -3157,6 +3250,7 @@ function CrmDashboard() {
       {/* Dashboard */}
       {tab === "dashboard" && (
         <div className="crm-content">
+          <TeamTodoPanel />
           {!dashboard ? <p className="crm-loading">Loading…</p> : (
             <>
               <div className="crm-dash-grid">

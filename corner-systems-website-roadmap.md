@@ -194,8 +194,8 @@ Typical setup includes:
 
 ## Proof And Trust
 
-- [ ] Add sample call transcript.
-- [ ] Add sample call summary.
+- [x] Add sample call transcript — two versions (fight gym + med spa) drafted in `website/content/sample-call-transcript.md`. Needs to be wired into the website UI as a styled chat-log + dashboard-card component.
+- [x] Add sample call summary — included in `website/content/sample-call-transcript.md` alongside each transcript.
 - [ ] Add screenshot of dashboard or call log.
 - [ ] Add screenshot of SMS follow-up.
 - [ ] Add screenshot of booked appointment.
@@ -259,9 +259,9 @@ The AI follows your escalation rules. It can take a message, send the caller to 
 
 Live demo system:
 
-- [ ] Create public demo phone number.
-- [ ] Configure demo AI receptionist.
-- [ ] Add demo scripts for gym, clinic, and med spa.
+- [ ] **Create public demo phone number** — Michael and Tom setting this up 2026-06-19 morning. Highest priority unlock for website conversion.
+- [ ] Configure demo AI receptionist — ElevenLabs agent trained on gym + med spa demo scripts.
+- [ ] Add demo scripts for gym, clinic, and med spa — see `website/content/sample-call-transcript.md` for draft gym and med spa scripts.
 - [ ] Ensure demo cannot create real bookings.
 - [ ] Log demo call events.
 - [ ] Track CTA clicks.
@@ -300,6 +300,7 @@ Analytics events:
 - [ ] Return explicit `configured: false` responses for CRM/calendar endpoints that are not live yet, so the agent does not claim records or bookings were created.
 - [ ] Keep website form handling here, but write reusable lead/contact/pipeline records through the custom CRM layer owned by `agent-network`.
 - [x] Add a protected CRM dashboard after login: Dashboard (master metrics + pipeline funnel), Hot Leads, Follow-ups Due, Drafts (AI email review/approve/reject + auto-send toggle), Activity (email open/click/reply feed, per-lead filterable), Pipeline, Compose, Tickets, Callbacks (2026-06-11).
+- [x] Add "Next Steps to Escape the Matrix" priority panel to CRM dashboard — shows top open items from both roadmaps with priority/category badges and a "Copy prompt" button per item. Notification icon in topbar with badge count. Managed by Claude via `website/src/data/team-todos.json`. Empty state prompts the team to ask Claude for more items (2026-06-18).
 - [ ] Add role-based access for internal users before any private records are exposed (currently any Clerk-authenticated user has full access).
 - [x] Add audit logging for CRM record views, edits, exports, and agent-created events. — `logAudit('human:crm', ...)` now fires on every manual leads PATCH, opportunities PATCH, accounts PATCH, and bulk-leads PATCH (diffFields helper computes before/after only for changed keys). AI mutations were already logged. Audit Log tab renamed from "AI Log", shows actor filter (All / Human / AI), colour-coded actor badges, and a per-field before→after diff list instead of raw JSON (2026-06-16).
 - [x] Add invite/password reset or chosen sign-in recovery flow — handled by Clerk's hosted `<SignIn>` component.

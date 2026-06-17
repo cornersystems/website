@@ -6355,3 +6355,164 @@ body::selection {
   color: var(--muted);
   max-width: 240px;
 }
+
+/* ── Team Todos Panel ───────────────────────────────────────────────────────── */
+
+.team-todos-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 3px solid #7c3aed;
+  border-radius: 10px;
+  padding: 20px 22px 16px;
+  margin-bottom: 28px;
+  box-shadow: 0 4px 16px rgba(20, 49, 74, 0.05);
+}
+
+.team-todos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.team-todos-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.team-todos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.team-todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--todo-accent, #6b7280);
+  border-radius: 7px;
+  padding: 12px 14px;
+}
+
+.team-todo-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.team-todo-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.team-todo-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-todo-title {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.team-todo-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.team-todo-copy {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 1px;
+  transition: background 0.15s;
+}
+
+.team-todo-copy:hover { background: var(--line); }
+
+.team-todo-copy-done {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #16a34a;
+}
+
+.crm-dark .team-todo-copy-done {
+  background: #052e16;
+  border-color: #166534;
+  color: #4ade80;
+}
+
+.team-todos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.team-todos-empty p { margin: 0; font-size: 0.875rem; }
+.team-todos-empty strong { color: var(--text); }
+
+.team-todos-empty-prompt {
+  margin-top: 6px !important;
+  font-size: 0.8rem !important;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+.team-todos-empty-prompt em {
+  font-style: normal;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Topbar notification icon */
+.crm-todos-notif {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.crm-todos-notif:hover { background: var(--bg-soft); }
