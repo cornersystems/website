@@ -2358,10 +2358,8 @@ function TeamTodoPanel() {
                       <span className="team-todo-badge" style={{ background: pc.color + "22", color: pc.color }}>{pc.label}</span>
                       <span className="team-todo-badge" style={{ background: cc.color + "22", color: cc.color }}>{cc.label}</span>
                     </div>
-                    <div className="team-todo-body">
-                      <strong className="team-todo-title">{item.title}</strong>
-                      <p className="team-todo-desc">{item.description}</p>
-                    </div>
+                    <strong className="team-todo-title">{item.title}</strong>
+                    <p className="team-todo-desc">{item.description}</p>
                     <button
                       className={`team-todo-copy${copied === item.id ? " team-todo-copy-done" : ""}`}
                       onClick={() => copyPrompt(item)}

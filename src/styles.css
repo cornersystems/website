@@ -6394,8 +6394,8 @@ body::selection {
 
 .team-todo-item {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
+  gap: 6px;
   background: var(--bg-soft);
   border: 1px solid var(--line);
   border-left: 3px solid var(--todo-accent, #6b7280);
@@ -6405,10 +6405,9 @@ body::selection {
 
 .team-todo-badges {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex-shrink: 0;
-  padding-top: 1px;
+  flex-direction: row;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .team-todo-badge {
@@ -6421,21 +6420,16 @@ body::selection {
   white-space: nowrap;
 }
 
-.team-todo-body {
-  flex: 1;
-  min-width: 0;
-}
-
 .team-todo-title {
   display: block;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 3px;
+  line-height: 1.4;
 }
 
 .team-todo-desc {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
@@ -6445,18 +6439,17 @@ body::selection {
   display: flex;
   align-items: center;
   gap: 5px;
-  flex-shrink: 0;
-  font-size: 0.75rem;
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 0.74rem;
   font-weight: 600;
-  padding: 5px 10px;
+  padding: 4px 10px;
   border-radius: 5px;
   border: 1px solid var(--line);
   background: var(--panel);
   color: var(--text);
   cursor: pointer;
   white-space: nowrap;
-  align-self: flex-start;
-  margin-top: 1px;
   transition: background 0.15s;
 }
 
@@ -6533,7 +6526,7 @@ body::selection {
 }
 
 .crm-dash-sidebar {
-  width: 260px;
+  width: 300px;
   flex-shrink: 0;
 }
 
