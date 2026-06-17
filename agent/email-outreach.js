@@ -28,7 +28,7 @@ Corner Systems sells AI front-office systems for gyms and service businesses —
 Rules:
 - 4-6 sentences MAX. No fluff.
 - Lead with the specific pain signal you found — make them feel like we did our homework.
-- One clear CTA: book a 20-minute discovery call (link: https://cornersystems.vercel.app/#contact)
+- One clear CTA: book a 20-minute discovery call (link: https://cornersystems.co/contact)
 - Tone: direct, confident, peer-to-peer. Not salesy.
 - No subject line in the response — just the email body.
 - Sign off as Thomas.
@@ -47,7 +47,7 @@ Rules:
 - 2-3 sentences MAX.
 - Reference that you sent something a few days ago.
 - Add one new hook: "We just helped a [similar gym type] in [similar region] cut their response time from 4 hours to under 2 minutes."
-- Same CTA: 20-minute call at https://cornersystems.vercel.app/#contact
+- Same CTA: 20-minute call at https://cornersystems.co/contact
 - Sign off as Thomas.
 
 Output ONLY the email body. Nothing else.`,
@@ -64,7 +64,7 @@ Rules:
 - 2-3 sentences.
 - Friendly, zero pressure. Let them know this is the last email.
 - Leave the door open with a soft CTA ("If timing ever changes, the link is below.").
-- Link: https://cornersystems.vercel.app/#contact
+- Link: https://cornersystems.co/contact
 - Sign off as Thomas.
 
 Output ONLY the email body. Nothing else.`,
@@ -124,12 +124,12 @@ export async function sendSequenceEmail(lead, sequenceKey) {
   const body    = await personalise(seq.prompt(lead));
 
   const html = `<div style="font-family:sans-serif;max-width:560px">
-  <img src="https://cornersystems.vercel.app/assets/cs-email-header.png" alt="Corner Systems" width="560" style="width:100%;border-radius:8px 8px 0 0;display:block;margin-bottom:24px" />
+  <img src="https://cornersystems.co/assets/cs-email-header.png" alt="Corner Systems" width="560" style="width:100%;border-radius:8px 8px 0 0;display:block;margin-bottom:24px" />
   <div style="font-size:15px;line-height:1.7;color:#1a1a1a">
 ${body.replace(/\n/g, "<br>")}
   </div>
   <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#999">
-    Corner Systems · cornersystemsai@gmail.com · <a href="https://cornersystems.vercel.app" style="color:#999">cornersystems.vercel.app</a>
+    Corner Systems · cornersystemsai@gmail.com · <a href="https://cornersystems.co" style="color:#999">cornersystems.co</a>
   </div>
 </div>`;
 

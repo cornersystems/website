@@ -301,7 +301,7 @@ Rules for the EMAIL BODY:
 - Start with: ${greeting}
 - 4-6 sentences MAX. No fluff. Peer-to-peer tone. No buzzwords.
 - Lead with a specific observation about their front-office gap based on the pain signal.
-- One clear CTA: book a 20-minute discovery call at https://cornersystems.vercel.app/contact
+- One clear CTA: book a 20-minute discovery call at https://cornersystems.co/contact
 - Sign off: "Thomas\nCorner Systems AI"
 - Body only. No subject line in the body.
 

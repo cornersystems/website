@@ -16,7 +16,7 @@ export function emailHtml(body) {
   return `<div style="font-family:sans-serif;max-width:560px;color:#1a1a1a">
 <div style="font-size:15px;line-height:1.75">${body.replace(/\n/g, "<br>")}</div>
 <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#999">
-  Corner Systems · <a href="https://cornersystems.vercel.app" style="color:#999">cornersystems.vercel.app</a>
+  Corner Systems · <a href="https://cornersystems.co" style="color:#999">cornersystems.co</a>
 </div></div>`;
 }
 

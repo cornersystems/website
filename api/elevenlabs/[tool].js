@@ -5,7 +5,7 @@ import { calcomConfigured, getAvailableSlots, createBooking } from "../_calcom.j
 
 const NOT_CONFIGURED = {
   configured: false,
-  message: "Direct scheduling is not configured. Direct the caller to book via cornersystems.vercel.app/contact.",
+  message: "Direct scheduling is not configured. Direct the caller to book via cornersystems.co/contact.",
 };
 
 export default async function handler(req, res) {

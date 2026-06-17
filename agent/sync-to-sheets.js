@@ -519,7 +519,7 @@ function d3Template(lead) {
     "",
     `Quick recap: we help ${lead.niche || "businesses"} like yours make sure every call, DM, and enquiry gets a professional response — automatically, 24/7. Most owners we talk to are losing 2–4 leads a week just to slow or missed replies.`,
     "",
-    `Worth 20 minutes to see if it fits? Book here: https://cornersystems.vercel.app/contact`,
+    `Worth 20 minutes to see if it fits? Book here: https://cornersystems.co/contact`,
     "",
     `Thomas\nCorner Systems AI`,
   ].join("\n");
@@ -534,7 +534,7 @@ function d7Template(lead) {
     "",
     `If you ever want to look at tightening up your front-office response times, I'm easy to reach. No pitch, just a quick conversation.`,
     "",
-    `https://cornersystems.vercel.app/contact`,
+    `https://cornersystems.co/contact`,
     "",
     `Thomas\nCorner Systems AI`,
   ].join("\n");

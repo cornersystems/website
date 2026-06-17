@@ -38,6 +38,7 @@ export async function initSchema() {
   await sql`
     CREATE TABLE IF NOT EXISTS leads (
       id              SERIAL PRIMARY KEY,
+      account_id      INTEGER,
       business_name   TEXT NOT NULL,
       owner_name      TEXT,
       city            TEXT,
@@ -70,11 +71,30 @@ export async function initSchema() {
       followup_d3_draft TEXT,
       followup_d7_draft TEXT,
       last_researched TIMESTAMPTZ,
+      job_title       TEXT,
+      linkedin        TEXT,
+      assigned_owner  TEXT,
+      deal_value      NUMERIC DEFAULT 0,
+      forecast_category TEXT DEFAULT 'pipeline',
+      close_probability INTEGER DEFAULT 20,
+      expected_close_date DATE,
+      current_cadence TEXT DEFAULT 'Default outbound',
+      next_action     TEXT,
+      next_action_at  TIMESTAMPTZ,
+      lost_reason     TEXT,
+      revenue_service TEXT,
+      tags            TEXT,
+      company_size    TEXT,
+      revenue_estimate TEXT,
+      locations_count INTEGER,
+      ai_summary      TEXT,
+      recommended_next_step TEXT,
       created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS auto_send_emails BOOLEAN`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS account_id INTEGER`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS google_maps TEXT`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS has_website BOOLEAN DEFAULT FALSE`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS website_url TEXT`;
@@ -88,6 +108,24 @@ export async function initSchema() {
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS followup_d3_draft TEXT`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS followup_d7_draft TEXT`;
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS last_researched TIMESTAMPTZ`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS job_title TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS linkedin TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_owner TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS deal_value NUMERIC DEFAULT 0`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS forecast_category TEXT DEFAULT 'pipeline'`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS close_probability INTEGER DEFAULT 20`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS expected_close_date DATE`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS current_cadence TEXT DEFAULT 'Default outbound'`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_action TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_action_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS lost_reason TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS revenue_service TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS tags TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS company_size TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS revenue_estimate TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS locations_count INTEGER`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS ai_summary TEXT`;
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS recommended_next_step TEXT`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS touches (
@@ -268,7 +306,165 @@ export async function initSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS accounts (
+      id             SERIAL PRIMARY KEY,
+      name           TEXT NOT NULL,
+      website        TEXT,
+      industry       TEXT,
+      city           TEXT,
+      state          TEXT,
+      assigned_owner TEXT,
+      health_score   INTEGER DEFAULT 75,
+      tags           TEXT,
+      notes          TEXT,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS crm_tasks (
+      id           SERIAL PRIMARY KEY,
+      lead_id      INTEGER REFERENCES leads(id),
+      account_id   INTEGER REFERENCES accounts(id),
+      opportunity_id INTEGER,
+      title        TEXT NOT NULL,
+      task_type    TEXT DEFAULT 'follow_up',
+      status       TEXT DEFAULT 'open',
+      due_at       TIMESTAMPTZ,
+      assigned_to  TEXT,
+      priority     TEXT DEFAULT 'normal',
+      outcome      TEXT,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMPTZ
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS opportunities (
+      id                    SERIAL PRIMARY KEY,
+      account_id            INTEGER REFERENCES accounts(id),
+      lead_id               INTEGER REFERENCES leads(id),
+      name                  TEXT NOT NULL,
+      account_name          TEXT NOT NULL,
+      contact_name          TEXT,
+      contact_email         TEXT,
+      stage                 TEXT DEFAULT 'found',
+      deal_value            NUMERIC DEFAULT 0,
+      forecast_category     TEXT DEFAULT 'pipeline',
+      close_probability     INTEGER DEFAULT 20,
+      expected_close_date   DATE,
+      assigned_owner        TEXT,
+      revenue_service       TEXT,
+      next_action           TEXT,
+      next_action_at        TIMESTAMPTZ,
+      lost_reason           TEXT,
+      ai_summary            TEXT,
+      recommended_next_step TEXT,
+      notes                 TEXT,
+      created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS opportunity_stage_history (
+      id             SERIAL PRIMARY KEY,
+      opportunity_id INTEGER REFERENCES opportunities(id),
+      from_stage     TEXT,
+      to_stage       TEXT NOT NULL,
+      actor          TEXT DEFAULT 'human:crm',
+      reason         TEXT,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS cadences (
+      id          SERIAL PRIMARY KEY,
+      name        TEXT NOT NULL UNIQUE,
+      description TEXT,
+      steps       JSONB NOT NULL,
+      status      TEXT DEFAULT 'active',
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS cadence_enrollments (
+      id                SERIAL PRIMARY KEY,
+      cadence_id        INTEGER REFERENCES cadences(id),
+      lead_id           INTEGER REFERENCES leads(id),
+      opportunity_id    INTEGER REFERENCES opportunities(id),
+      account_id        INTEGER REFERENCES accounts(id),
+      status            TEXT DEFAULT 'active',
+      current_step      INTEGER DEFAULT 0,
+      next_step_at      TIMESTAMPTZ,
+      enrolled_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_completed_at TIMESTAMPTZ,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS cadence_step_events (
+      id            SERIAL PRIMARY KEY,
+      enrollment_id INTEGER REFERENCES cadence_enrollments(id),
+      step_index    INTEGER NOT NULL,
+      action        TEXT DEFAULT 'completed',
+      outcome       TEXT,
+      completed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS saved_views (
+      id         SERIAL PRIMARY KEY,
+      name       TEXT NOT NULL,
+      view_type  TEXT NOT NULL,
+      filters    JSONB DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS stage_history (
+      id          SERIAL PRIMARY KEY,
+      lead_id     INTEGER REFERENCES leads(id),
+      from_stage  TEXT,
+      to_stage    TEXT NOT NULL,
+      actor       TEXT DEFAULT 'human:crm',
+      reason      TEXT,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`ALTER TABLE leads ADD CONSTRAINT leads_account_fk FOREIGN KEY (account_id) REFERENCES accounts(id) NOT VALID`.catch(() => {});
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_followup_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE crm_tasks ADD COLUMN IF NOT EXISTS opportunity_id INTEGER`;
+
+  await sql`
+    INSERT INTO cadences (name, description, steps)
+    VALUES (
+      'Default outbound',
+      'Enterprise default 30-day outbound sequence',
+      ${JSON.stringify([
+        { day: 1, type: "email", label: "Personalized Introduction Email" },
+        { day: 2, type: "call", label: "Phone Call" },
+        { day: 4, type: "email", label: "Follow-Up Email" },
+        { day: 6, type: "call", label: "Phone Call" },
+        { day: 8, type: "linkedin", label: "LinkedIn Touch" },
+        { day: 10, type: "email", label: "Case Study Email" },
+        { day: 14, type: "call", label: "Follow-Up Call" },
+        { day: 21, type: "email", label: "Breakup Email" },
+        { day: 30, type: "nurture", label: "Nurture Campaign" }
+      ])}::jsonb
+    )
+    ON CONFLICT (name) DO NOTHING
+  `;
 
   await sql`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ`;
 
@@ -276,10 +472,25 @@ export async function initSchema() {
   await sql`CREATE INDEX IF NOT EXISTS touches_external_id_idx ON touches (external_id)`;
   await sql`CREATE INDEX IF NOT EXISTS touches_status_idx ON touches (status)`;
   await sql`CREATE INDEX IF NOT EXISTS leads_stage_idx ON leads (stage)`;
+  await sql`CREATE INDEX IF NOT EXISTS leads_account_id_idx ON leads (account_id) WHERE account_id IS NOT NULL`;
   await sql`CREATE INDEX IF NOT EXISTS leads_next_followup_idx ON leads (next_followup_at) WHERE next_followup_at IS NOT NULL`;
+  await sql`CREATE INDEX IF NOT EXISTS leads_next_action_idx ON leads (next_action_at) WHERE next_action_at IS NOT NULL`;
+  await sql`CREATE INDEX IF NOT EXISTS leads_forecast_category_idx ON leads (forecast_category)`;
   await sql`CREATE INDEX IF NOT EXISTS appointments_lead_id_idx ON appointments (lead_id)`;
   await sql`CREATE INDEX IF NOT EXISTS appointments_start_at_idx ON appointments (start_at)`;
   await sql`CREATE INDEX IF NOT EXISTS audit_log_lead_id_idx ON audit_log (lead_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS stage_history_lead_id_idx ON stage_history (lead_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS accounts_name_idx ON accounts (lower(name))`;
+  await sql`CREATE INDEX IF NOT EXISTS crm_tasks_due_idx ON crm_tasks (due_at) WHERE status = 'open'`;
+  await sql`CREATE INDEX IF NOT EXISTS opportunities_account_id_idx ON opportunities (account_id) WHERE account_id IS NOT NULL`;
+  await sql`CREATE INDEX IF NOT EXISTS opportunities_account_name_idx ON opportunities (lower(account_name))`;
+  await sql`CREATE INDEX IF NOT EXISTS opportunities_stage_idx ON opportunities (stage)`;
+  await sql`CREATE INDEX IF NOT EXISTS opportunities_forecast_idx ON opportunities (forecast_category)`;
+  await sql`CREATE INDEX IF NOT EXISTS opportunities_next_action_idx ON opportunities (next_action_at) WHERE next_action_at IS NOT NULL`;
+  await sql`CREATE INDEX IF NOT EXISTS opportunity_stage_history_opp_idx ON opportunity_stage_history (opportunity_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS cadence_enrollments_status_idx ON cadence_enrollments (status)`;
+  await sql`CREATE INDEX IF NOT EXISTS cadence_enrollments_next_idx ON cadence_enrollments (next_step_at) WHERE status = 'active'`;
+  await sql`CREATE INDEX IF NOT EXISTS cadence_step_events_enrollment_idx ON cadence_step_events (enrollment_id)`;
 
   // Guarded: the DB is shared with agent-network, which may own tables with
   // FKs to leads that this repo doesn't know about. A failed merge must not

@@ -315,6 +315,28 @@ CRM autonomy build-out (2026-06-12):
 - Graduated auto-send policy (`ai_send_policy` setting, editable in the Drafts tab): per action type (reply_interested / reply_question / followup_due) review-vs-auto, pricing mentions always reviewed, per-lead `auto_send_emails` override wins.
 - Hourly Vercel cron `/api/cron/followups` (protect with `CRON_SECRET`): drafts/sends due follow-ups (`leads.next_followup_at`) and appointment reminders.
 - The Google Sheets "Sent?" approval loop in `agent/` is superseded by the Drafts tab + policy flow; `sync-to-sheets` can remain as a read-only export, but approvals should happen in /crm. Outbound pipeline scripts in `agent-network` should write drafts as `pending_review` touches instead of waiting on Sheets marks.
+
+Enterprise CRM foundation (2026-06-15):
+
+- [x] Add opportunity fields to the CRM data model: deal value, forecast category, close probability, expected close date, assigned owner, cadence, next action, tags, firmographics, AI summary, recommended next step, and lost reason.
+- [x] Add stage history tracking for CRM stage changes and require a loss reason before marking a deal lost from the CRM update endpoint.
+- [x] Add CRM endpoints for Kanban pipeline (`/api/crm/kanban`), Salesforce-style forecast analytics (`/api/crm/forecast`), next-action tasks (`/api/crm/tasks`), and global search (`/api/crm/search`).
+- [x] Add CRM UI tabs for Global Search, Forecast, Pipeline Board with drag-and-drop stage movement, and Tasks split into overdue/today/upcoming.
+- [x] Expand contact profiles with editable sales fields, cadence/next-action fields, tags/firmographics, and AI sales assistant notes.
+- [x] Add account architecture foundation: `accounts`, account-linked leads, account rollup API, and Accounts CRM tab showing contacts, pipeline value, health, owner, industry, and last activity.
+- [x] Add native cadence architecture foundation: `cadences` table, default 30-day outbound sequence seed, cadence API, and Cadences CRM tab.
+- [x] Add standalone CRM task architecture foundation: `crm_tasks` table and task API merged with lead next-actions.
+- [x] Add pipeline health monitoring API and Pipeline Health tab for missing next actions, missing deal values, stale opportunities, and health score.
+- [x] Add saved-view storage foundation (`saved_views` table and API) for future saved searches/views.
+- [x] Add account profile view with contacts/opportunities rollup, master account timeline, and stage-change history.
+- [x] Add reusable saved views UI for search filters.
+- [x] Add Contacts-table bulk selection with bulk stage/owner updates.
+- [x] Add CRM-scoped dark mode toggle with persisted preference.
+- [x] Expand activity feed to merge email touches, stage changes, and CRM task history for richer contact/account timelines.
+- [x] Add true multiple opportunities per account beyond lead-as-opportunity records: `opportunities` and `opportunity_stage_history` tables, `/api/crm/opportunities`, Opportunities CRM tab, opportunity-aware account rollups, account profile opportunities, and opportunity next-actions in Tasks.
+- [x] Add editable account fields and account-level notes from the account profile.
+- [x] Add custom cadence builder UI, cadence enrollment/step completion tracking, and step completion analytics.
+- [x] Add record-level enrollment actions from contact/opportunity profiles so reps can enroll a specific lead or opportunity without using the API directly. Contact profile and drawer show active enrollments (pause/resume/complete step/remove) and a cadence picker to enroll. Opportunities tab has a per-row Cadence column with an inline picker for unenrolled rows and status+controls for active enrollments. API GET cadence-enrollments now accepts lead_id/opportunity_id query params (2026-06-16).
 - Env vars now referenced: `CALCOM_API_KEY`, `CALCOM_EVENT_TYPE_ID`, `ANTHROPIC_API_KEY`, `CLAUDE_CLASSIFY_MODEL` (optional), `CRON_SECRET` (recommended), plus existing `DATABASE_URL`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, Clerk keys.
 
 Open questions before further CRM work:
