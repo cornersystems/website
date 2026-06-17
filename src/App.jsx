@@ -5,6 +5,7 @@ import {
   BarChart3,
   Bot,
   Building2,
+  Calculator,
   Calendar,
   CheckCircle2,
   ChevronDown,
@@ -41,6 +42,24 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import {
+  SiAirtable,
+  SiFacebook,
+  SiGmail,
+  SiGooglecalendar,
+  SiGooglesheets,
+  SiHubspot,
+  SiInstagram,
+  SiMailchimp,
+  SiNotion,
+  SiQuickbooks,
+  SiSalesforce,
+  SiSquare,
+  SiStripe,
+  SiTwilio,
+  SiWhatsapp,
+  SiYelp,
+} from "react-icons/si";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { SignedIn, SignedOut, SignIn, useAuth, UserButton } from "@clerk/clerk-react";
 
@@ -141,18 +160,21 @@ const marketGroups = [
     title: "Fitness & Studios",
     text: "Gyms, studios, and membership businesses that live on trials, consultations, and fast response.",
     items: ["Membership gyms", "Boutique studios", "Martial arts academies", "Strength & conditioning", "Personal training studios", "Wellness studios"],
+    image: "/assets/cs-gym-night-v2.png",
   },
   {
     icon: HeartPulse,
     title: "Clinics & Recovery",
     text: "Practices where a missed new-patient inquiry is real revenue walking away.",
     items: ["Chiropractic clinics", "Physiotherapy", "Sports medicine", "Recovery & rehab clinics", "Massage & wellness", "Osteopathy"],
+    image: "/assets/cs-clinic-story-v2.png",
   },
   {
     icon: Sparkles,
     title: "Aesthetics & Dental",
     text: "High-ticket bookings where every lead is worth protecting around the clock.",
     items: ["Med spas", "Cosmetic & laser clinics", "Cosmetic dentistry", "Dental practices", "Skin & injectables", "Aesthetic medicine"],
+    image: "/assets/cs-medspa-v2.png",
   },
 ];
 
@@ -165,33 +187,153 @@ const channels = [
 
 const integrationGroups = [
   {
-    title: "Booking",
+    icon: Calendar,
+    title: "Booking & Scheduling",
     text: "Move qualified inquiries toward a real appointment, trial, class, or consult.",
     tools: ["Mindbody", "GloFox", "Zen Planner", "Jane App", "Cliniko", "Google Calendar"],
   },
   {
-    title: "CRM + Pipeline",
+    icon: LayoutDashboard,
+    title: "CRM & Pipeline",
     text: "Route clean lead data into the system your team already checks.",
-    tools: ["HubSpot", "GoHighLevel", "Pipedrive", "Airtable", "Google Sheets", "Notion"],
+    tools: ["HubSpot", "GoHighLevel", "Salesforce", "Airtable", "Google Sheets", "Notion"],
   },
   {
-    title: "Inbox + Messaging",
-    text: "Keep calls, forms, emails, texts, and DMs from becoming loose ends.",
-    tools: ["Gmail", "Outlook", "Twilio", "Instagram", "Facebook", "Website Forms"],
+    icon: Inbox,
+    title: "Inbox & Messaging",
+    text: "Keep calls, emails, texts, and DMs from becoming loose ends.",
+    tools: ["Gmail", "Outlook", "Twilio", "WhatsApp", "Instagram", "Facebook"],
+  },
+  {
+    icon: DollarSign,
+    title: "Marketing & Payments",
+    text: "Keep billing, reviews, and campaigns in step with the rest of the front office.",
+    tools: ["Stripe", "Square", "QuickBooks", "Mailchimp", "Yelp", "Google Business Profile"],
   },
 ];
 
-const benefits = [
-  "Channels covered",
-  "Leads qualified",
-  "Next steps tracked",
-  "Follow-up handled",
-];
+// Real brand icons where available (react-icons/si). Tools without a Simple
+// Icons entry — mostly niche fitness/clinic software — fall back to a
+// monogram tile in ToolTile.
+const toolIcons = {
+  "Google Calendar": SiGooglecalendar,
+  "HubSpot": SiHubspot,
+  "Salesforce": SiSalesforce,
+  "Airtable": SiAirtable,
+  "Google Sheets": SiGooglesheets,
+  "Notion": SiNotion,
+  "Gmail": SiGmail,
+  "Twilio": SiTwilio,
+  "WhatsApp": SiWhatsapp,
+  "Instagram": SiInstagram,
+  "Facebook": SiFacebook,
+  "Stripe": SiStripe,
+  "Square": SiSquare,
+  "QuickBooks": SiQuickbooks,
+  "Mailchimp": SiMailchimp,
+  "Yelp": SiYelp,
+};
+
+function toolInitials(name) {
+  const words = name.split(" ");
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
 
 const proofPoints = [
   { title: "Operator-ready", text: "Built for busy days, not perfect conditions." },
   { title: "Discreet",       text: "Private client details stay private." },
   { title: "Hands-on",       text: "Mapped, built, tested, and refined with you." },
+];
+
+const shiftScenarios = [
+  {
+    time: "9:42 PM · Instagram DM",
+    before: "A new lead asks about a trial spot. The message sits unread until the front desk opens tomorrow.",
+    after: "Replied in under 10 seconds with availability and a booking link. Trial reserved before they put their phone down.",
+  },
+  {
+    time: "12:30 PM · Phone, back-to-back",
+    before: "Three calls come in during the lunch rush. All three hit voicemail — no one calls back.",
+    after: "All three calls answered on the first ring. Two consults booked, one routed into today's open slot.",
+  },
+  {
+    time: "Saturday · New inquiry",
+    before: "A high-value treatment inquiry comes in over the weekend. By the time anyone follows up Monday, they've already booked elsewhere.",
+    after: "Answered and qualified the same minute it arrived. Staff walks in Monday to a booked appointment, not a cold lead.",
+  },
+];
+
+const industryShifts = [
+  {
+    icon: Dumbbell,
+    title: "Fitness & Studios",
+    moments: [
+      {
+        before: "A prospective member messages about a trial class at 8pm on a Sunday.",
+        after: "Replied within seconds with class times and a booking link — they're in for Monday's 6am class.",
+      },
+      {
+        before: "A member texts to cancel their 6pm session twenty minutes before it starts.",
+        after: "The cancellation is logged instantly and the spot is offered to the waitlist.",
+      },
+      {
+        before: "Someone calls during the noon class rush asking about membership pricing.",
+        after: "Pricing is explained and a tour is booked for after work — no one's left on hold.",
+      },
+    ],
+    outcomes: [
+      "After-hours trial requests get booked, not lost",
+      "Membership FAQs answered instantly, day or night",
+      "Front desk freed up during class rushes",
+    ],
+  },
+  {
+    icon: HeartPulse,
+    title: "Clinics & Recovery",
+    moments: [
+      {
+        before: "A new patient calls about insurance coverage during a packed afternoon.",
+        after: "Answered immediately — insurance is confirmed and they're booked for next week.",
+      },
+      {
+        before: "A patient texts at 9pm to reschedule tomorrow's appointment.",
+        after: "Rescheduled on the spot, and the open slot is offered to someone on the waitlist.",
+      },
+      {
+        before: "A weekend message asks whether you treat a specific condition.",
+        after: "Answered the same day with next steps and the earliest available time.",
+      },
+    ],
+    outcomes: [
+      "New-patient calls never hit voicemail",
+      "Insurance and intake questions handled before the visit",
+      "Reception stays focused on the patient in front of them",
+    ],
+  },
+  {
+    icon: Sparkles,
+    title: "Aesthetics & Dental",
+    moments: [
+      {
+        before: "Someone DMs asking about pricing late at night, then goes quiet when no one replies by morning.",
+        after: "Pricing and availability are answered in under a minute, with a consult booked before they close the app.",
+      },
+      {
+        before: "A call comes in mid-treatment asking about a last-minute cancellation opening.",
+        after: "Availability is checked and the caller is booked into this week's opening.",
+      },
+      {
+        before: "A Saturday message asks, \"Are you open today?\"",
+        after: "Hours and a booking link go out within minutes, any day of the week.",
+      },
+    ],
+    outcomes: [
+      "High-value consult inquiries answered in minutes, not days",
+      "Pricing questions handled consistently, every time",
+      "Evening and weekend DMs turn into booked consults",
+    ],
+  },
 ];
 
 const process = [
@@ -514,6 +656,61 @@ function PageHero({ eyebrow, title, subtitle, stats = [] }) {
   );
 }
 
+function ToolTile({ name }) {
+  const Icon = toolIcons[name];
+  return (
+    <div className="tool-tile">
+      <span className="tool-tile-icon">
+        {Icon ? (
+          <Icon aria-hidden="true" size={26} />
+        ) : (
+          <span className="tool-tile-monogram">{toolInitials(name)}</span>
+        )}
+      </span>
+      <span className="tool-tile-name">{name}</span>
+    </div>
+  );
+}
+
+// ── Integrations (shared between homepage and /services) ──────────────────────
+function IntegrationsSection({ eyebrow, title, copy }) {
+  return (
+    <section className="section integrations-section" aria-labelledby="integrations-title">
+      <div className="section-heading integrations-heading">
+        <p className="eyebrow">{eyebrow}</p>
+        <h2 id="integrations-title">{title}</h2>
+        <p className="section-copy">{copy}</p>
+      </div>
+      <div className="integration-categories">
+        {integrationGroups.map(({ icon: Icon, title: groupTitle, text, tools }, i) => (
+          <RevealSection delay={i * 90} key={groupTitle}>
+            <div className="integration-category">
+              <div className="integration-category-header">
+                <span className="integration-icon"><Icon aria-hidden="true" size={20} /></span>
+                <div>
+                  <h3>{groupTitle}</h3>
+                  <p>{text}</p>
+                </div>
+              </div>
+              <div className="tool-tile-row" aria-label={`${groupTitle} tools`}>
+                {tools.map((tool) => <ToolTile name={tool} key={tool} />)}
+              </div>
+            </div>
+          </RevealSection>
+        ))}
+      </div>
+      <RevealSection delay={integrationGroups.length * 90}>
+        <div className="integration-callout">
+          <Globe aria-hidden="true" size={22} />
+          <p>
+            Don't see your tool? If it's used by gyms, clinics, or med spas — booking, CRM, EHR, payments, forms, or marketing — and it has an API, webhook, or Zapier / Make / n8n connection, we can very likely build around it.
+          </p>
+        </div>
+      </RevealSection>
+    </section>
+  );
+}
+
 // ── Pricing (shared between homepage teaser and /pricing page) ────────────────
 function PricingSection({ page = false }) {
   const [billingCycle, setBillingCycle] = useState("annual");
@@ -630,6 +827,11 @@ function PricingPage() {
           { value: "Setup", label: "quoted upfront" },
         ]}
       />
+      <MissedRevenueCalculator
+        eyebrow="Before you compare plans"
+        title="See what missed calls and messages are already costing you."
+        subtitle="Every plan below is priced against this number. For most businesses, recovering a single missed booking covers the monthly cost many times over."
+      />
       <PricingSection page />
       <section className="cta-band pricing-final-cta" aria-label="Pricing call to action">
         <div className="cta-band-inner">
@@ -644,6 +846,169 @@ function PricingPage() {
         </div>
       </section>
     </>
+  );
+}
+
+// ── Missed revenue calculator ─────────────────────────────────────────────────
+const WEEKS_PER_MONTH = 4.33;
+const FULL_TIME_FRONT_DESK_ANNUAL = 50000;
+
+function currencyToNumber(value) {
+  return Number(String(value).replace(/[^0-9.]/g, "")) || 0;
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Math.max(0, Math.round(value || 0)));
+}
+
+function MissedRevenueCalculator({ eyebrow = "Free tool", title, subtitle }) {
+  const [missedPerWeek, setMissedPerWeek] = useState(10);
+  const [avgValue, setAvgValue] = useState(150);
+  const [conversionRate, setConversionRate] = useState(25);
+  const [adminHours, setAdminHours] = useState(8);
+  const [hourlyStaffCost, setHourlyStaffCost] = useState(24);
+
+  const monthlyLostRevenue = missedPerWeek * WEEKS_PER_MONTH * avgValue * (conversionRate / 100);
+  const yearlyLostRevenue = monthlyLostRevenue * 12;
+  const monthlyAdminHours = adminHours * WEEKS_PER_MONTH;
+  const monthlyStaffCost = monthlyAdminHours * hourlyStaffCost;
+  const totalMonthlyOpportunity = monthlyLostRevenue + monthlyStaffCost;
+
+  const receptionistPlan = pricingPlans.find((p) => p.id === "receptionist");
+  const receptionistMonthly = currencyToNumber(receptionistPlan.prices.annual.amount);
+  const bookingsToBreakEven = avgValue > 0 ? Math.max(1, Math.ceil(receptionistMonthly / avgValue)) : null;
+
+  const frontDeskMonthly = FULL_TIME_FRONT_DESK_ANNUAL / 12;
+
+  const numberField = (id, label, hint, value, setValue, { prefix, suffix, min = 0, max, step = 1 } = {}) => (
+    <div className="calc-field">
+      <label htmlFor={id}>
+        {label}
+        {hint && <span className="calc-field-hint">{hint}</span>}
+      </label>
+      <div className={`calc-input-wrap${prefix ? " has-prefix" : ""}${suffix ? " has-suffix" : ""}`}>
+        {prefix && <span className="calc-prefix">{prefix}</span>}
+        <input
+          id={id}
+          type="number"
+          inputMode="decimal"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => {
+            const next = e.target.value === "" ? 0 : Number(e.target.value);
+            const clamped = max !== undefined ? Math.min(max, Math.max(min, next)) : Math.max(min, next);
+            setValue(clamped);
+          }}
+        />
+        {suffix && <span className="calc-suffix">{suffix}</span>}
+      </div>
+    </div>
+  );
+
+  return (
+    <section className="calculator-section" id="calculator" aria-labelledby="calculator-title">
+      <div className="calculator-inner">
+      <div className="calculator-header">
+        <p className="eyebrow"><Calculator aria-hidden="true" size={15} /> {eyebrow}</p>
+        <h2 id="calculator-title">{title}</h2>
+        {subtitle && <p className="section-copy">{subtitle}</p>}
+      </div>
+
+      <div className="calculator-grid">
+        <div className="calculator-inputs" aria-label="Your numbers">
+          {numberField(
+            "calc-missed", "Missed calls, DMs & messages / week", "across all channels, combined",
+            missedPerWeek, setMissedPerWeek,
+          )}
+          {numberField(
+            "calc-value", "Average value of a new client", "first visit, package, or membership",
+            avgValue, setAvgValue, { prefix: "$", step: 10 },
+          )}
+          {numberField(
+            "calc-conversion", "Booking rate on answered inquiries", "% that convert to a paying client",
+            conversionRate, setConversionRate, { suffix: "%", max: 100 },
+          )}
+          {numberField(
+            "calc-admin-hours", "Staff hours / week on calls & messages", "answering, scheduling, follow-up",
+            adminHours, setAdminHours,
+          )}
+          {numberField(
+            "calc-staff-cost", "Hourly cost of that staff time", "$50k/yr full-time ≈ $24/hr",
+            hourlyStaffCost, setHourlyStaffCost, { prefix: "$" },
+          )}
+        </div>
+
+        <div className="calculator-results">
+          <div className="calc-result-card calc-result-primary">
+            <span className="calc-result-label">Revenue slipping through the cracks</span>
+            <div className="calc-result-value">
+              {formatCurrency(monthlyLostRevenue)}
+              <span className="calc-result-unit"> / month</span>
+            </div>
+            <p className="calc-result-sub">
+              That's roughly <strong>{formatCurrency(yearlyLostRevenue)}</strong> a year in inquiries that never become clients.
+            </p>
+          </div>
+
+          <div className="calc-result-row">
+            <div className="calc-result-card">
+              <span className="calc-result-label">Staff time freed up</span>
+              <div className="calc-result-value">
+                {Math.round(monthlyAdminHours)}
+                <span className="calc-result-unit"> hrs / month</span>
+              </div>
+              <p className="calc-result-sub">Time back for members, patients, and clients in front of your team.</p>
+            </div>
+            <div className="calc-result-card">
+              <span className="calc-result-label">Staff cost recovered</span>
+              <div className="calc-result-value">
+                {formatCurrency(monthlyStaffCost)}
+                <span className="calc-result-unit"> / month</span>
+              </div>
+              <p className="calc-result-sub">Based on the hourly cost you entered above.</p>
+            </div>
+          </div>
+
+          <div className="calc-staff-compare">
+            <Users aria-hidden="true" size={20} />
+            <p>
+              <strong>Versus hiring a full-time front desk worker:</strong> a {formatCurrency(FULL_TIME_FRONT_DESK_ANNUAL)}/year hire runs about {formatCurrency(frontDeskMonthly)}/month — and still can't cover nights, weekends, or instant replies to DMs and email. The {receptionistPlan.name} plan starts at {receptionistPlan.prices.annual.amount}/month (billed annually) and covers every channel, 24/7/365.
+            </p>
+          </div>
+
+          <div className="calc-result-card calc-result-total">
+            <span className="calc-result-label">Total monthly opportunity</span>
+            <div className="calc-result-value">
+              {formatCurrency(totalMonthlyOpportunity)}
+              <span className="calc-result-unit"> / month</span>
+            </div>
+            <p className="calc-result-sub">
+              {bookingsToBreakEven
+                ? <>Recovering just <strong>{bookingsToBreakEven}</strong> new client{bookingsToBreakEven === 1 ? "" : "s"} a month covers the entire {receptionistPlan.name} plan ({receptionistPlan.prices.annual.amount}/mo).</>
+                : <>Enter an average client value above to see your break-even point.</>}
+            </p>
+          </div>
+
+          <div className="calc-cta">
+            <a className="button button-primary" href="/contact">
+              See how we'd recover this
+              <ArrowRight aria-hidden="true" size={20} />
+            </a>
+          </div>
+
+          <p className="calc-disclaimer">
+            Estimates only, based on the numbers you enter — actual results depend on your business, call volume, and current setup.
+          </p>
+        </div>
+      </div>
+      </div>
+    </section>
   );
 }
 
@@ -729,71 +1094,46 @@ function ServicesPage() {
         </div>
       </section>
 
-      {/* Integrations */}
-      <section className="section integrations-section" aria-labelledby="integrations-title">
-        <div className="section-heading integrations-heading">
-          <p className="eyebrow">Works with your tools</p>
-          <h2 id="integrations-title">Built around the systems your team already uses.</h2>
+      {/* Your front office, mapped */}
+      <section className="section system-map-section" aria-labelledby="system-map-title">
+        <div className="section-heading">
+          <p className="eyebrow">How it fits together</p>
+          <h2 id="system-map-title">Your front office, mapped.</h2>
           <p className="section-copy">
-            Corner Systems connects the front-office workflow to your booking, CRM, calendar, inbox, and messaging stack.
+            One system connects every channel to every outcome — no manual hand-offs, no dropped threads.
           </p>
         </div>
-        <div className="integration-grid">
-          {integrationGroups.map((group, i) => (
-            <RevealSection delay={i * 100} key={group.title}>
-              <article className="integration-card">
-                <div className="integration-card-top">
-                  <span className="integration-icon"><Zap aria-hidden="true" size={20} /></span>
-                  <div>
-                    <h3>{group.title}</h3>
-                    <p>{group.text}</p>
-                  </div>
-                </div>
-                <div className="tool-chip-list" aria-label={`${group.title} tools`}>
-                  {group.tools.map((tool) => (
-                    <span className="tool-chip" key={tool}>{tool}</span>
-                  ))}
-                </div>
-              </article>
-            </RevealSection>
-          ))}
+        <div className="system-map">
+          <RevealSection className="system-col">
+            <h3>Every channel in</h3>
+            <div className="system-chip"><PhoneCall aria-hidden="true" size={18} /> Calls</div>
+            <div className="system-chip"><MessageSquareText aria-hidden="true" size={18} /> Texts &amp; DMs</div>
+            <div className="system-chip"><Mail aria-hidden="true" size={18} /> Email &amp; forms</div>
+            <div className="system-chip"><Instagram aria-hidden="true" size={18} /> Social DMs</div>
+          </RevealSection>
+          <div className="system-arrow" aria-hidden="true"><ArrowRight size={28} /></div>
+          <RevealSection className="system-hub" delay={120}>
+            <span className="system-hub-icon"><Bot aria-hidden="true" size={28} /></span>
+            <h3>Corner Systems AI</h3>
+            <p>Reads, replies, qualifies, and routes — 24/7, on every channel at once.</p>
+          </RevealSection>
+          <div className="system-arrow" aria-hidden="true"><ArrowRight size={28} /></div>
+          <RevealSection className="system-col" delay={240}>
+            <h3>Where it lands</h3>
+            <div className="system-chip"><Calendar aria-hidden="true" size={18} /> Booking confirmed</div>
+            <div className="system-chip"><LayoutDashboard aria-hidden="true" size={18} /> CRM updated</div>
+            <div className="system-chip"><Users aria-hidden="true" size={18} /> Staff notified</div>
+            <div className="system-chip"><Send aria-hidden="true" size={18} /> Follow-up scheduled</div>
+          </RevealSection>
         </div>
       </section>
 
-      {/* Proof */}
-      <section className="section proof-section" aria-label="Operational value">
-        <div className="proof-media proof-media-img">
-          <img src="/assets/cs-dashboard.png" alt="Corner Systems live lead pipeline dashboard" loading="lazy" className="proof-dashboard-img" />
-          <div className="proof-media-chips">
-            <span className="proof-chip proof-chip-teal">✓ Lead captured</span>
-            <span className="proof-chip proof-chip-blue">✓ Consultation booked 8:15 PM</span>
-            <span className="proof-chip proof-chip-teal">✓ Staff handoff assigned</span>
-          </div>
-        </div>
-        <div>
-          <p className="eyebrow">The result</p>
-          <h2>A front office that protects every opportunity.</h2>
-          <p className="section-copy">
-            Prospects get a sharp first impression. Staff get clean handoffs. Owners get visibility.
-          </p>
-          <div className="benefit-grid">
-            {benefits.map((benefit) => (
-              <span className="benefit-item" key={benefit}>
-                <CheckCircle2 aria-hidden="true" size={16} />
-                {benefit}
-              </span>
-            ))}
-          </div>
-          <div className="proof-grid" aria-label="Trust points">
-            {proofPoints.map((point) => (
-              <article className="proof-card" key={point.title}>
-                <h3>{point.title}</h3>
-                <p>{point.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Integrations */}
+      <IntegrationsSection
+        eyebrow="Works with your tools"
+        title="Built around the systems your team already uses."
+        copy="Corner Systems connects the front-office workflow to your booking, CRM, calendar, inbox, marketing, and payments stack."
+      />
 
       <section className="cta-band" aria-label="Services call to action">
         <div className="cta-band-inner">
@@ -813,6 +1153,9 @@ function ServicesPage() {
 
 // ── /industries page ──────────────────────────────────────────────────────────
 function IndustriesPage() {
+  const [activeIndustry, setActiveIndustry] = useState(0);
+  const activeShift = industryShifts[activeIndustry];
+
   useEffect(() => {
     const m = PAGE_META["/industries"];
     document.title = m.title;
@@ -887,36 +1230,59 @@ function IndustriesPage() {
         </div>
       </section>
 
-      {/* Social grid */}
-      <section className="social-section" aria-label="Industry environments">
-        <RevealSection>
-          <div className="social-heading">
-            <p className="eyebrow">Across every environment</p>
-            <h2>From the gym floor to the clinic corridor — we cover it all.</h2>
-          </div>
-        </RevealSection>
-        <div className="social-grid">
-          {[
-            { src: "/assets/cs-gym-night-v2.png",    label: "Combat Sports & Fitness",        tag: "Your Niche"   },
-            { src: "/assets/cs-medspa-v2.png",        label: "Med Spa & Aesthetic Clinics",    tag: "Premium"      },
-            { src: "/assets/cs-clinic-story-v2.png",  label: "Clinics & Patient Intake",       tag: "Your Niche"   },
-            { src: "/assets/cs-reception-hero.png",   label: "Front Office Infrastructure",    tag: "Built For You"},
-            { src: "/assets/cs-gym-aerial.png",       label: "Gym Operations — Automated",     tag: "Systemised"   },
-            { src: "/assets/cs-clinic-square.png",    label: "Patient Intake — Seamless",      tag: "Clinics"      },
-            { src: "/assets/cs-lobby-hero.png",       label: "Premium Reception Coverage",     tag: "24/7"         },
-            { src: "/assets/cs-gym-night-sq.png",     label: "Corner Systems Network",         tag: "Connected"    },
-          ].map((item, i) => (
-            <RevealSection delay={i * 55} key={item.src}>
-              <div className="social-card">
-                <img src={item.src} alt={item.label} loading="lazy" />
-                <div className="social-card-label">
-                  <span>{item.label}</span>
-                  <span className="social-tag">{item.tag}</span>
-                </div>
-              </div>
-            </RevealSection>
+      {/* Interactive industry shift */}
+      <section className="section industry-shift-section" aria-labelledby="industry-shift-title">
+        <div className="section-heading">
+          <p className="eyebrow">See it in action</p>
+          <h2 id="industry-shift-title">What changes for your business.</h2>
+          <p className="section-copy">
+            Pick your world below — the moment-to-moment difference looks a little different in every industry.
+          </p>
+        </div>
+        <div className="industry-tabs" role="tablist" aria-label="Choose your industry">
+          {industryShifts.map(({ icon: Icon, title }, i) => (
+            <button
+              key={title}
+              type="button"
+              role="tab"
+              aria-selected={i === activeIndustry}
+              className={`industry-tab${i === activeIndustry ? " active" : ""}`}
+              onClick={() => setActiveIndustry(i)}
+            >
+              <Icon aria-hidden="true" size={18} />
+              {title}
+            </button>
           ))}
         </div>
+        <RevealSection className="industry-panel" key={activeShift.title}>
+          <div className="industry-moment-labels">
+            <span className="moment-label moment-label-before">Before Corner Systems</span>
+            <span className="moment-label moment-label-after">After Corner Systems</span>
+          </div>
+          <div className="industry-moments">
+            {activeShift.moments.map((moment, i) => (
+              <div className="industry-moment" key={i}>
+                <div className="moment-before">
+                  <X aria-hidden="true" size={14} className="shift-icon shift-icon-before" />
+                  <span>{moment.before}</span>
+                </div>
+                <ArrowRight aria-hidden="true" size={16} className="moment-arrow" />
+                <div className="moment-after">
+                  <CheckCircle2 aria-hidden="true" size={14} className="shift-icon shift-icon-after" />
+                  <span>{moment.after}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="industry-outcomes">
+            {activeShift.outcomes.map((outcome) => (
+              <div className="industry-outcome" key={outcome}>
+                <CheckCircle2 aria-hidden="true" size={16} />
+                <span>{outcome}</span>
+              </div>
+            ))}
+          </div>
+        </RevealSection>
       </section>
 
       <section className="cta-band" aria-label="Industries call to action">
@@ -1381,6 +1747,13 @@ function HomePage() {
         </RevealSection>
       </section>
 
+      {/* Missed revenue calculator */}
+      <MissedRevenueCalculator
+        eyebrow="Free tool"
+        title="What are missed calls and messages costing you?"
+        subtitle="Plug in your numbers. Most owners are surprised by the total once missed revenue and staff time are combined."
+      />
+
       {/* Coverage brief */}
       <section className="coverage-band" aria-label="Channels covered">
         <RevealSection className="coverage-inner">
@@ -1409,79 +1782,100 @@ function HomePage() {
         </RevealSection>
       </section>
 
-      {/* Proof section */}
-      <section className="section proof-section" aria-label="Operational value">
-        <div className="proof-media proof-media-img">
-          <img src="/assets/cs-dashboard.png" alt="Corner Systems live lead pipeline dashboard" loading="lazy" className="proof-dashboard-img" />
-          <div className="proof-media-chips">
-            <span className="proof-chip proof-chip-teal">✓ Lead captured</span>
-            <span className="proof-chip proof-chip-blue">✓ Consultation booked 8:15 PM</span>
-            <span className="proof-chip proof-chip-teal">✓ Staff handoff assigned</span>
-          </div>
-        </div>
-        <div>
-          <p className="eyebrow">The result</p>
-          <h2>A front office that protects every opportunity.</h2>
+      {/* The Shift */}
+      <section className="section shift-section" aria-label="Before and after Corner Systems">
+        <div className="section-heading">
+          <p className="eyebrow">The shift</p>
+          <h2>What changes the moment you go live.</h2>
           <p className="section-copy">
-            Prospects get a sharp first impression. Staff get clean handoffs. Owners get visibility.
+            Same kinds of moments your front desk deals with every week — before Corner Systems, and after.
           </p>
-          <div className="benefit-grid">
-            {benefits.map((benefit) => (
-              <span className="benefit-item" key={benefit}>
-                <CheckCircle2 aria-hidden="true" size={16} />
-                {benefit}
-              </span>
-            ))}
-          </div>
-          <div className="proof-grid" aria-label="Trust points">
-            {proofPoints.map((point) => (
-              <article className="proof-card" key={point.title}>
-                <h3>{point.title}</h3>
-                <p>{point.text}</p>
-              </article>
-            ))}
-          </div>
+        </div>
+        <div className="shift-labels">
+          <span className="shift-label shift-label-before">Without Corner Systems</span>
+          <span className="shift-label shift-label-after">With Corner Systems</span>
+        </div>
+        <div className="shift-grid">
+          {shiftScenarios.map((s) => (
+            <React.Fragment key={s.time}>
+              <RevealSection>
+                <div className="shift-card shift-before">
+                  <span className="shift-time"><Clock3 aria-hidden="true" size={14} /> {s.time}</span>
+                  <p><X aria-hidden="true" size={16} className="shift-icon shift-icon-before" /> {s.before}</p>
+                </div>
+              </RevealSection>
+              <RevealSection delay={90}>
+                <div className="shift-card shift-after">
+                  <span className="shift-time"><Clock3 aria-hidden="true" size={14} /> {s.time}</span>
+                  <p><CheckCircle2 aria-hidden="true" size={16} className="shift-icon shift-icon-after" /> {s.after}</p>
+                </div>
+              </RevealSection>
+            </React.Fragment>
+          ))}
+        </div>
+        <div className="shift-badges">
+          {proofPoints.map((point, i) => {
+            const icons = [Activity, LockKeyhole, Users];
+            const Icon = icons[i];
+            return (
+              <RevealSection delay={i * 90} key={point.title}>
+                <div className="shift-badge">
+                  <Icon aria-hidden="true" size={20} />
+                  <div>
+                    <strong>{point.title}</strong>
+                    <p>{point.text}</p>
+                  </div>
+                </div>
+              </RevealSection>
+            );
+          })}
         </div>
       </section>
 
-      {/* Social grid */}
-      <section className="social-section" aria-label="What we build for your business">
+      {/* Built for your environment */}
+      <section className="section environments-section" aria-label="Industry environments">
         <RevealSection>
-          <div className="social-heading">
-            <p className="eyebrow">Across every environment</p>
-            <h2>From the gym floor to the clinic corridor — we cover it all.</h2>
-            <p className="social-subhead">
+          <div className="section-heading">
+            <p className="eyebrow">Built for your environment</p>
+            <h2>Three industries. One always-on front desk.</h2>
+            <p className="section-copy">
               Calls answered at 11pm. DMs replied in seconds. Bookings confirmed while your staff is focused on the client in front of them.
             </p>
           </div>
         </RevealSection>
-        <div className="social-grid">
-          {[
-            { src: "/assets/cs-hero-lobby-v2.png",    label: "24/7 AI Reception — Active",        tag: "Always On"    },
-            { src: "/assets/cs-gym-night-v2.png",     label: "Combat Sports & Fitness",           tag: "Your Niche"   },
-            { src: "/assets/cs-phone-story.png",      label: "Every Lead. Captured.",             tag: "Zero Dropped" },
-            { src: "/assets/cs-medspa-v2.png",        label: "Med Spa & Aesthetic Clinics",       tag: "Premium"      },
-            { src: "/assets/cs-dashboard.png",        label: "Lead Pipeline — Live View",         tag: "Real-Time"    },
-            { src: "/assets/cs-clinic-story-v2.png",  label: "Clinics & Patient Intake",          tag: "Your Niche"   },
-            { src: "/assets/cs-reception-hero.png",   label: "Front Office Infrastructure",       tag: "Built For You"},
-            { src: "/assets/cs-gym-aerial.png",       label: "Gym Operations — Automated",        tag: "Systemised"   },
-            { src: "/assets/cs-before-after-v2.png",  label: "Before Corner Systems → After",    tag: "The Result"   },
-            { src: "/assets/cs-clinic-square.png",    label: "Patient Intake — Seamless",         tag: "Clinics"      },
-            { src: "/assets/cs-lobby-hero.png",       label: "Premium Reception Coverage",        tag: "24/7"         },
-            { src: "/assets/cs-gym-night-sq.png",     label: "Corner Systems Network",            tag: "Connected"    },
-          ].map((item, i) => (
-            <RevealSection delay={i * 55} key={item.src}>
-              <div className="social-card">
-                <img src={item.src} alt={item.label} loading="lazy" />
-                <div className="social-card-label">
-                  <span>{item.label}</span>
-                  <span className="social-tag">{item.tag}</span>
+        <div className="environments-grid">
+          {marketGroups.map(({ icon: Icon, title, text, items, image }, i) => (
+            <RevealSection delay={i * 110} key={title}>
+              <article className="environment-card">
+                <div className="environment-media">
+                  <img src={image} alt={title} loading="lazy" />
+                  <div className="environment-icon"><Icon aria-hidden="true" size={22} /></div>
                 </div>
-              </div>
+                <div className="environment-body">
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                  <div className="environment-tags">
+                    {items.map((item) => <span className="environment-tag" key={item}>{item}</span>)}
+                  </div>
+                </div>
+              </article>
             </RevealSection>
           ))}
         </div>
+        <RevealSection delay={330}>
+          <a className="button button-secondary environments-cta" href="/industries">
+            See industry-specific details
+            <ChevronRight aria-hidden="true" size={18} />
+          </a>
+        </RevealSection>
       </section>
+
+      {/* Integrations */}
+      <IntegrationsSection
+        eyebrow="Connect anything"
+        title="Plug into what you already run."
+        copy="Booking platforms, CRMs, inboxes, marketing, and payments — Corner Systems works alongside the tools your team already knows."
+      />
 
       {/* Early results — honest, no fake quotes */}
       <section id="proof" className="early-results-section" aria-label="Early results">
@@ -1505,7 +1899,28 @@ function HomePage() {
               </RevealSection>
             ))}
           </div>
-          <RevealSection delay={200}>
+          <RevealSection delay={150}>
+            <div className="early-results-case">
+              <div className="early-results-case-stats">
+                <div>
+                  <strong>~20%</strong>
+                  <span>of calls were getting answered before</span>
+                </div>
+                <div>
+                  <strong>100%</strong>
+                  <span>of calls answered now, every time</span>
+                </div>
+                <div>
+                  <strong>10+ hrs/wk</strong>
+                  <span>given back to the owner and team</span>
+                </div>
+              </div>
+              <p>
+                One early gym client relied on the owner and his wife to answer every call — whenever one of them happened to be free. Calls during classes, after hours, or off-site often just rang with no one to pick up, and new-membership inquiries quietly disappeared. Since going live, every call is answered, the team has 10+ hours a week back, and inquiries that used to fall through the cracks are now captured, qualified, and followed up automatically. <em>(Client details kept anonymous by request — they prefer their members not know their phones are AI-assisted.)</em>
+              </p>
+            </div>
+          </RevealSection>
+          <RevealSection delay={250}>
             <p className="early-results-note">
               If you're the right fit, you'll be part of a small cohort of founding clients who help shape the product — with direct access to Tom and Mike throughout.
             </p>
