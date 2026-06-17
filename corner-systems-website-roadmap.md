@@ -84,17 +84,17 @@ Follow-up ideas (not yet built):
 
 Recommended homepage order:
 
-- [ ] Hero: clear outcome-focused headline.
+- [x] Hero: clear outcome-focused headline. — Rewrote to "Never miss another booking [because your front desk was busy / because it was after hours / …]" with missed-booking typing animation; subheadline updated to roadmap copy; secondary CTA now scrolls to the revenue calculator (2026-06-16).
 - [ ] Live demo: call the AI now.
 - [ ] Problem section: missed calls, slow replies, after-hours leads, overwhelmed staff.
 - [ ] How it works: answer, qualify, book, follow up, escalate, log.
-- [x] ROI calculator: estimate missed revenue and admin hours. — placed right after the "how it works" journey section.
+- [x] ROI calculator: estimate missed revenue and admin hours. — placed right after the "how it works" journey section; wrapped with `id="calculator"` so hero secondary CTA scrolls to it (2026-06-16).
 - [x] Vertical cards: gyms, clinics, med spas. — replaced the old 12-tile "Social grid" with a 3-card "Three industries. One always-on front desk." section (`.environments-grid`/`.environment-card`), one large image per vertical (gym/clinic/med spa) with icon badge, blurb, and real business-type tags from `marketGroups`, 2026-06-14.
 - [ ] Proof: screenshots, sample transcripts, call summaries, testimonials.
 - [x] Follow-up: `/industries`' old 8-tile `.social-grid` wall and `/services`' old `.proof-section`/`.benefit-grid` (both predating the 2026-06-14 homepage redesign) have been replaced — `/industries` now has an interactive "What changes for your business." industry-tabs section (`.industry-tabs`/`.industry-panel`/`.industry-outcomes`, one before/after + 3-outcome panel per vertical, switchable), and `/services` now has a "Your front office, mapped." system-flow diagram (`.system-map`/`.system-hub`/`.system-chip`, channels in → AI hub → outcomes), 2026-06-14.
-- [ ] Implementation process: live in 7-14 days.
+- [x] Implementation process: live in 7-14 days. — 7-step `.impl-section` added to homepage between Integrations and Early Results, with numbered cards (business intake → call script → FAQ training → booking integration → SMS follow-up → QA → launch), CTA + "7–14 days" note (2026-06-16).
 - [x] Integrations: phone, calendar, CRM, booking tools. — see "Supported Integrations Section" below, 2026-06-14.
-- [ ] FAQ: objections and concerns.
+- [x] FAQ: objections and concerns. — 14-question FAQ section added to homepage (before pricing teaser) using `.faq-section-home` / `.faq-list-home` two-column grid layout; covers replacement concern, phone number, escalation, booking, SMS, after-hours, transcripts, integrations, setup time, pricing, customisation, clinic safety, medical advice, and manual override (2026-06-16).
 - [ ] Final CTA: call demo or book consultation.
 
 ## Priority 4: Vertical-Specific Pages
@@ -221,20 +221,20 @@ SMS sent: Yes
 
 ## FAQ And Objections
 
-- [ ] Will this replace my receptionist?
-- [ ] Can it use my existing phone number?
-- [ ] What happens when the AI cannot answer?
-- [ ] Can it book appointments?
-- [ ] Can it send SMS follow-ups?
-- [ ] Does it work after hours?
-- [ ] Can I review call transcripts?
-- [ ] Does it integrate with my calendar or booking software?
-- [ ] How long does setup take?
-- [ ] What does it cost?
-- [ ] Can I customize what the AI says?
-- [ ] Is this safe for clinics?
-- [ ] Does the AI give medical advice?
-- [ ] Can I turn it off or route calls back to staff?
+- [x] Will this replace my receptionist? — answered in homepage FAQ (2026-06-16).
+- [x] Can it use my existing phone number? — answered in homepage FAQ (2026-06-16).
+- [x] What happens when the AI cannot answer? — answered in homepage FAQ (2026-06-16).
+- [x] Can it book appointments? — answered in homepage FAQ (2026-06-16).
+- [x] Can it send SMS follow-ups? — answered in homepage FAQ (2026-06-16).
+- [x] Does it work after hours? — answered in homepage FAQ (2026-06-16).
+- [x] Can I review call transcripts? — answered in homepage FAQ (2026-06-16).
+- [x] Does it integrate with my calendar or booking software? — answered in homepage FAQ (2026-06-16).
+- [x] How long does setup take? — answered in homepage FAQ (2026-06-16).
+- [x] What does it cost? — answered in homepage FAQ (2026-06-16).
+- [x] Can I customize what the AI says? — answered in homepage FAQ (2026-06-16).
+- [x] Is this safe for clinics? — answered in homepage FAQ (2026-06-16).
+- [x] Does the AI give medical advice? — answered in homepage FAQ (2026-06-16).
+- [x] Can I turn it off or route calls back to staff? — answered in homepage FAQ (2026-06-16).
 
 Suggested answer for replacement concern:
 

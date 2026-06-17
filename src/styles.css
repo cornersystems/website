@@ -2056,6 +2056,85 @@ h3 {
   background-clip: text;
 }
 
+/* ── Implementation process ─────────────────────────────────────────────── */
+
+.impl-section {
+  background: var(--bg-soft);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.impl-header {
+  max-width: 600px;
+  margin-bottom: clamp(32px, 5vw, 56px);
+}
+
+.impl-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: clamp(32px, 5vw, 48px);
+}
+
+.impl-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+.impl-step-n {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--teal);
+  padding-top: 3px;
+  flex-shrink: 0;
+}
+
+.impl-step-body strong {
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 5px;
+  color: var(--text);
+}
+
+.impl-step-body p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.impl-cta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.impl-cta-note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+/* ── Homepage FAQ (full-width two-column grid) ───────────────────────────── */
+
+.faq-section-home {
+  display: block !important;
+}
+
+.faq-list-home {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+  margin-top: clamp(24px, 4vw, 40px);
+}
+
 .faq-section {
   display: grid;
   grid-template-columns: minmax(0, 0.75fr) minmax(320px, 1fr);

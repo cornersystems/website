@@ -449,20 +449,60 @@ const earlyResults = [
 
 const faqs = [
   {
-    question: "Do we need to replace our current CRM?",
-    answer: "Not necessarily. If your current tools work, we can often build around them.",
+    question: "Will this replace my receptionist?",
+    answer: "No. Corner Systems is designed to support your team, not replace it. The AI handles repetitive calls, lead capture, appointment requests, and after-hours inquiries so your staff can focus on the customers in front of them.",
   },
   {
-    question: "Can you connect with the tools we already use?",
-    answer: "Usually, yes. We design around your current booking, CRM, calendar, inbox, and messaging tools using the cleanest available connection or handoff.",
+    question: "Can it use my existing phone number?",
+    answer: "Yes. We can route your current number through the AI so callers reach the same number they always have. Nothing changes for them — and nothing falls through the cracks.",
   },
   {
-    question: "How does pricing work?",
-    answer: "Fixed packages start at $179/mo when billed annually, or $199 month-to-month, with Enterprise custom pricing for more complex builds. Pick the plan closest to your coverage needs — we scope the exact build around your tools and volume from there. No hourly rates, no surprise add-ons.",
+    question: "What happens when the AI can't answer?",
+    answer: "The AI follows your escalation rules. It can take a message, send the caller to a human, notify your team by SMS or email, or flag the call for follow-up. You decide what escalates and how.",
   },
   {
-    question: "What happens after we reach out?",
-    answer: "We review the current lead path, identify friction, and recommend the cleanest next step.",
+    question: "Can it book appointments?",
+    answer: "Yes. The AI can check availability, book directly into your calendar or booking system, send confirmations, and set reminders — without a human in the loop.",
+  },
+  {
+    question: "Can it send SMS follow-ups?",
+    answer: "Yes. Automated SMS sequences go out after a call, inquiry, or missed booking attempt — keeping leads warm and nudging them to book without you having to chase.",
+  },
+  {
+    question: "Does it work after hours?",
+    answer: "That's where it earns its keep. Most missed bookings happen outside business hours. Corner Systems runs 24/7, so an inquiry at 10pm gets answered immediately — not the next morning when the lead has already moved on.",
+  },
+  {
+    question: "Can I review call transcripts?",
+    answer: "Yes. Every call and conversation is logged with a summary, transcript, and next-step recommendation. You can review anything from the dashboard.",
+  },
+  {
+    question: "Does it integrate with my calendar or booking software?",
+    answer: "Usually, yes. We connect to the tools you already run — booking platforms, Google Calendar, CRM, and more. If there's a clean API or Zapier connection, we can build around it.",
+  },
+  {
+    question: "How long does setup take?",
+    answer: "Most clients are live in 7–14 days. Setup includes a business intake, call script design, FAQ training, booking integration, SMS follow-up configuration, test calls, and launch.",
+  },
+  {
+    question: "What does it cost?",
+    answer: "Plans start at $179/month billed annually ($199 month-to-month). Enterprise builds with custom integrations are scoped separately. No hourly rates, no surprise add-ons — use the calculator above to see how quickly one recovered booking covers the cost.",
+  },
+  {
+    question: "Can I customise what the AI says?",
+    answer: "Yes. The script, tone, FAQs, escalation triggers, and follow-up messages are all configured around your business. It answers as your business, not a generic AI.",
+  },
+  {
+    question: "Is this suitable for clinics?",
+    answer: "Yes. Corner Systems handles scheduling, intake, FAQs, and routing — it does not provide medical advice, diagnose, or replace clinical staff. All health-related questions are routed to your team.",
+  },
+  {
+    question: "Does the AI give medical advice?",
+    answer: "No. Corner Systems is an AI receptionist, not a medical tool. It captures appointment requests, answers operational questions (hours, services, pricing), and escalates anything clinical to your staff.",
+  },
+  {
+    question: "Can I turn it off or route calls back to my team?",
+    answer: "Yes. You can pause the AI, adjust escalation rules, or route all calls to a human at any time. You stay in control — the AI just handles the volume you want it to.",
   },
 ];
 
@@ -524,10 +564,10 @@ function useLiveConsole() {
 
 // Typing / cycling headline hook
 const HERO_LINES = [
-  "never misses a call.",
-  "books leads 24/7.",
-  "captures every lead.",
-  "works while you sleep.",
+  "because your front desk was busy.",
+  "because it was after hours.",
+  "because you were in a session.",
+  "because calls went to voicemail.",
 ];
 
 function useTypingCycle(lines, typeSpeed = 55, pause = 2500, deleteSpeed = 28) {
@@ -1543,13 +1583,17 @@ function HomePage() {
           <div className="hero-copy">
 
             {/* Typing headline */}
-            <h1 id="hero-title" aria-label="Your front office, never misses a call.">
-              <span className="h1-static">Your front office,</span>
+            <h1 id="hero-title" aria-label="Never miss another booking because your front desk was busy.">
+              <span className="h1-static">Never miss another booking</span>
               <span className="h1-typed" aria-hidden="true">
                 {typedText}
                 <span className="type-cursor" />
               </span>
             </h1>
+
+            <p className="hero-lede">
+              Corner Systems answers calls, captures leads, books appointments, and follows up automatically — for gyms, clinics, and med spas, even after hours.
+            </p>
 
             <div className="hero-channels" aria-label="Every communication channel captured">
               <span className="hero-channel"><PhoneCall size={15} aria-hidden="true" /> Calls</span>
@@ -1559,10 +1603,6 @@ function HomePage() {
               <span className="hero-channel"><Bot size={15} aria-hidden="true" /> AI Chat</span>
             </div>
 
-            <p className="hero-lede">
-              For gyms, clinics, and med spas where every inquiry is real money. Every call, DM, text, and form — captured, qualified, and booked 24/7.
-            </p>
-
             {/* Interactive challenge dropdown */}
             <HeroSelector />
 
@@ -1571,10 +1611,13 @@ function HomePage() {
                 Book a Discovery Call
                 <ArrowRight aria-hidden="true" size={20} />
               </a>
-              <a className="button button-secondary" href="/services">
-                See Services
+              <button
+                className="button button-secondary"
+                onClick={() => document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                Calculate Missed Revenue
                 <ChevronRight aria-hidden="true" size={20} />
-              </a>
+              </button>
             </div>
           </div>
 
@@ -1748,11 +1791,13 @@ function HomePage() {
       </section>
 
       {/* Missed revenue calculator */}
-      <MissedRevenueCalculator
-        eyebrow="Free tool"
-        title="What are missed calls and messages costing you?"
-        subtitle="Plug in your numbers. Most owners are surprised by the total once missed revenue and staff time are combined."
-      />
+      <div id="calculator">
+        <MissedRevenueCalculator
+          eyebrow="Free tool"
+          title="What are missed calls and messages costing you?"
+          subtitle="Plug in your numbers. Most owners are surprised by the total once missed revenue and staff time are combined."
+        />
+      </div>
 
       {/* Coverage brief */}
       <section className="coverage-band" aria-label="Channels covered">
@@ -1877,6 +1922,49 @@ function HomePage() {
         copy="Booking platforms, CRMs, inboxes, marketing, and payments — Corner Systems works alongside the tools your team already knows."
       />
 
+      {/* Implementation process */}
+      <section className="section impl-section" aria-label="Implementation process">
+        <RevealSection>
+          <div className="impl-header">
+            <p className="eyebrow">Setup & launch</p>
+            <h2>Live in days, not months.</h2>
+            <p className="section-copy">
+              We set up your AI receptionist around your existing business — your services, hours, FAQs, booking flow, and escalation rules. No rip-and-replace.
+            </p>
+          </div>
+        </RevealSection>
+        <div className="impl-steps">
+          {[
+            { n: "01", label: "Business intake",            detail: "We map your services, hours, pricing, common questions, and booking flow." },
+            { n: "02", label: "Call script design",         detail: "Custom conversation scripts that match your tone and handle your most common inquiries." },
+            { n: "03", label: "FAQ & service training",     detail: "The AI learns your specific offers, objections, and escalation triggers." },
+            { n: "04", label: "Booking integration",        detail: "We connect to your calendar or booking software so appointments land in the right place." },
+            { n: "05", label: "SMS follow-up setup",        detail: "Automated sequences for after-call follow-up, no-shows, and lead nurture." },
+            { n: "06", label: "Test calls & QA",            detail: "We run the system hard before launch — edge cases, escalations, and off-script scenarios." },
+            { n: "07", label: "Launch & optimisation",      detail: "Go live. We monitor the first week and tune based on real call data." },
+          ].map((step, i) => (
+            <RevealSection delay={i * 70} key={step.n}>
+              <div className="impl-step">
+                <span className="impl-step-n">{step.n}</span>
+                <div className="impl-step-body">
+                  <strong>{step.label}</strong>
+                  <p>{step.detail}</p>
+                </div>
+              </div>
+            </RevealSection>
+          ))}
+        </div>
+        <RevealSection delay={200}>
+          <div className="impl-cta">
+            <a className="button button-primary" href="/contact">
+              Start the conversation
+              <ArrowRight aria-hidden="true" size={19} />
+            </a>
+            <p className="impl-cta-note">Typical timeline: 7–14 days from intake to live.</p>
+          </div>
+        </RevealSection>
+      </section>
+
       {/* Early results — honest, no fake quotes */}
       <section id="proof" className="early-results-section" aria-label="Early results">
         <div className="early-results-inner">
@@ -1925,6 +2013,29 @@ function HomePage() {
               If you're the right fit, you'll be part of a small cohort of founding clients who help shape the product — with direct access to Tom and Mike throughout.
             </p>
           </RevealSection>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="section faq-section faq-section-home" aria-label="Frequently asked questions">
+        <RevealSection>
+          <div className="section-heading">
+            <p className="eyebrow">Common questions</p>
+            <h2>Everything you need to know before you decide.</h2>
+            <p className="section-copy">
+              If something's still unclear after reading, book a 15-minute call and we'll answer it directly.
+            </p>
+          </div>
+        </RevealSection>
+        <div className="faq-list faq-list-home">
+          {faqs.map((item, i) => (
+            <RevealSection delay={i * 40} key={item.question}>
+              <article className="faq-item">
+                <h3>{item.question}</h3>
+                <p>{item.answer}</p>
+              </article>
+            </RevealSection>
+          ))}
         </div>
       </section>
 
