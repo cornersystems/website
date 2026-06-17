@@ -1,6 +1,6 @@
 # Corner Systems Website Roadmap & Conversion Checklist
 
-Last updated: 2026-06-14 (Integrations + /services + /industries reshape)
+Last updated: 2026-06-19
 
 ## Goal
 
@@ -300,7 +300,10 @@ Analytics events:
 - [ ] Return explicit `configured: false` responses for CRM/calendar endpoints that are not live yet, so the agent does not claim records or bookings were created.
 - [ ] Keep website form handling here, but write reusable lead/contact/pipeline records through the custom CRM layer owned by `agent-network`.
 - [x] Add a protected CRM dashboard after login: Dashboard (master metrics + pipeline funnel), Hot Leads, Follow-ups Due, Drafts (AI email review/approve/reject + auto-send toggle), Activity (email open/click/reply feed, per-lead filterable), Pipeline, Compose, Tickets, Callbacks (2026-06-11).
-- [x] Add "Next Steps to Escape the Matrix" priority panel to CRM dashboard — shows top open items from both roadmaps with priority/category badges and a "Copy prompt" button per item. Notification icon in topbar with badge count. Managed by Claude via `website/src/data/team-todos.json`. Empty state prompts the team to ask Claude for more items (2026-06-18).
+- [x] Add "Next Steps to Escape the Matrix" priority panel to CRM dashboard — shows top open items from both roadmaps with priority/category badges and a "Copy prompt" button per item. Notification icon in topbar opens a dropdown. Managed by Claude via `website/src/data/team-todos.json`. Empty state prompts the team to ask Claude for more items (2026-06-18).
+- [x] Redesign Drafts, Inbox, and Outbox CRM tabs as Outlook-style master-detail layout — 280px scrollable list on left, full detail panel on right. Drafts detail has editable subject/body, collapsible "Show original AI draft" toggle, and Save/Approve/Reject actions. Inbox/Outbox show read-only email with "Open lead" button. Auto-send policy controls moved to compact topbar (2026-06-18/19).
+- [x] Reorder CRM navigation: Drafts moved between Inbox and Outbox (logical email flow: receive → review → sent) (2026-06-19).
+- [x] Pipeline run observability: `pipeline_runs` table, smart-polling dashboard status card (pulsing live indicator when agent is running), full run history with expandable event logs in Audit tab (2026-06-19).
 - [ ] Add role-based access for internal users before any private records are exposed (currently any Clerk-authenticated user has full access).
 - [x] Add audit logging for CRM record views, edits, exports, and agent-created events. — `logAudit('human:crm', ...)` now fires on every manual leads PATCH, opportunities PATCH, accounts PATCH, and bulk-leads PATCH (diffFields helper computes before/after only for changed keys). AI mutations were already logged. Audit Log tab renamed from "AI Log", shows actor filter (All / Human / AI), colour-coded actor badges, and a per-field before→after diff list instead of raw JSON (2026-06-16).
 - [x] Add invite/password reset or chosen sign-in recovery flow — handled by Clerk's hosted `<SignIn>` component.

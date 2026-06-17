@@ -2381,6 +2381,78 @@ function TeamTodoPanel() {
   );
 }
 
+function TodoNotifButton() {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(null);
+  const ref = useRef(null);
+  const openItems = TEAM_TODOS.items.filter(t => t.status !== "done");
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [open]);
+
+  function copy(item) {
+    navigator.clipboard.writeText(item.aiPrompt).catch(() => {});
+    setCopied(item.id);
+    setTimeout(() => setCopied(null), 2200);
+  }
+
+  return (
+    <div className="crm-todos-notif-wrap" ref={ref}>
+      <button
+        className={`crm-todos-notif${open ? " crm-todos-notif-active" : ""}`}
+        onClick={() => setOpen(v => !v)}
+        title="Next Steps to Escape the Matrix"
+      >
+        <ClipboardList size={16} />
+        {openItems.length > 0 && <span className="crm-tab-badge">{openItems.length}</span>}
+      </button>
+      {open && (
+        <div className="crm-todos-dropdown">
+          <div className="crm-todos-dd-header">
+            <strong>Next Steps to Escape the Matrix</strong>
+            <button className="crm-todos-dd-close" onClick={() => setOpen(false)}><X size={14} /></button>
+          </div>
+          <div className="crm-todos-dd-list">
+            {openItems.length === 0 ? (
+              <p className="crm-todos-dd-empty">All clear — ask Claude what to add next.</p>
+            ) : (
+              ["critical", "high", "medium"].flatMap(priority =>
+                openItems.filter(t => t.priority === priority).map(item => {
+                  const pc = TODO_PRIORITY[item.priority] || TODO_PRIORITY.medium;
+                  const cc = TODO_CATEGORY[item.category] || TODO_CATEGORY.sales;
+                  return (
+                    <div key={item.id} className="crm-todos-dd-item">
+                      <div className="crm-todos-dd-badges">
+                        <span className="team-todo-badge" style={{ background: pc.color + "22", color: pc.color }}>{pc.label}</span>
+                        <span className="team-todo-badge" style={{ background: cc.color + "22", color: cc.color }}>{cc.label}</span>
+                      </div>
+                      <span className="crm-todos-dd-title">{item.title}</span>
+                      <button
+                        className={`team-todo-copy${copied === item.id ? " team-todo-copy-done" : ""}`}
+                        onClick={() => copy(item)}
+                      >
+                        {copied === item.id
+                          ? <><CheckCircle2 size={12} /> Copied</>
+                          : <><Copy size={12} /> Copy</>}
+                      </button>
+                    </div>
+                  );
+                })
+              )
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const CRM_TAB_STORAGE_KEY = "crm:lastTab";
 
 function CrmDashboard() {
@@ -2444,6 +2516,7 @@ function CrmDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [auditActorFilter, setAuditActorFilter] = useState("all");
+  const [pipelineRuns, setPipelineRuns] = useState([]);
   const [inboxRecipient, setInboxRecipient] = useState("");
   const [outboxRecipient, setOutboxRecipient] = useState("");
   const [openMsgId, setOpenMsgId] = useState(null);
@@ -2459,6 +2532,7 @@ function CrmDashboard() {
   const [sendPolicy, setSendPolicy] = useState(null);
   const [draftEdits, setDraftEdits] = useState({});
   const [draftStatus, setDraftStatus] = useState({});
+  const [rawOpen, setRawOpen] = useState({});
   const [detailLead, setDetailLead] = useState(null);
   const [accountDetail, setAccountDetail] = useState(null);
   const [accountLoading, setAccountLoading] = useState(false);
@@ -2640,6 +2714,23 @@ function CrmDashboard() {
     authFetch("/api/crm/audit").then(r => r.ok ? r.json() : [])
       .then(d => setAuditLog(Array.isArray(d) ? d : [])).catch(() => {});
   }, [tab, authFetch]);
+
+  // Pipeline run observability — always polling, fast when a run is active
+  useEffect(() => {
+    let timer;
+    const load = () => {
+      if (document.visibilityState === "hidden") return;
+      authFetch("/api/crm/pipeline-runs?limit=20").then(r => r.ok ? r.json() : [])
+        .then(d => {
+          const runs = Array.isArray(d) ? d : [];
+          setPipelineRuns(runs);
+          const isRunning = runs.some(r => r.status === "running");
+          timer = setTimeout(load, isRunning ? 3000 : 30000);
+        }).catch(() => { timer = setTimeout(load, 30000); });
+    };
+    load();
+    return () => clearTimeout(timer);
+  }, [authFetch]);
 
   useEffect(() => {
     if (tab !== "appointments") return;
@@ -3121,6 +3212,7 @@ function CrmDashboard() {
         ["dashboard", "Dashboard", LayoutDashboard],
         ["search", "Search", Search],
         ["inbox", "Inbox", MailOpen],
+        ["drafts", "Drafts", Inbox],
         ["outbox", "Outbox", Send],
       ],
     },
@@ -3136,7 +3228,6 @@ function CrmDashboard() {
         ["appointments", "Appointments", Calendar],
         ["followups", "Follow-ups", Clock3],
         ["cadences", "Cadences", Zap],
-        ["drafts", "Drafts", Inbox],
         ["activity", "Activity", Activity],
         ["audit", "Audit Log", BarChart3],
       ],
@@ -3216,18 +3307,7 @@ function CrmDashboard() {
           <button className="crm-btn-mini" onClick={() => setCrmDarkMode(v => !v)}>
             {crmDarkMode ? "Light" : "Dark"}
           </button>
-          <button
-            className="crm-todos-notif"
-            onClick={() => setTab("dashboard")}
-            title="Next Steps to Escape the Matrix"
-          >
-            <ClipboardList size={16} />
-            {TEAM_TODOS.items.filter(t => t.status !== "done").length > 0 && (
-              <span className="crm-tab-badge">
-                {TEAM_TODOS.items.filter(t => t.status !== "done").length}
-              </span>
-            )}
-          </button>
+          <TodoNotifButton />
           <UserButton afterSignOutUrl="/crm" />
         </header>
 
@@ -3250,7 +3330,51 @@ function CrmDashboard() {
       {/* Dashboard */}
       {tab === "dashboard" && (
         <div className="crm-content">
-          <TeamTodoPanel />
+          <div className="crm-dash-layout">
+            <div className="crm-dash-main">
+          {(() => {
+            const latestRun = pipelineRuns[0] ?? null;
+            const isRunning = latestRun?.status === "running";
+            const recentEvents = latestRun?.events ?? [];
+            return (
+              <div className={`crm-pipeline-run-card${isRunning ? " crm-pipeline-run-card--active" : ""}`}>
+                <div className="crm-pipeline-run-header">
+                  <span className="crm-pipeline-run-title">
+                    <span className={`crm-run-dot${isRunning ? " crm-run-dot--live" : latestRun?.status === "failed" ? " crm-run-dot--fail" : " crm-run-dot--ok"}`} />
+                    {isRunning ? "Pipeline running…" : latestRun ? `Last run — ${latestRun.script}` : "No runs yet"}
+                  </span>
+                  {latestRun && (
+                    <span className="crm-pipeline-run-meta">
+                      {isRunning
+                        ? `Started ${new Date(latestRun.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                        : `${new Date(latestRun.started_at).toLocaleDateString()} ${new Date(latestRun.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${latestRun.status}`
+                      }
+                    </span>
+                  )}
+                </div>
+                {latestRun && !isRunning && (
+                  <div className="crm-pipeline-run-stats">
+                    <span><strong>{latestRun.leads_processed}</strong> leads</span>
+                    <span><strong>{latestRun.drafts_created}</strong> drafted</span>
+                    <span><strong>{latestRun.emails_sent}</strong> sent</span>
+                    <span><strong>{latestRun.calls_triggered}</strong> calls</span>
+                    {latestRun.error && <span className="crm-run-error">{latestRun.error}</span>}
+                  </div>
+                )}
+                {isRunning && recentEvents.length > 0 && (
+                  <div className="crm-pipeline-run-events">
+                    {recentEvents.slice(-5).map((ev, i) => (
+                      <div key={i} className={`crm-run-event crm-run-event--${ev.level || "info"}`}>
+                        <span className="crm-run-event-time">{new Date(ev.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+                        <span>{ev.msg}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {!dashboard ? <p className="crm-loading">Loading…</p> : (
             <>
               <div className="crm-dash-grid">
@@ -3310,6 +3434,11 @@ function CrmDashboard() {
               </div>
             </>
           )}
+            </div>
+            <aside className="crm-dash-sidebar">
+              <TeamTodoPanel />
+            </aside>
+          </div>
         </div>
       )}
 
@@ -3894,79 +4023,127 @@ function CrmDashboard() {
 
       {/* Drafts */}
       {tab === "drafts" && (
-        <div className="crm-content">
-          <div className="crm-toolbar crm-toolbar-spread">
-            <div>{drafts.length} draft{drafts.length === 1 ? "" : "s"} awaiting review</div>
-            <label className="crm-toggle-label">
+        <div className="crm-content crm-content-email">
+          <div className="crm-email-topbar">
+            <span style={{ fontWeight: 600 }}>{drafts.length} draft{drafts.length === 1 ? "" : "s"}</span>
+            <label className="crm-toggle-label" style={{ marginLeft: "auto" }}>
               <input type="checkbox" checked={autoSendDefault} onChange={toggleAutoSendDefault} />
-              Auto-send all future emails (skip review)
+              Auto-send future emails
             </label>
-          </div>
-          {sendPolicy && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", padding: "10px 14px", marginBottom: 16, background: "#fafbfc", border: "1px solid #eee", borderRadius: 8, fontSize: 13 }}>
-              <span style={{ fontWeight: 600, color: "#444" }}>AI reply policy:</span>
-              {[
-                ["reply_interested", "Replies to interested leads"],
-                ["reply_question", "Replies to questions"],
-                ["followup_due", "Scheduled follow-ups"],
-              ].map(([key, label]) => (
-                <label key={key} style={{ display: "flex", alignItems: "center", gap: 6, color: "#555" }}>
-                  {label}
-                  <select
-                    value={sendPolicy[key] || "review"}
-                    onChange={e => updateSendPolicy(key, e.target.value)}
-                    style={{ padding: "3px 6px", borderRadius: 6, border: "1px solid #ddd", fontSize: 12 }}
-                  >
-                    <option value="review">Require review</option>
-                    <option value="auto">Auto-send</option>
-                  </select>
+            {sendPolicy && (
+              <>
+                {[
+                  ["reply_interested", "Interested replies"],
+                  ["reply_question", "Questions"],
+                  ["followup_due", "Follow-ups"],
+                ].map(([key, label]) => (
+                  <label key={key} className="crm-policy-label">
+                    {label}
+                    <select
+                      className="crm-policy-select"
+                      value={sendPolicy[key] || "review"}
+                      onChange={e => updateSendPolicy(key, e.target.value)}
+                    >
+                      <option value="review">Review</option>
+                      <option value="auto">Auto</option>
+                    </select>
+                  </label>
+                ))}
+                <label className="crm-policy-label">
+                  <input
+                    type="checkbox"
+                    checked={sendPolicy.always_review_pricing !== false}
+                    onChange={e => updateSendPolicy("always_review_pricing", e.target.checked)}
+                  />
+                  Review pricing
                 </label>
-              ))}
-              <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#555" }}>
-                <input
-                  type="checkbox"
-                  checked={sendPolicy.always_review_pricing !== false}
-                  onChange={e => updateSendPolicy("always_review_pricing", e.target.checked)}
-                />
-                Always review pricing mentions
-              </label>
+              </>
+            )}
+          </div>
+          <div className="crm-email-shell">
+            <div className="crm-email-list">
+              {drafts.length === 0 && <p className="crm-email-list-empty">No drafts awaiting review.</p>}
+              {drafts.map(d => {
+                const edit = draftEdits[d.id] || {};
+                const subject = edit.subject ?? d.subject ?? "";
+                const isActive = openMsgId === `draft-${d.id}`;
+                return (
+                  <button
+                    key={d.id}
+                    className={`crm-email-row${isActive ? " crm-email-row-active" : ""}`}
+                    onClick={() => setOpenMsgId(isActive ? null : `draft-${d.id}`)}
+                  >
+                    <div className="crm-email-row-from">
+                      {d.business_name}{d.owner_name ? ` · ${d.owner_name}` : ""}
+                    </div>
+                    <div className="crm-email-row-subject">{subject || "(no subject)"}</div>
+                    <div className="crm-email-row-meta">
+                      <span className="crm-draft-channel">{d.channel?.replace(/_/g, " ")}</span>
+                      <span className="crm-email-row-date">{d.created_at ? new Date(d.created_at).toLocaleDateString() : ""}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          )}
-          {drafts.length === 0 && <p className="crm-empty">No drafts awaiting review.</p>}
-          {drafts.map(d => {
-            const edit = draftEdits[d.id] || {};
-            const subject = edit.subject ?? d.subject ?? "";
-            const body    = edit.body ?? d.body ?? "";
-            const status  = draftStatus[d.id];
-            return (
-              <div className="crm-draft-card" key={d.id}>
-                <div className="crm-draft-header">
-                  <div>
-                    <strong>{d.business_name}</strong>{d.owner_name ? ` — ${d.owner_name}` : ""}
-                    {d.lead_email && <> · <a href={`mailto:${d.lead_email}`}>{d.lead_email}</a></>}
+            <div className="crm-email-detail">
+              {(() => {
+                const d = drafts.find(x => openMsgId === `draft-${x.id}`);
+                if (!d) return <div className="crm-email-placeholder">Select a draft to review.</div>;
+                const edit = draftEdits[d.id] || {};
+                const subject = edit.subject ?? d.subject ?? "";
+                const body    = edit.body ?? d.body ?? "";
+                const status  = draftStatus[d.id];
+                const showRawToggle = d.draft_raw && d.draft_raw !== body;
+                return (
+                  <div className="crm-email-detail-inner">
+                    <div className="crm-email-detail-meta">
+                      <span><strong>Business:</strong> {d.business_name}</span>
+                      {d.owner_name && <span><strong>Owner:</strong> {d.owner_name}</span>}
+                      {d.lead_email && <span><strong>Email:</strong> <a href={`mailto:${d.lead_email}`}>{d.lead_email}</a></span>}
+                      <span><strong>Channel:</strong> <span className="crm-draft-channel">{d.channel?.replace(/_/g, " ")}</span></span>
+                    </div>
+                    <input
+                      className="crm-draft-subject"
+                      value={subject}
+                      onChange={e => setDraftEdits(s => ({ ...s, [d.id]: { ...s[d.id], subject: e.target.value, body } }))}
+                    />
+                    <textarea
+                      className="crm-draft-body crm-draft-body-detail"
+                      rows={16}
+                      value={body}
+                      onChange={e => setDraftEdits(s => ({ ...s, [d.id]: { ...s[d.id], subject, body: e.target.value } }))}
+                    />
+                    {showRawToggle && (
+                      <>
+                        <button
+                          className="crm-draft-raw-toggle"
+                          onClick={() => setRawOpen(r => ({ ...r, [d.id]: !r[d.id] }))}
+                        >
+                          {rawOpen[d.id] ? "Hide original AI draft" : "Show original AI draft"}
+                        </button>
+                        {rawOpen[d.id] && (
+                          <div className="crm-draft-raw-body">{d.draft_raw}</div>
+                        )}
+                      </>
+                    )}
+                    <div className="crm-draft-footer">
+                      <button className="crm-btn-mini" disabled={status === "edit"} onClick={() => draftAction(d.id, "edit")}>
+                        {status === "edit" ? "Saving…" : "Save edits"}
+                      </button>
+                      <button className="button button-primary" disabled={status === "approve"} onClick={() => draftAction(d.id, "approve")}>
+                        {status === "approve" ? "Sending…" : "Approve & send"}
+                      </button>
+                      <button className="crm-btn-mini crm-btn-danger" disabled={status === "reject"} onClick={() => draftAction(d.id, "reject")}>
+                        {status === "reject" ? "Rejecting…" : "Reject"}
+                      </button>
+                      {status === "saved" && <span className="crm-status-ok">Saved</span>}
+                      {status === "error" && <span className="crm-status-err">Something went wrong — try again.</span>}
+                    </div>
                   </div>
-                  <span className="crm-draft-channel">{d.channel?.replace(/_/g, " ")}</span>
-                </div>
-                <input className="crm-draft-subject" value={subject}
-                  onChange={e => setDraftEdits(s => ({ ...s, [d.id]: { ...s[d.id], subject: e.target.value, body } }))} />
-                <textarea className="crm-draft-body" rows={8} value={body}
-                  onChange={e => setDraftEdits(s => ({ ...s, [d.id]: { ...s[d.id], subject, body: e.target.value } }))} />
-                <div className="crm-draft-footer">
-                  <button className="crm-btn-mini" disabled={status === "edit"} onClick={() => draftAction(d.id, "edit")}>
-                    {status === "edit" ? "Saving…" : "Save edits"}
-                  </button>
-                  <button className="button button-primary" disabled={status === "approve"} onClick={() => draftAction(d.id, "approve")}>
-                    {status === "approve" ? "Sending…" : "Approve & send"}
-                  </button>
-                  <button className="crm-btn-mini crm-btn-danger" disabled={status === "reject"} onClick={() => draftAction(d.id, "reject")}>
-                    {status === "reject" ? "Rejecting…" : "Reject"}
-                  </button>
-                  {status === "saved" && <span className="crm-status-ok">Saved</span>}
-                  {status === "error" && <span className="crm-status-err">Something went wrong — try again.</span>}
-                </div>
-              </div>
-            );
-          })}
+                );
+              })()}
+            </div>
+          </div>
         </div>
       )}
 
@@ -4321,6 +4498,51 @@ function CrmDashboard() {
       {/* Audit Log */}
       {tab === "audit" && (
         <div className="crm-content">
+
+          {/* Pipeline run history */}
+          <h3 className="crm-section-title" style={{ marginBottom: 10 }}>Pipeline runs</h3>
+          {pipelineRuns.length === 0 ? (
+            <p className="crm-muted-line" style={{ marginBottom: 24 }}>No pipeline runs recorded yet. Run <code>node outbound/pipeline.js</code> or <code>node outbound/daily-run.js</code> to start tracking.</p>
+          ) : (
+            <div className="crm-run-history" style={{ marginBottom: 28 }}>
+              {pipelineRuns.map(run => {
+                const isRunning = run.status === "running";
+                const events = Array.isArray(run.events) ? run.events : [];
+                return (
+                  <details key={run.id} className={`crm-run-row${isRunning ? " crm-run-row--active" : ""}`}>
+                    <summary className="crm-run-summary">
+                      <span className={`crm-run-dot${isRunning ? " crm-run-dot--live" : run.status === "failed" ? " crm-run-dot--fail" : " crm-run-dot--ok"}`} />
+                      <span className="crm-run-script">{run.script}</span>
+                      <span className="crm-run-time">{new Date(run.started_at).toLocaleDateString()} {new Date(run.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className="crm-run-badges">
+                        {isRunning
+                          ? <span className="crm-run-badge crm-run-badge--running">running</span>
+                          : <span className={`crm-run-badge crm-run-badge--${run.status}`}>{run.status}</span>
+                        }
+                        {!isRunning && <><span>{run.leads_processed} leads</span><span>{run.drafts_created} drafted</span><span>{run.emails_sent} sent</span></>}
+                      </span>
+                      {run.completed_at && (
+                        <span className="crm-run-duration">{((new Date(run.completed_at) - new Date(run.started_at)) / 1000).toFixed(1)}s</span>
+                      )}
+                    </summary>
+                    {(events.length > 0 || run.error) && (
+                      <div className="crm-run-events-detail">
+                        {run.error && <div className="crm-run-event crm-run-event--error"><span className="crm-run-event-time">error</span><span>{run.error}</span></div>}
+                        {events.map((ev, i) => (
+                          <div key={i} className={`crm-run-event crm-run-event--${ev.level || "info"}`}>
+                            <span className="crm-run-event-time">{new Date(ev.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+                            <span>{ev.msg}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </details>
+                );
+              })}
+            </div>
+          )}
+
+          <h3 className="crm-section-title" style={{ marginBottom: 10 }}>CRM field changes</h3>
           <div className="crm-filter-row" style={{ marginBottom: 14 }}>
             <select className="crm-filter" value={auditActorFilter} onChange={e => setAuditActorFilter(e.target.value)}>
               <option value="all">All actors</option>
@@ -4454,101 +4676,76 @@ function CrmDashboard() {
       {tab === "inbox" && (() => {
         const recipients = [...new Set(inbox.map(m => (m.recipient || "").toLowerCase()).filter(Boolean))].sort();
         const visible = inboxRecipient ? inbox.filter(m => (m.recipient || "").toLowerCase() === inboxRecipient) : inbox;
+        const selectedMsg = visible.find(m => openMsgId === m.id);
         return (
-        <div className="crm-content">
-          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 16px" }}>
+        <div className="crm-content crm-content-email">
+          <div className="crm-email-topbar">
             <select
+              className="crm-policy-select"
               value={inboxRecipient}
               onChange={e => setInboxRecipient(e.target.value)}
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd", fontSize: 13, color: "#444" }}
             >
               <option value="">All recipients</option>
               {recipients.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
-            <span style={{ fontSize: 13, color: "#888" }}>
+            <span style={{ color: "var(--muted)" }}>
               {visible.length} message{visible.length === 1 ? "" : "s"} · refreshes automatically
             </span>
           </div>
-          <div className="crm-table-wrap">
-            <table className="crm-table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Subject / Preview</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
-                      No inbound messages yet.
-                    </td>
-                  </tr>
-                ) : visible.map(m => (
-                  <React.Fragment key={m.id}>
-                  <tr
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setOpenMsgId(openMsgId === m.id ? null : m.id)}
+          <div className="crm-email-shell">
+            <div className="crm-email-list">
+              {visible.length === 0 && <p className="crm-email-list-empty">No inbound messages yet.</p>}
+              {visible.map(m => {
+                const isActive = openMsgId === m.id;
+                const channelLabel = m.channel === "website_contact" ? "Form" : "Reply";
+                return (
+                  <button
+                    key={m.id}
+                    className={`crm-email-row${isActive ? " crm-email-row-active" : ""}`}
+                    onClick={() => setOpenMsgId(isActive ? null : m.id)}
                   >
-                    <td>
+                    <div className="crm-email-row-from">{m.business_name || "—"}</div>
+                    {m.lead_email && <div className="crm-email-row-preview">{m.lead_email}</div>}
+                    <div className="crm-email-row-subject">{m.subject || "(no subject)"}</div>
+                    {m.body && <div className="crm-email-row-preview">{m.body}</div>}
+                    <div className="crm-email-row-meta">
                       <span style={{
-                        display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
+                        display: "inline-block", padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 600,
                         background: m.channel === "website_contact" ? "#e8f4fd" : "#edf7ed",
                         color: m.channel === "website_contact" ? "#1565c0" : "#2e7d32",
-                      }}>
-                        {m.channel === "website_contact" ? "Contact Form" : "Reply"}
+                      }}>{channelLabel}</span>
+                      <span className="crm-email-row-date">
+                        {new Date(m.created_at).toLocaleDateString()}
                       </span>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{m.business_name || "—"}</div>
-                      {m.lead_email && <div style={{ fontSize: 12, color: "#666" }}>{m.lead_email}</div>}
-                    </td>
-                    <td style={{ fontSize: 13, color: "#666" }}>{m.recipient || "—"}</td>
-                    <td>
-                      <div style={{ fontSize: 14 }}>{m.subject || "(no subject)"}</div>
-                      {m.body && (
-                        <div style={{ fontSize: 12, color: "#888", marginTop: 2, maxWidth: 420, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {m.body}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ whiteSpace: "nowrap", color: "#666", fontSize: 13 }}>
-                      {new Date(m.created_at).toLocaleDateString()}{" "}
-                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </td>
-                  </tr>
-                  {openMsgId === m.id && (
-                    <tr>
-                      <td colSpan={5} style={{ background: "#fafbfc", padding: "16px 20px" }}>
-                        <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
-                          From: {m.lead_email || m.business_name || "—"} · To: {m.recipient || "—"} ·{" "}
-                          {new Date(m.created_at).toLocaleString()}
-                        </div>
-                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>{m.subject || "(no subject)"}</div>
-                        <div style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.55, color: "#333", maxWidth: 720 }}>
-                          {m.body || "(no content)"}
-                        </div>
-                        {m.lead_id && (
-                          <button
-                            style={{ marginTop: 12, padding: "6px 14px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", fontSize: 13, cursor: "pointer" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openLeadDetail({ id: m.lead_id, business_name: m.business_name, owner_name: m.owner_name, email: m.lead_email, stage: m.stage, lead_tier: m.lead_tier, notes: "" });
-                            }}
-                          >
-                            Open lead
-                          </button>
-                        )}
-                      </td>
-                    </tr>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="crm-email-detail">
+              {!selectedMsg ? (
+                <div className="crm-email-placeholder">Select a message to read.</div>
+              ) : (
+                <div className="crm-email-detail-inner">
+                  <div className="crm-email-detail-meta">
+                    <span><strong>From:</strong> {selectedMsg.lead_email || selectedMsg.business_name || "—"}</span>
+                    <span><strong>To:</strong> {selectedMsg.recipient || "—"}</span>
+                    <span><strong>Date:</strong> {new Date(selectedMsg.created_at).toLocaleString()}</span>
+                  </div>
+                  <div className="crm-email-detail-subject">{selectedMsg.subject || "(no subject)"}</div>
+                  <div className="crm-email-detail-body">{selectedMsg.body || "(no content)"}</div>
+                  {selectedMsg.lead_id && (
+                    <button
+                      className="crm-btn-mini"
+                      style={{ marginTop: 16 }}
+                      onClick={() => openLeadDetail({ id: selectedMsg.lead_id, business_name: selectedMsg.business_name, owner_name: selectedMsg.owner_name, email: selectedMsg.lead_email, stage: selectedMsg.stage, lead_tier: selectedMsg.lead_tier, notes: "" })}
+                    >
+                      Open lead
+                    </button>
                   )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         );
@@ -4560,108 +4757,85 @@ function CrmDashboard() {
         const visible = outboxRecipient
           ? outbox.filter(m => ((m.recipient || m.lead_email || "").toLowerCase()) === outboxRecipient)
           : outbox;
+        const selectedMsg = visible.find(m => openMsgId === `outbox-${m.id}`);
         return (
-        <div className="crm-content">
-          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 16px" }}>
+        <div className="crm-content crm-content-email">
+          <div className="crm-email-topbar">
             <select
+              className="crm-policy-select"
               value={outboxRecipient}
               onChange={e => setOutboxRecipient(e.target.value)}
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd", fontSize: 13, color: "#444" }}
             >
               <option value="">All recipients</option>
               {recipients.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
-            <span style={{ fontSize: 13, color: "#888" }}>
+            <span style={{ color: "var(--muted)" }}>
               {visible.length} sent message{visible.length === 1 ? "" : "s"}
             </span>
           </div>
-          <div className="crm-table-wrap">
-            <table className="crm-table">
-              <thead>
-                <tr>
-                  <th>Status</th>
-                  <th>To</th>
-                  <th>Subject / Preview</th>
-                  <th>Tracking</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#999" }}>
-                      No outgoing messages yet.
-                    </td>
-                  </tr>
-                ) : visible.map(m => {
-                  const rowId = `outbox-${m.id}`;
-                  return (
-                  <React.Fragment key={rowId}>
-                  <tr
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setOpenMsgId(openMsgId === rowId ? null : rowId)}
+          <div className="crm-email-shell">
+            <div className="crm-email-list">
+              {visible.length === 0 && <p className="crm-email-list-empty">No outgoing messages yet.</p>}
+              {visible.map(m => {
+                const rowId = `outbox-${m.id}`;
+                const isActive = openMsgId === rowId;
+                return (
+                  <button
+                    key={rowId}
+                    className={`crm-email-row${isActive ? " crm-email-row-active" : ""}`}
+                    onClick={() => setOpenMsgId(isActive ? null : rowId)}
                   >
-                    <td><TouchStatusBadge status={m.status} /></td>
-                    <td>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{m.business_name || m.owner_name || "-"}</div>
-                      {(m.recipient || m.lead_email) && (
-                        <div style={{ fontSize: 12, color: "#666" }}>{m.recipient || m.lead_email}</div>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ fontSize: 14 }}>{m.subject || "(no subject)"}</div>
-                      {m.body && (
-                        <div style={{ fontSize: 12, color: "#888", marginTop: 2, maxWidth: 520, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {m.body}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ fontSize: 13, color: "#666" }}>
-                      {m.bounced_at ? (
-                        <span title={new Date(m.bounced_at).toLocaleString()} style={{ color: "#ef4444" }}>Bounced</span>
-                      ) : (
-                        <>
-                          {m.opened_at && <span title={new Date(m.opened_at).toLocaleString()}>Opened</span>}
-                          {m.clicked_at && <span title={new Date(m.clicked_at).toLocaleString()}>{m.opened_at ? " · " : ""}Clicked</span>}
-                          {!m.opened_at && !m.clicked_at && "-"}
-                        </>
-                      )}
-                    </td>
-                    <td style={{ whiteSpace: "nowrap", color: "#666", fontSize: 13 }}>
-                      {new Date(m.created_at).toLocaleDateString()}{" "}
-                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </td>
-                  </tr>
-                  {openMsgId === rowId && (
-                    <tr>
-                      <td colSpan={5} style={{ background: "#fafbfc", padding: "16px 20px" }}>
-                        <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
-                          To: {m.recipient || m.lead_email || "-"} / Channel: {m.channel?.replace(/_/g, " ") || "-"} /{" "}
-                          {new Date(m.created_at).toLocaleString()}
-                        </div>
-                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>{m.subject || "(no subject)"}</div>
-                        <div style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.55, color: "#333", maxWidth: 720 }}>
-                          {m.body || "(no content)"}
-                        </div>
-                        {m.lead_id && (
-                          <button
-                            style={{ marginTop: 12, padding: "6px 14px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", fontSize: 13, cursor: "pointer" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openLeadDetail({ id: m.lead_id, business_name: m.business_name, owner_name: m.owner_name, email: m.lead_email || m.recipient, stage: m.stage, lead_tier: m.lead_tier, notes: "" });
-                            }}
-                          >
-                            Open lead
-                          </button>
-                        )}
-                      </td>
-                    </tr>
+                    <div className="crm-email-row-from">{m.business_name || m.owner_name || "—"}</div>
+                    {(m.recipient || m.lead_email) && (
+                      <div className="crm-email-row-preview">{m.recipient || m.lead_email}</div>
+                    )}
+                    <div className="crm-email-row-subject">{m.subject || "(no subject)"}</div>
+                    {m.body && <div className="crm-email-row-preview">{m.body}</div>}
+                    <div className="crm-email-row-meta">
+                      <TouchStatusBadge status={m.status} />
+                      <span className="crm-email-row-date">
+                        {new Date(m.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="crm-email-detail">
+              {!selectedMsg ? (
+                <div className="crm-email-placeholder">Select a message to read.</div>
+              ) : (
+                <div className="crm-email-detail-inner">
+                  <div className="crm-email-detail-meta">
+                    <span><strong>To:</strong> {selectedMsg.recipient || selectedMsg.lead_email || "—"}</span>
+                    <span><strong>Channel:</strong> {selectedMsg.channel?.replace(/_/g, " ") || "—"}</span>
+                    <span><strong>Date:</strong> {new Date(selectedMsg.created_at).toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+                    {selectedMsg.opened_at && (
+                      <span title={new Date(selectedMsg.opened_at).toLocaleString()} style={{ fontSize: "0.78rem", padding: "2px 8px", borderRadius: 4, background: "#e8f4fd", color: "#1565c0" }}>Opened</span>
+                    )}
+                    {selectedMsg.clicked_at && (
+                      <span title={new Date(selectedMsg.clicked_at).toLocaleString()} style={{ fontSize: "0.78rem", padding: "2px 8px", borderRadius: 4, background: "#edf7ed", color: "#2e7d32" }}>Clicked</span>
+                    )}
+                    {selectedMsg.bounced_at && (
+                      <span title={new Date(selectedMsg.bounced_at).toLocaleString()} style={{ fontSize: "0.78rem", padding: "2px 8px", borderRadius: 4, background: "#fdecea", color: "#ef4444" }}>Bounced</span>
+                    )}
+                  </div>
+                  <div className="crm-email-detail-subject">{selectedMsg.subject || "(no subject)"}</div>
+                  <div className="crm-email-detail-body">{selectedMsg.body || "(no content)"}</div>
+                  {selectedMsg.lead_id && (
+                    <button
+                      className="crm-btn-mini"
+                      style={{ marginTop: 16 }}
+                      onClick={() => openLeadDetail({ id: selectedMsg.lead_id, business_name: selectedMsg.business_name, owner_name: selectedMsg.owner_name, email: selectedMsg.lead_email || selectedMsg.recipient, stage: selectedMsg.stage, lead_tier: selectedMsg.lead_tier, notes: "" })}
+                    >
+                      Open lead
+                    </button>
                   )}
-                  </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         );

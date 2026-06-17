@@ -443,6 +443,24 @@ export async function initSchema() {
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS pipeline_runs (
+      id                SERIAL PRIMARY KEY,
+      script            TEXT NOT NULL DEFAULT 'pipeline',
+      status            TEXT NOT NULL DEFAULT 'running',
+      leads_processed   INTEGER DEFAULT 0,
+      drafts_created    INTEGER DEFAULT 0,
+      emails_sent       INTEGER DEFAULT 0,
+      calls_triggered   INTEGER DEFAULT 0,
+      skipped           INTEGER DEFAULT 0,
+      error             TEXT,
+      events            JSONB DEFAULT '[]'::jsonb,
+      started_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at      TIMESTAMPTZ
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS pipeline_runs_started_idx ON pipeline_runs (started_at DESC)`;
+
   await sql`ALTER TABLE leads ADD CONSTRAINT leads_account_fk FOREIGN KEY (account_id) REFERENCES accounts(id) NOT VALID`.catch(() => {});
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_followup_at TIMESTAMPTZ`;
   await sql`ALTER TABLE crm_tasks ADD COLUMN IF NOT EXISTS opportunity_id INTEGER`;
@@ -510,6 +528,39 @@ export async function logAudit(actor, action, { lead_id = null, reason = null, b
     INSERT INTO audit_log (actor, action, lead_id, reason, before, after)
     VALUES (${actor}, ${action}, ${lead_id}, ${reason},
       ${before ? JSON.stringify(before) : null}, ${after ? JSON.stringify(after) : null})
+  `;
+}
+
+export async function startPipelineRun(script = "pipeline") {
+  const rows = await sql`
+    INSERT INTO pipeline_runs (script, status, started_at)
+    VALUES (${script}, 'running', NOW())
+    RETURNING id
+  `;
+  return rows[0].id;
+}
+
+export async function logPipelineEvent(runId, msg, level = "info") {
+  const event = { t: new Date().toISOString(), level, msg };
+  await sql`
+    UPDATE pipeline_runs
+    SET events = events || ${JSON.stringify([event])}::jsonb
+    WHERE id = ${runId}
+  `;
+}
+
+export async function endPipelineRun(runId, summary = {}, error = null) {
+  await sql`
+    UPDATE pipeline_runs SET
+      status           = ${error ? "failed" : "completed"},
+      leads_processed  = ${summary.leadsProcessed ?? 0},
+      drafts_created   = ${summary.drafted ?? 0},
+      emails_sent      = ${summary.sent ?? 0},
+      calls_triggered  = ${summary.called ?? 0},
+      skipped          = ${summary.skipped ?? 0},
+      error            = ${error ?? null},
+      completed_at     = NOW()
+    WHERE id = ${runId}
   `;
 }
 

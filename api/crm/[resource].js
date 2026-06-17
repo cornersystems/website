@@ -1223,6 +1223,15 @@ async function route(req, res) {
     }
   }
 
+  // ── pipeline-runs (observability) ────────────────────────────────────────
+  if (resource === "pipeline-runs" && req.method === "GET") {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const runs = await sql`
+      SELECT * FROM pipeline_runs ORDER BY started_at DESC LIMIT ${limit}
+    `;
+    return res.json(runs);
+  }
+
   // ── audit (AI + human action log, read-only) ───────────────────────────────
   if (resource === "audit" && req.method === "GET") {
     const entries = await sql`
