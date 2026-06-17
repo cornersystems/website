@@ -2290,6 +2290,12 @@ function CrmDashboard() {
     document.querySelector('link[rel="canonical"]')?.setAttribute("href", m.canonical);
   }, []);
 
+  // Load cadences once on mount so the enrollment picker works in any tab/drawer.
+  useEffect(() => {
+    authFetch("/api/crm/cadences").then(r => r.ok ? r.json() : [])
+      .then(d => setCadences(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [authFetch]);
+
   // Remember the active section so a page refresh stays put. The "profile"
   // tab depends on transient detailLead state, so it isn't persisted.
   useEffect(() => {
@@ -2372,13 +2378,9 @@ function CrmDashboard() {
   }, [tab, refreshOpportunities]);
 
   useEffect(() => {
-    if (tab !== "cadences" && tab !== "profile") return;
-    authFetch("/api/crm/cadences").then(r => r.ok ? r.json() : [])
-      .then(d => setCadences(Array.isArray(d) ? d : [])).catch(() => {});
-    if (tab === "cadences") {
-      authFetch("/api/crm/cadence-enrollments").then(r => r.ok ? r.json() : { summary: null, rows: [] })
-        .then(d => setCadenceEnrollments({ summary: d?.summary || null, rows: Array.isArray(d?.rows) ? d.rows : [] })).catch(() => {});
-    }
+    if (tab !== "cadences") return;
+    authFetch("/api/crm/cadence-enrollments").then(r => r.ok ? r.json() : { summary: null, rows: [] })
+      .then(d => setCadenceEnrollments({ summary: d?.summary || null, rows: Array.isArray(d?.rows) ? d.rows : [] })).catch(() => {});
   }, [tab, authFetch]);
 
   useEffect(() => {
